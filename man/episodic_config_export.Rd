@@ -14,9 +14,8 @@ episodic_config_export(
 \arguments{
 \item{db_path}{Path to the EpiSODIC database: an existing SQLite file,
 or a MariaDB/MySQL DSN (see \code{\link[=episodic_db_dsn_mariadb]{episodic_db_dsn_mariadb()}}). Defaults to
-the \code{EPISODIC_DB} environment variable. Only used to read a
-Settings-screen \code{notifications} override, if one exists - \code{NA}/unset
-skips this and exports the YAML-resolved configuration only.}
+the \code{EPISODIC_DB} environment variable. Only used to place the zip
+beside the database's reports when \code{output_dir} is not given.}
 
 \item{episodic_config_path}{The config path.}
 
@@ -37,11 +36,10 @@ handle the file with the same care as the secrets themselves.}
 Invisibly, the path to the written zip file.
 }
 \description{
-Bundles the fully-resolved configuration (shipped defaults, your
-\code{EPISODIC_CONFIG} YAML overlay, and - if \code{db_path} points at a
-database - any Settings-screen \code{notifications} override) together with
-the pathogen configuration and, if set, the colour palette override,
-into a single zip file. This is the Settings screen's "export
+Bundles the fully-resolved configuration (shipped defaults with your
+\code{EPISODIC_CONFIG} YAML on top) together with the pathogen
+configuration and, if set, the colour palette override, into a single
+zip file. This is the Settings screen's "export
 configuration" button; it is also just a plain function you can call
 from the console to snapshot an instance's configuration for backup or
 migration.

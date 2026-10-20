@@ -151,60 +151,58 @@ test_that("episodic_settings_flatten() flattens a nested config list to dotted k
   expect_equal(flat[["e"]], "1, 2, 3")
 })
 
-test_that("episodic_db_app_config_event_insert()/episodic_db_app_config_latest() round-trip, most recent wins", {
+# Rows the Settings screen once wrote to the database, which it no longer
+# writes or applies.
+settings_saved_row <- function(con, user_id, json, created_at) {
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_app_config_event (user_id, created_at, section, config_json)
+     VALUES (?, ?, 'notifications', ?)",
+    params = list(user_id, created_at, json)
+  )
+}
+
+settings_admin <- function(con) {
+  episodic_db_app_user_insert(con, "admin1", "Admin One", "a@x.nl", "hash", is_admin = TRUE)
+}
+
+test_that("episodic_db_app_config_latest() returns the most recent settings row, or NULL", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
-  user_id <- episodic_db_app_user_insert(
-    con,
-    "admin1",
-    "Admin One",
-    "a@x.nl",
-    sodium::password_store("pw12345678"),
-    is_admin = TRUE
-  )
-
+  user_id <- settings_admin(con)
   expect_null(episodic_db_app_config_latest(con, "notifications"))
-
-  episodic_db_app_config_event_insert(
-    con,
-    user_id,
-    "notifications",
-    '{"enabled":true}'
-  )
-  latest <- episodic_db_app_config_latest(con, "notifications")
-  expect_equal(latest$config_json, '{"enabled":true}')
-
-  episodic_db_app_config_event_insert(
-    con,
-    user_id,
-    "notifications",
-    '{"enabled":false}'
-  )
-  latest <- episodic_db_app_config_latest(con, "notifications")
-  expect_equal(latest$config_json, '{"enabled":false}')
-
-  events <- episodic_db_app_config_events(con, section = "notifications")
-  expect_equal(nrow(events), 2)
-  expect_equal(events$actor_full_name[1], "Admin One")
+  settings_saved_row(con, user_id, '{"enabled":true}', "2026-01-01T10:00:00Z")
+  settings_saved_row(con, user_id, '{"enabled":false}', "2026-01-02T10:00:00Z")
+  expect_equal(episodic_db_app_config_latest(con, "notifications")$config_json, '{"enabled":false}')
 })
 
-test_that("episodic_db_app_config_event_insert() rejects an unknown section", {
+test_that("settings once saved to the database are announced while they differ from the file, and not after", {
   con <- episodic_test_db()
   on.exit(DBI::dbDisconnect(con))
-  user_id <- episodic_db_app_user_insert(
-    con,
-    "admin1",
-    "Admin One",
-    "a@x.nl",
-    sodium::password_store("pw12345678")
-  )
-  expect_error(
-    episodic_db_app_config_event_insert(
-      con,
-      user_id,
-      "not_a_real_section",
-      "{}"
-    )
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path), add = TRUE)
+  writeLines("notifications:\n  dashboard_url: https://file.example", path)
+  withr::local_envvar(EPISODIC_CONFIG = path)
+  user_id <- settings_admin(con)
+
+  notices <- function() as.character(episodic_ui_settings_file_notices(con, episodic_config_resolve(), lang = "en"))
+  expect_identical(notices(), "")
+
+  settings_saved_row(con, user_id, '{"dashboard_url":"https://saved.example"}', "2026-01-01T10:00:00Z")
+  expect_match(notices(), "no longer read", fixed = TRUE)
+
+  episodic_config_set(c("notifications", "dashboard_url"), "https://saved.example", path)
+  expect_identical(notices(), "")
+})
+
+test_that("without a configuration file the Settings screen says its settings cannot be saved", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  withr::local_envvar(EPISODIC_CONFIG = NA)
+  expect_match(
+    as.character(episodic_ui_settings_file_notices(con, episodic_config_resolve(), lang = "en")),
+    "No configuration file is set",
+    fixed = TRUE
   )
 })
 
@@ -231,4 +229,51 @@ test_that("episodic_db_app_users() lists every account", {
   users <- episodic_db_app_users(con)
   expect_equal(nrow(users), 2)
   expect_equal(users$username, c("a", "b")) # ORDER BY username
+})
+
+test_that("notification settings saved in the database move into the configuration file once, and never again", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path), add = TRUE)
+  writeLines(c("# operator file", "notifications:", "  dashboard_url: https://file.example"), path)
+  user_id <- settings_admin(con)
+  settings_saved_row(con, user_id, '{"enabled":true,"channels":{"ntfy":{"enabled":true,"topic":"outbreaks"}}}', "2026-01-01T10:00:00Z")
+
+  expect_message(expect_identical(episodic_app_settings_migrate(con, path), "moved"), "were moved")
+  config <- episodic_config_resolve(path)$notifications
+  expect_identical(config$dashboard_url, "https://file.example")
+  expect_identical(config$channels$ntfy$topic, "outbreaks")
+  expect_identical(readLines(path)[1], "# operator file")
+  expect_identical(episodic_db_app_config_latest(con, "notifications")$note, episodic_app_settings_migrated_note)
+
+  episodic_config_set(c("notifications", "channels", "ntfy", "topic"), "changed-by-hand", path)
+  expect_identical(episodic_app_settings_migrate(con, path), "none")
+  expect_identical(episodic_config_resolve(path)$notifications$channels$ntfy$topic, "changed-by-hand")
+})
+
+test_that("settings the file already holds are marked as moved without writing the file", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path), add = TRUE)
+  writeLines("notifications:\n  dashboard_url: https://same.example", path)
+  before <- readLines(path)
+  settings_saved_row(con, settings_admin(con), '{"dashboard_url":"https://same.example"}', "2026-01-01T10:00:00Z")
+  expect_identical(episodic_app_settings_migrate(con, path), "unchanged")
+  expect_identical(readLines(path), before)
+  expect_identical(episodic_app_settings_migrate(con, path), "none")
+})
+
+test_that("without a writable configuration file nothing moves, it is said, and the notice stays", {
+  con <- episodic_test_db()
+  on.exit(DBI::dbDisconnect(con))
+  settings_saved_row(con, settings_admin(con), '{"dashboard_url":"https://saved.example"}', "2026-01-01T10:00:00Z")
+  withr::local_envvar(EPISODIC_CONFIG = NA)
+  expect_message(expect_identical(episodic_app_settings_migrate(con, NA), "not_moved"), "were not moved")
+  expect_match(
+    as.character(episodic_ui_settings_file_notices(con, episodic_config_resolve(NA), lang = "en")),
+    "no longer read",
+    fixed = TRUE
+  )
 })

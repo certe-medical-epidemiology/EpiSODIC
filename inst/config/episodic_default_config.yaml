@@ -173,6 +173,15 @@ export:
   fields: [receipt_date, care_line, municipality, ward, specialism, pc, sex, age]
   pc_characters: ~
 
+# Plugins: Quarto files in EPISODIC_PLUGIN_DIR (by default a "plugins"
+# folder beside this file). See vignette("plugins").
+# enabled: one entry per enabled plugin, named by its id, holding what it
+# was granted: the permissions it may use and the environment variables
+# it may read. A plugin not listed here does not run. The dashboard's
+# Plugins screen writes this section; it can also be edited by hand.
+plugins:
+  enabled: {}
+
 # Notifications. See vignette("notifications") for setup.
 notifications: ~
 

@@ -29,6 +29,19 @@
 #' @noRd
 episodic_app_server_factory <- function(db_path,
                                         lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  # Once per dashboard process, before any session: settings the Settings
+  # screen once saved to the database move into the configuration file.
+  # A failure is said and never stops the dashboard.
+  tryCatch(
+    {
+      con <- episodic_db_connect(db_path)
+      on.exit(DBI::dbDisconnect(con), add = TRUE)
+      episodic_app_settings_migrate(con)
+    },
+    error = function(e) {
+      message("Saved notification settings could not be checked for moving into the configuration file: ", conditionMessage(e))
+    }
+  )
   function(input, output, session) {
     con <- episodic_db_connect(db_path)
     session$onSessionEnded(function() {
@@ -858,6 +871,17 @@ episodic_app_server_factory <- function(db_path,
       con,
       lang = lang,
       current_user = current_user
+    )
+    episodic_app_server_plugins(
+      input,
+      output,
+      session,
+      con,
+      lang = lang,
+      current_user = current_user,
+      access_granted = access_granted,
+      selected_cluster_id = selected_cluster_id,
+      selected_epidemic_id = selected_epidemic_id
     )
   }
 }

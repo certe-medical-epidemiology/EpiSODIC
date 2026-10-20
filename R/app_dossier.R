@@ -104,6 +104,9 @@ episodic_ui_dossier <- function(con,
     episodic_ui_places_panel(con, cluster_id, obj, lang = lang),
     episodic_ui_related_panel(con, cluster_id, lang = lang),
     episodic_ui_similar_clusters_panel(con, cluster_id, lang = lang),
+    # Its own output, filled by episodic_app_server_plugins(), so the
+    # dossier itself knows nothing about plugins.
+    shiny::uiOutput("plugin_buttons_outbreak"),
     episodic_ui_report_panel(
       con,
       cluster_id,
@@ -1557,7 +1560,7 @@ episodic_ui_report_panel <- function(con,
 episodic_ui_report_schedule_section <- function(con,
                                                 cluster_id,
                                                 lang = Sys.getenv("EPISODIC_LANGUAGE")) {
-  config <- episodic_config_resolve(con = con)
+  config <- episodic_config_resolve()
   available_channels <- episodic_report_subscription_available_channels(config)
   subscription <- episodic_report_subscription_current(con, cluster_id)
   sends <- episodic_db_report_subscription_sends(con, cluster_id)

@@ -747,19 +747,16 @@ CREATE TABLE episodic_app_user_event (
 CREATE INDEX idx_episodic_app_user_event_user ON episodic_app_user_event(user_id);
 
 -- ---------------------------------------------------------------------
--- 5.9 In-app settings: notification/config overrides (app, append-only)
+-- 5.9 Notification settings once saved from the Settings screen (retired)
 --
--- The YAML overlay (EPISODIC_CONFIG) remains the authoritative source of
--- detection configuration and stays fully supported; this table is an
--- additional, higher-precedence overlay that lets an is_admin account
--- change certain sections (currently: notifications) from the Settings
--- screen without SSH/file access. episodic_config_resolve() applies the
--- most recent event per section on top of the YAML-resolved config. Every
--- change is kept (never updated/deleted) for the audit trail the Settings
--- screen shows; config_json for 'notifications' may contain secrets
--- (SMTP passwords, webhook URLs) and is masked in the UI on display, never
--- on storage - the database is already the trust boundary every other
--- secret-bearing table in this schema relies on.
+-- The Settings screen used to save notification settings here, as an
+-- overlay on the configuration file. It now writes the configuration
+-- file itself (episodic_config_set()), which is the only record of an
+-- instance's settings, and this table is no longer written or applied.
+-- It is kept because it holds data and a migration never deletes data;
+-- the Settings screen reads its latest row only to say when settings
+-- saved here would still change something. config_json may contain
+-- secrets (SMTP passwords, webhook URLs).
 -- ---------------------------------------------------------------------
 CREATE TABLE episodic_app_config_event (
   event_id    INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1054,6 +1051,42 @@ CREATE TABLE episodic_export_event (
   file_bytes             INTEGER,
   destination            TEXT,
   error_text             TEXT
+);
+
+-- ---------------------------------------------------------------------
+-- 5.11c Plugin runs (see vignette("plugins"))
+--
+-- One row per time a plugin ran: a button pushed on a dossier, the hook
+-- after a detection run committed, or a headless episodic_plugin_run().
+-- Written by whichever process ran it, and only ever inserted into, for
+-- the same reason as episodic_export_event: a plugin can send data out
+-- of the instance, and the record of that cannot depend on which process
+-- sent it. Plugins themselves, and whether they are enabled, live in
+-- files (the plugin folder and the configuration file), never here; this
+-- table is history and is never read to decide what may run.
+-- `permissions` is what the payload carried (a JSON array), `sha256` the
+-- exact file that ran.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_plugin_run_event (
+  event_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  plugin_id      TEXT NOT NULL,
+  plugin_version TEXT,
+  plugin_sha256  TEXT NOT NULL CHECK (length(plugin_sha256) = 64),
+  initiated_by   TEXT NOT NULL CHECK (initiated_by IN ('dashboard', 'cron', 'headless')),
+  started_at     TEXT NOT NULL,
+  finished_at    TEXT NOT NULL,
+  user_id        INTEGER REFERENCES episodic_app_user(user_id),
+  host           TEXT NOT NULL,
+  account        TEXT NOT NULL,
+  cluster_id     INTEGER REFERENCES episodic_cluster(cluster_id),
+  run_id         INTEGER REFERENCES episodic_detection_run(run_id),
+  permissions    TEXT NOT NULL,
+  destination    TEXT,
+  status         TEXT NOT NULL CHECK (status IN ('success', 'error', 'failed', 'timeout')),
+  message        TEXT,
+  link           TEXT,
+  step           TEXT,
+  detail         TEXT
 );
 
 -- ---------------------------------------------------------------------

@@ -161,7 +161,11 @@ episodic_ui_instance_screen <- function(instance,
         # Admin-only for the same reason as Settings: it sends this
         # instance's cases elsewhere and decides what it takes in. The
         # screen itself re-checks server-side (episodic_app_server_import_export()).
-        list(view = "import_export", meta = NULL)
+        list(view = "import_export", meta = NULL),
+        # Admin-only: a plugin runs code on the server and can send data
+        # out of the instance. Re-checked server-side
+        # (episodic_app_server_plugins()).
+        list(view = "plugins", meta = NULL)
       )
     )
   }

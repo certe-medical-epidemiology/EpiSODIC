@@ -69,28 +69,15 @@ test_that("a resolved configuration is cached per file, and a rewritten file is 
   )
 })
 
-test_that("a Settings-screen override is read from the database on every resolve, never cached with the file", {
-  con <- episodic_test_db()
-  on.exit(DBI::dbDisconnect(con))
-  expect_null(episodic_config_resolve(NA, con = con)$notifications$ntfy$topic)
-
-  user_id <- episodic_db_app_user_insert(
-    con,
-    "admin",
-    "Admin User",
-    "a@example.com",
-    "hash",
-    is_admin = TRUE
-  )
-  episodic_db_app_config_event_insert(
-    con,
-    user_id = user_id,
-    section = "notifications",
-    config_json = '{"ntfy": {"topic": "outbreaks"}}'
-  )
-  expect_equal(
-    episodic_config_resolve(NA, con = con)$notifications$ntfy$topic,
-    "outbreaks"
+test_that("notification settings written to the file are read on the next resolve, never cached from before", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines("notifications: ~", path)
+  expect_null(episodic_config_resolve(path)$notifications)
+  episodic_config_set("notifications", list(dashboard_url = "https://dashboard.example"), path)
+  expect_identical(
+    episodic_config_resolve(path)$notifications$dashboard_url,
+    "https://dashboard.example"
   )
 })
 
@@ -255,114 +242,27 @@ test_that("episodic_config_hash() changes when a value changes", {
   expect_false(identical(h1$hash, h2$hash))
 })
 
-test_that("episodic_config_resolve() with con = NULL never touches the database (the default, no admin override)", {
-  config <- episodic_config_resolve(NA, con = NULL)
-  expect_null(config$notifications)
-})
-
-test_that("episodic_config_resolve(con = ...) overlays the latest episodic_app_config_event on top of the YAML config", {
-  con <- episodic_test_db()
-  on.exit(DBI::dbDisconnect(con))
-  user_id <- episodic_db_app_user_insert(
-    con,
-    "admin1",
-    "Admin One",
-    "a@x.nl",
-    sodium::password_store("pw12345678"),
-    is_admin = TRUE
-  )
-
-  # no override saved yet: DB-aware and DB-unaware resolution agree
-  config_before <- episodic_config_resolve(NA, con = con)
-  expect_null(config_before$notifications)
-
-  episodic_db_app_config_event_insert(
-    con,
-    user_id,
+test_that("notification settings in the file do not change episodic_config_hash(), since notifications is stripped before hashing", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines("notifications: ~", path)
+  h_before <- episodic_config_hash(episodic_config_resolve(path))
+  episodic_config_set(
     "notifications",
-    jsonlite::toJSON(
-      list(
-        enabled = TRUE,
-        channels = list(
-          ntfy = list(enabled = TRUE, server = "https://ntfy.sh", topic = "t")
-        )
-      ),
-      auto_unbox = TRUE
-    )
+    list(enabled = TRUE, channels = list(slack = list(enabled = TRUE, webhook_url = "https://hooks.example/x"))),
+    path
   )
-
-  config_after <- episodic_config_resolve(NA, con = con)
-  expect_true(config_after$notifications$enabled)
-  expect_equal(config_after$notifications$channels$ntfy$topic, "t")
-  # untouched sections are unaffected by the DB overlay
-  expect_equal(config_after$reconciliation$close_after_runs, 14)
-})
-
-test_that("episodic_config_resolve(con = ...) applies the most recent override, not the first", {
-  con <- episodic_test_db()
-  on.exit(DBI::dbDisconnect(con))
-  user_id <- episodic_db_app_user_insert(
-    con,
-    "admin1",
-    "Admin One",
-    "a@x.nl",
-    sodium::password_store("pw12345678"),
-    is_admin = TRUE
-  )
-  episodic_db_app_config_event_insert(
-    con,
-    user_id,
-    "notifications",
-    jsonlite::toJSON(
-      list(dashboard_url = "https://first.example"),
-      auto_unbox = TRUE
-    )
-  )
-  Sys.sleep(0.01)
-  episodic_db_app_config_event_insert(
-    con,
-    user_id,
-    "notifications",
-    jsonlite::toJSON(
-      list(dashboard_url = "https://second.example"),
-      auto_unbox = TRUE
-    )
-  )
-
-  config <- episodic_config_resolve(NA, con = con)
-  expect_equal(config$notifications$dashboard_url, "https://second.example")
-})
-
-test_that("a DB notifications override does not change episodic_config_hash(), since notifications is stripped before hashing", {
-  con <- episodic_test_db()
-  on.exit(DBI::dbDisconnect(con))
-  user_id <- episodic_db_app_user_insert(
-    con,
-    "admin1",
-    "Admin One",
-    "a@x.nl",
-    sodium::password_store("pw12345678"),
-    is_admin = TRUE
-  )
-  h_before <- episodic_config_hash(episodic_config_resolve(NA, con = con))
-
-  episodic_db_app_config_event_insert(
-    con,
-    user_id,
-    "notifications",
-    jsonlite::toJSON(
-      list(
-        enabled = TRUE,
-        channels = list(
-          slack = list(enabled = TRUE, webhook_url = "https://hooks.example/x")
-        )
-      ),
-      auto_unbox = TRUE
-    )
-  )
-  h_after <- episodic_config_hash(episodic_config_resolve(NA, con = con))
-
+  h_after <- episodic_config_hash(episodic_config_resolve(path))
   expect_equal(h_before$hash, h_after$hash)
+})
+
+test_that("enabled plugins do not change episodic_config_hash(), since plugins never touch detection", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  writeLines("plugins:\n  enabled: {}", path)
+  h_before <- episodic_config_hash(episodic_config_resolve(path))
+  episodic_config_set(c("plugins", "enabled", "share-regional"), list(permissions = list("cluster_summary")), path)
+  expect_equal(h_before$hash, episodic_config_hash(episodic_config_resolve(path))$hash)
 })
 
 test_that("episodic_scale_for_level() returns 'outbreak' or 'epidemic' from config", {

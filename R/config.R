@@ -34,45 +34,20 @@
 #' `episodic_config_hash()`), so you can always trace a past result back to
 #' the settings that produced it, even after you have since changed them.
 #'
-#' An `is_admin` account can additionally override the `notifications`
-#' section from the Settings screen, without touching the YAML file at
-#' all - pass `con` to also apply the most recent such override (if any)
-#' on top of the YAML-resolved configuration. The YAML overlay itself
-#' remains fully supported either way: an admin override is an additional,
-#' higher-precedence layer, not a replacement for it.
+#' The Settings screen and the Plugins screen change settings by writing
+#' this same file (see `episodic_config_set()`), so the file is the only
+#' record of an instance's settings.
 #'
 #' @param episodic_config_path Path to your own configuration file. Defaults
-#'   to the `EPISODIC_CONFIG` environment variable; if that is unset or the
-#'   file does not exist, only the built-in defaults are used.
-#' @param con An open [DBI::DBIConnection-class], to also overlay the most
-#'   recent Settings-screen `notifications` override (if any) on top of
-#'   the YAML-resolved configuration. `NULL` (the default) skips this -
-#'   [episodic_run_cron()] and the Settings screen itself both pass their
-#'   own connection; most other callers (tests, `episodic_config_hash()`
-#'   snapshots) do not need one.
+#'   to the `EPISODIC_CONFIG` environment variable; if that is unset, only
+#'   the built-in defaults are used. Set to a path that does not exist, or
+#'   to a file that is not valid, this stops with an error.
 #' @return A nested list with the resolved configuration, e.g.
 #'   `config$eligibility$min_baseline_weeks` or `config$priority_score$weights`.
 #' @keywords internal
 #' @noRd
-episodic_config_resolve <- function(episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA),
-                                    con = NULL) {
-  config <- episodic_config_resolve_files(episodic_config_path)
-
-  if (!is.null(con)) {
-    latest <- episodic_db_app_config_latest(con, "notifications")
-    if (!is.null(latest)) {
-      overlay <- jsonlite::fromJSON(
-        latest$config_json,
-        simplifyVector = FALSE
-      )
-      config$notifications <- episodic_config_merge(
-        config$notifications %||% list(),
-        overlay
-      )
-    }
-  }
-
-  config
+episodic_config_resolve <- function(episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+  episodic_config_resolve_files(episodic_config_path)
 }
 
 # `episodic_geography_config()` is a default argument on
@@ -90,9 +65,7 @@ episodic_config_cache <- new.env(parent = emptyenv())
 #' The YAML half of `episodic_config_resolve()`, cached per file stamp
 #'
 #' @param episodic_config_path See `episodic_config_resolve()`.
-#' @return The resolved configuration, before any Settings-screen
-#'   overlay - that layer comes from the database, can change while a
-#'   session is up, and is therefore applied fresh by the caller.
+#' @return The resolved configuration.
 #' @keywords internal
 #' @noRd
 episodic_config_resolve_files <- function(episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
@@ -259,7 +232,8 @@ episodic_config_file_hash <- function(path) {
 episodic_config_open_sections <- list(
   "notifications",
   c("same_place", "overrides"),
-  c("rare_trigger", "pathogens")
+  c("rare_trigger", "pathogens"),
+  c("plugins", "enabled")
 )
 
 #' Settings that mean something by an explicit YAML `null`
@@ -719,13 +693,17 @@ episodic_pathogen_config_merge <- function(defaults, overlay, source_label = "op
 #' what leaves the instance, never what a detection run computes. Each
 #' export records the field set it actually used in its own audit row.
 #'
+#' `plugins` is here because plugins never touch detection: a plugin acts
+#' on what a run has already computed, so which plugins are enabled cannot
+#' change a run's result.
+#'
 #' `geography` is deliberately *not* here. `region_code` and the area
 #' rule both feed `episodic_stream_key()`, so a change to either changes
 #' every geographic stream's identity - which is exactly the kind of
 #' difference the hash exists to make visible.
 #' @keywords internal
 #' @noRd
-episodic_config_unhashed_sections <- c("notifications", "access", "report", "database", "export")
+episodic_config_unhashed_sections <- c("notifications", "access", "report", "database", "export", "plugins")
 
 #' The scale a lattice level belongs to
 #'

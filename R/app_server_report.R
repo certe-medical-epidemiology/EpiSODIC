@@ -78,7 +78,7 @@ episodic_app_server_report <- function(input,
     result <- tryCatch(
       {
         output_dir <- episodic_report_output_dir(
-          episodic_config_resolve(con = con),
+          episodic_config_resolve(),
           db_path,
           "reports"
         )

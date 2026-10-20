@@ -27,9 +27,9 @@
 # every other write action in this app applies.
 #
 # Three things live here:
-#  - notification channels/recipients/toggles: read/write, stored as an
-#    episodic_app_config_event (append-only; episodic_config_resolve()
-#    overlays the latest one on top of the YAML config)
+#  - notification channels/recipients/toggles: read/write, written to the
+#    `notifications` section of the configuration file itself
+#    (episodic_config_set()), which stays the only record of settings
 #  - detection configuration: read-only, straight from
 #    episodic_config_resolve() - changing it deliberately still requires
 #    editing EPISODIC_CONFIG
@@ -160,7 +160,7 @@ episodic_settings_set_path <- function(x, path, value) {
 #'
 #' @param input The Shiny server function's `input`.
 #' @param existing The `notifications` section currently in effect (from
-#'   `episodic_config_resolve(con = con)$notifications`), used only so a
+#'   `episodic_config_resolve()$notifications`), used only so a
 #'   `"secret"` field left blank on screen keeps its stored value instead
 #'   of being wiped - the screen never round-trips a real secret value
 #'   back into the browser (`episodic_ui_settings_notif_channel()` renders
@@ -222,6 +222,75 @@ episodic_app_settings_build_notifications <- function(input, existing) {
   )
 }
 
+#' Move notification settings once saved to the database into the file
+#'
+#' The Settings screen used to save notification settings as rows in
+#' `episodic_app_config_event`, applied on top of the configuration file.
+#' The file is now the only record of settings, so the last such row is
+#' merged into the file's `notifications` section once, when the
+#' dashboard starts, and a row noting that it was moved is added after
+#' it. From then on the old row never applies again, so an operator who
+#' later edits the file by hand is not overruled by a setting saved long
+#' before.
+#'
+#' Without a writable configuration file nothing can be moved: that is
+#' said, and the Settings screen keeps saying so, until the dashboard
+#' starts with one.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param episodic_config_path The configuration file.
+#' @return Invisibly, `"none"` (nothing to move), `"moved"`, `"unchanged"`
+#'   (the file already said the same) or `"not_moved"`.
+#' @keywords internal
+#' @noRd
+episodic_app_settings_migrate <- function(con,
+                                          episodic_config_path = Sys.getenv("EPISODIC_CONFIG", unset = NA)) {
+  latest <- episodic_db_app_config_latest(con, "notifications")
+  if (is.null(latest) || identical(latest$note, episodic_app_settings_migrated_note)) {
+    return(invisible("none"))
+  }
+  saved <- tryCatch(
+    jsonlite::fromJSON(latest$config_json, simplifyVector = FALSE),
+    error = function(e) e
+  )
+  if (inherits(saved, "error") || !is.list(saved)) {
+    message(
+      "Notification settings saved in the database on ", latest$created_at,
+      " could not be read, so they were not moved into the configuration file."
+    )
+    return(invisible("not_moved"))
+  }
+  current <- episodic_config_resolve(episodic_config_path)$notifications %||% list()
+  merged <- episodic_config_merge(current, saved)
+  if (episodic_config_same(merged, current)) {
+    episodic_db_app_config_migrated_insert(con, latest$user_id)
+    return(invisible("unchanged"))
+  }
+  moved <- tryCatch(
+    episodic_config_set("notifications", merged, episodic_config_path),
+    error = function(e) e
+  )
+  if (inherits(moved, "error")) {
+    message(
+      "Notification settings saved in the database on ", latest$created_at,
+      " were not moved into the configuration file, and are not in force: ",
+      conditionMessage(moved)
+    )
+    return(invisible("not_moved"))
+  }
+  episodic_db_app_config_migrated_insert(con, latest$user_id)
+  message(
+    "Notification settings saved in the database on ", latest$created_at,
+    " were moved into the configuration file (", episodic_config_path, ")."
+  )
+  invisible("moved")
+}
+
+#' The note on the row that records the move into the configuration file
+#' @keywords internal
+#' @noRd
+episodic_app_settings_migrated_note <- "moved to the configuration file"
+
 #' Wire the Settings screen's server-side logic
 #'
 #' Every handler re-resolves the signed-in account with
@@ -267,22 +336,31 @@ episodic_app_server_settings <- function(input,
     user <- episodic_auth_refresh_user(con, current_user())
     shiny::req(episodic_user_is_admin(user))
 
-    existing <- episodic_config_resolve(con = con)$notifications
-    notif <- episodic_app_settings_build_notifications(input, existing)
-    episodic_db_app_config_event_insert(
-      con,
-      user_id = user$user_id,
-      section = "notifications",
-      config_json = as.character(jsonlite::toJSON(
-        notif,
-        auto_unbox = TRUE,
-        null = "null"
-      ))
+    result <- tryCatch(
+      {
+        existing <- episodic_config_resolve()$notifications
+        notif <- episodic_app_settings_build_notifications(input, existing)
+        episodic_config_set("notifications", notif)
+      },
+      error = function(e) e
     )
-    settings_message(list(
-      type = "success",
-      text = episodic_tr("settings.notif.saved", lang = lang)
-    ))
+    settings_message(
+      if (inherits(result, "error")) {
+        list(
+          type = "error",
+          text = episodic_tr(
+            "settings.notif.save_failed",
+            error = conditionMessage(result),
+            lang = lang
+          )
+        )
+      } else {
+        list(
+          type = "success",
+          text = episodic_tr("settings.notif.saved", lang = lang)
+        )
+      }
+    )
     settings_touch()
   })
 

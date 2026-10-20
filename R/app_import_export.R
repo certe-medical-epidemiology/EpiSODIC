@@ -783,7 +783,7 @@ episodic_app_server_import_export <- function(input,
     }
     episodic_ui_import_export_screen(
       episodic_app_import_export(con),
-      episodic_config_resolve(con = con),
+      episodic_config_resolve(),
       lang = lang,
       message = notice(),
       test = test_result()
@@ -801,7 +801,7 @@ episodic_app_server_import_export <- function(input,
       if (is.null(user)) {
         stop("Only an admin account can export.", call. = FALSE)
       }
-      config <- episodic_config_resolve(con = con)
+      config <- episodic_config_resolve()
       from <- value("impexp_dl_from", format(Sys.Date() - 27, "%Y-%m-%d"))
       to <- value("impexp_dl_to", format(Sys.Date(), "%Y-%m-%d"))
       mode <- value("impexp_dl_mode", "public_key")
@@ -851,7 +851,7 @@ episodic_app_server_import_export <- function(input,
   shiny::observeEvent(input$impexp_schedule_save, {
     user <- admin()
     shiny::req(user)
-    config <- episodic_config_resolve(con = con)
+    config <- episodic_config_resolve()
     result <- tryCatch(
       episodic_export_schedule_set(
         con,
@@ -921,7 +921,7 @@ episodic_app_server_import_export <- function(input,
     kind <- if (startsWith(action, "schedule")) "schedule" else "source"
     if (action %in% c("schedule_test", "source_test")) {
       result <- tryCatch(
-        episodic_import_export_test_named(con, name, kind, episodic_config_resolve(con = con)),
+        episodic_import_export_test_named(con, name, kind, episodic_config_resolve()),
         error = function(e) e
       )
       if (inherits(result, "error")) {

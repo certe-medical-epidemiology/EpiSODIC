@@ -50,10 +50,12 @@ po/*~
 rsconnect/
 
 # Instance configuration and data are never versioned - only the shipped
-# defaults, CI workflow files, and pkgdown's own config are exceptions.
+# defaults, the shipped reference plugins, CI workflow files, and
+# pkgdown's own config are exceptions.
 *.yaml
 !inst/config/episodic_default_config.yaml
 !inst/config/episodic_default_style.yaml
+!inst/plugins/*.yaml
 !.github/**/*.yaml
 !_pkgdown.yaml
 *.yml

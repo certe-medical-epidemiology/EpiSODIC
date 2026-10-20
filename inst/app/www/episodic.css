@@ -249,7 +249,8 @@ body {
 .episodic-shell[data-view="performance"] .episodic-screen[data-screen="performance"],
 .episodic-shell[data-view="info"] .episodic-screen[data-screen="info"],
 .episodic-shell[data-view="settings"] .episodic-screen[data-screen="settings"],
-.episodic-shell[data-view="import_export"] .episodic-screen[data-screen="import_export"] {
+.episodic-shell[data-view="import_export"] .episodic-screen[data-screen="import_export"],
+.episodic-shell[data-view="plugins"] .episodic-screen[data-screen="plugins"] {
   display: flex;
 }
 
@@ -2260,4 +2261,41 @@ dl.episodic-settings dd { margin: 0; }
 .episodic-import-export-test li {
   margin-block-end: 6px;
   font-size: 12.5px;
+}
+
+/* The Plugins screen: a plugin's status as a word in its own colour, the
+   reasons it cannot run under it, and what it is granted as a short
+   list. */
+.episodic-plugins-status {
+  font-weight: 600;
+  font-size: 12.5px;
+}
+.episodic-plugins-status-enabled { color: var(--episodic-success-dark); }
+.episodic-plugins-status-disabled { color: var(--episodic-muted); }
+.episodic-plugins-status-needs_approval { color: var(--episodic-warning); }
+.episodic-plugins-status-unavailable,
+.episodic-plugins-status-missing { color: var(--episodic-danger-dark); }
+.episodic-plugins-problems,
+.episodic-plugins-grants {
+  margin: 4px 0 0;
+  padding-inline-start: 18px;
+  font-size: 12px;
+}
+.episodic-plugins-actions .episodic-btn,
+.episodic-plugins-buttons .episodic-btn {
+  margin-inline-end: 6px;
+  margin-block-end: 4px;
+}
+.episodic-plugins-outcome {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.episodic-plugins-detail {
+  max-height: 240px;
+  overflow: auto;
+  font-size: 11.5px;
+  white-space: pre-wrap;
+  background: var(--episodic-bg-subtle);
+  border: 1px solid var(--episodic-border);
+  padding: 8px;
 }

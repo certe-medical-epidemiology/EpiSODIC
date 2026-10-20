@@ -887,12 +887,6 @@ episodic_db_app_users <- function(con) {
   )
 }
 
-#' The most recent config override for one section, or `NULL`
-#'
-#' @param con A [DBI::DBIConnection-class].
-#' @param section A section name, e.g. `"notifications"`.
-#' @return The most recent `episodic_app_config_event` row for `section`,
-#'   or `NULL` if an admin has never saved one.
 #' Every recorded sign-in failure, most recent first
 #'
 #' @param con A [DBI::DBIConnection-class].
@@ -911,6 +905,17 @@ episodic_db_app_login_failures <- function(con, limit = 200) {
   )
 }
 
+#' The most recent settings row once saved to the database, or `NULL`
+#'
+#' The Settings screen writes the configuration file; this table is no
+#' longer written or applied. It is read only so the screen can say when
+#' settings saved there would still change something (see
+#' `episodic_ui_settings_file_notices()`).
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param section A section name, e.g. `"notifications"`.
+#' @return The most recent `episodic_app_config_event` row for `section`,
+#'   or `NULL` if there is none.
 #' @keywords internal
 #' @noRd
 episodic_db_app_config_latest <- function(con, section) {
@@ -923,40 +928,6 @@ episodic_db_app_config_latest <- function(con, section) {
     params = list(section)
   )
   if (nrow(res) == 0) NULL else res[1, ]
-}
-
-#' The full audit trail of config overrides, most recent first
-#'
-#' @param con A [DBI::DBIConnection-class].
-#' @param section Optional section filter; `NULL` (default) returns every
-#'   section.
-#' @param limit Maximum number of rows to return.
-#' @return A data frame, joined with the acting user's full name.
-#' @keywords internal
-#' @noRd
-episodic_db_app_config_events <- function(con, section = NULL, limit = 200) {
-  if (is.null(section)) {
-    episodic_db_get_query(
-      con,
-      "SELECT e.*, u.full_name AS actor_full_name
-        FROM episodic_app_config_event e
-        LEFT JOIN episodic_app_user u ON u.user_id = e.user_id
-        ORDER BY e.created_at DESC, e.event_id DESC
-        LIMIT ?",
-      params = list(as.integer(limit))
-    )
-  } else {
-    episodic_db_get_query(
-      con,
-      "SELECT e.*, u.full_name AS actor_full_name
-        FROM episodic_app_config_event e
-        LEFT JOIN episodic_app_user u ON u.user_id = e.user_id
-        WHERE e.section = ?
-        ORDER BY e.created_at DESC, e.event_id DESC
-        LIMIT ?",
-      params = list(section, as.integer(limit))
-    )
-  }
 }
 
 #' @param limit Maximum number of rows to return, most recent first.
