@@ -26,77 +26,90 @@ test_that("the plugin folder is EPISODIC_PLUGIN_DIR, else beside the configurati
 })
 
 test_that("a well-formed plugin reads with everything it declares and no problems", {
-  local_mocked_bindings(episodic_quarto_available = function() TRUE)
   instance <- plugin_test_instance()
-  header <- plugin_test_header(
+  spec <- plugin_test_spec(
     permissions = list("cluster_summary", "cluster_cases"),
-    env = list("REGIONAL_TOKEN"),
+    secrets = list("REGIONAL_TOKEN"),
     destination = "https://regional.example",
-    source = "https://example.org/share-regional.qmd",
+    source = "https://example.org/share-regional.yaml",
     timeout = 30L,
-    requires = list(packages = list("jsonlite"))
+    requires = list(packages = list("jsonlite")),
+    steps = list(plugin_test_step(env = list(MODE = "test", RETRIES = 3L, DRY = TRUE)))
   )
-  plugin <- episodic_plugin_read(plugin_test_write(instance$dir, "share-regional", header))
+  plugin <- episodic_plugin_read(plugin_test_write(instance$dir, "share-regional", spec))
   expect_identical(plugin$problems, list())
   expect_identical(plugin$id, "share-regional")
   expect_identical(plugin$permissions, c("cluster_summary", "cluster_cases"))
-  expect_identical(plugin$env, "REGIONAL_TOKEN")
+  expect_identical(plugin$secrets, "REGIONAL_TOKEN")
   expect_identical(plugin$destination, "https://regional.example")
   expect_identical(plugin$timeout, 30L)
+  expect_identical(plugin$steps[[1]]$env, c(MODE = "test", RETRIES = "3", DRY = "true"))
   expect_match(plugin$sha256, "^[0-9a-f]{64}$")
   expect_identical(episodic_plugin_label(plugin, lang = "nl"), "Delen")
   expect_identical(episodic_plugin_label(plugin, lang = "de"), "Share")
 })
 
 test_that("every problem with a plugin file is named, not only the first", {
-  local_mocked_bindings(episodic_quarto_available = function() TRUE)
   instance <- plugin_test_instance()
-  header <- plugin_test_header(
+  spec <- plugin_test_spec(
     api = 2L,
     placement = "report",
     permissions = list("cluster_cases", "run_summary"),
-    env = list("EPISODIC_DB"),
-    timeout = 9999L
+    secrets = list("EPISODIC_DB"),
+    timeout = 9999L,
+    colour = "blue",
+    version = NULL,
+    steps = list(plugin_test_step(shell = "perl", when = "always"))
   )
-  header$engine <- "jupyter"
-  codes <- plugin_test_codes(episodic_plugin_read(plugin_test_write(instance$dir, "Bad_Name", header)))
+  codes <- plugin_test_codes(episodic_plugin_read(plugin_test_write(instance$dir, "Bad_Name", spec)))
   expect_setequal(
     codes,
-    c("bad_id", "bad_engine", "api_unsupported", "bad_field", "bad_permission", "episodic_env", "no_destination", "bad_timeout")
+    c(
+      "bad_id", "unknown_key", "missing_key", "api_unsupported", "bad_field",
+      "bad_permission", "no_destination", "episodic_secret", "bad_timeout"
+    )
   )
+  expect_identical(sum(codes == "unknown_key"), 2L)
 })
 
-test_that("a file without a header, or without an episodic section, is not a plugin", {
+test_that("a hook cannot carry a button's placement or label", {
+  instance <- plugin_test_instance()
+  spec <- plugin_test_spec(trigger = "run_committed", permissions = list("run_summary"))
+  codes <- plugin_test_codes(episodic_plugin_read(plugin_test_write(instance$dir, "hook", spec)))
+  expect_identical(codes, c("button_only", "button_only"))
+})
+
+test_that("a file that is not YAML, or not a mapping, is not a plugin", {
   instance <- plugin_test_instance()
   dir.create(instance$dir)
-  writeLines("just text", file.path(instance$dir, "notes.qmd"))
-  expect_identical(plugin_test_codes(episodic_plugin_read(file.path(instance$dir, "notes.qmd"))), c("no_header"))
-  writeLines(c("---", "title: [unclosed", "---"), file.path(instance$dir, "broken.qmd"))
-  expect_identical(plugin_test_codes(episodic_plugin_read(file.path(instance$dir, "broken.qmd"))), "bad_header")
-  header <- plugin_test_header()
-  header$episodic <- NULL
-  expect_true("no_episodic" %in% plugin_test_codes(episodic_plugin_read(plugin_test_write(instance$dir, "plain", header))))
+  writeLines("name: [unclosed", file.path(instance$dir, "broken.yaml"))
+  expect_identical(plugin_test_codes(episodic_plugin_read(file.path(instance$dir, "broken.yaml"))), "bad_yaml")
+  writeLines(c("- a", "- b"), file.path(instance$dir, "list.yaml"))
+  expect_identical(plugin_test_codes(episodic_plugin_read(file.path(instance$dir, "list.yaml"))), "not_mapping")
 })
 
 test_that("what a plugin requires is checked and never installed", {
-  local_mocked_bindings(episodic_quarto_available = function() FALSE)
   instance <- plugin_test_instance()
-  header <- plugin_test_header(requires = list(packages = list("no.such.package.episodic")))
-  plugin <- episodic_plugin_read(plugin_test_write(instance$dir, "needs-things", header))
-  expect_setequal(plugin_test_codes(plugin), c("no_quarto", "missing_package"))
+  local_mocked_bindings(episodic_plugin_shell_program = function(shell) if (shell == "bash") "" else "/usr/bin/true")
+  spec <- plugin_test_spec(
+    requires = list(packages = list("no.such.package.episodic"), commands = list("no-such-command-episodic")),
+    steps = list(plugin_test_step(), plugin_test_step(run = "echo hi", shell = "bash"))
+  )
+  plugin <- episodic_plugin_read(plugin_test_write(instance$dir, "needs-things", spec))
+  expect_identical(plugin_test_codes(plugin), c("missing_package", "missing_command", "missing_command"))
   expect_false(requireNamespace("no.such.package.episodic", quietly = TRUE))
 })
 
 test_that("a plugin's status follows from its file and from what the configuration grants it", {
-  local_mocked_bindings(episodic_quarto_available = function() TRUE)
   instance <- plugin_test_instance()
   plugin_test_write(instance$dir, "off")
   plugin_test_write(instance$dir, "on")
-  plugin_test_write(instance$dir, "grew", plugin_test_header(env = list("REGIONAL_TOKEN")))
-  plugin_test_write(instance$dir, "broken", plugin_test_header(trigger = "never"))
-  episodic_config_set(c("plugins", "enabled", "on"), list(permissions = list("cluster_summary")), instance$config_path)
-  episodic_config_set(c("plugins", "enabled", "grew"), list(permissions = list("cluster_summary")), instance$config_path)
-  episodic_config_set(c("plugins", "enabled", "gone"), list(permissions = list("cluster_summary")), instance$config_path)
+  plugin_test_write(instance$dir, "grew", plugin_test_spec(secrets = list("REGIONAL_TOKEN")))
+  plugin_test_write(instance$dir, "broken", plugin_test_spec(trigger = "never"))
+  grant <- list(permissions = list("cluster_summary"))
+  for (id in c("on", "grew", "gone")) {
+    episodic_config_set(c("plugins", "enabled", id), grant, instance$config_path)
+  }
 
   plugins <- episodic_plugins(episodic_config_resolve(instance$config_path), instance$dir)
   status <- vapply(plugins, function(p) p$status, character(1))
@@ -110,10 +123,9 @@ test_that("a plugin's status follows from its file and from what the configurati
 })
 
 test_that("episodic_plugin_list() lists every plugin with its status and its problems as text", {
-  local_mocked_bindings(episodic_quarto_available = function() TRUE)
   instance <- plugin_test_instance()
   plugin_test_write(instance$dir, "share-regional")
-  plugin_test_write(instance$dir, "old-api", plugin_test_header(api = 0L))
+  plugin_test_write(instance$dir, "old-api", plugin_test_spec(api = 0L))
   listed <- episodic_plugin_list(instance$config_path)
   expect_identical(listed$id, c("old-api", "share-regional"))
   expect_identical(listed$status, c("unavailable", "disabled"))

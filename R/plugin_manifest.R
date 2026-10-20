@@ -17,17 +17,17 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# A plugin is one Quarto file in the plugin folder. Its YAML header says
-# what it is and what it needs; the configuration file says whether it
+# A plugin is one YAML file in the plugin folder: what it is, what it
+# needs, and the steps it runs. The configuration file says whether it
 # may run and what it was granted. Nothing about plugins is kept in the
 # database except the record of each run (`episodic_plugin_run_event`),
 # which is history and never decides what loads. See vignette("plugins").
 
 #' The plugin API version this EpiSODIC provides
 #'
-#' A plugin names the version it was written for in `episodic.api`; one
-#' naming any other is refused rather than handed a payload it may
-#' misread. The version changes only when the payload or the result
+#' A plugin names the version it was written for in `api`; one naming
+#' any other is refused rather than handed a payload it may misread. The
+#' version changes only when the file format, the payload or the result
 #' contract changes incompatibly.
 #' @keywords internal
 #' @noRd
@@ -52,10 +52,23 @@ episodic_plugin_permissions <- list(
   run_committed = c("run_summary")
 )
 
-#' The engines a plugin's chunks can be written in
+#' The languages a step can be written in, and the program that runs each
+#'
+#' `r` runs with this R installation's own `Rscript`, so a plugin sees the
+#' same packages EpiSODIC does.
 #' @keywords internal
 #' @noRd
-episodic_plugin_engines <- c("r", "python", "bash")
+episodic_plugin_shells <- c("r", "bash", "python")
+
+#' The keys a plugin file may hold, and those it must
+#' @keywords internal
+#' @noRd
+episodic_plugin_keys <- c(
+  "name", "version", "api", "description", "source", "trigger", "placement",
+  "label", "permissions", "destination", "secrets", "requires", "timeout", "steps"
+)
+episodic_plugin_keys_required <- c("name", "version", "api", "trigger", "steps")
+episodic_plugin_step_keys <- c("name", "shell", "run", "env")
 
 #' The longest a plugin may run, in seconds
 #' @keywords internal
@@ -86,7 +99,7 @@ episodic_plugin_dir <- function(episodic_config_path = Sys.getenv("EPISODIC_CONF
 
 #' Whether a plugin id is well formed
 #'
-#' The file name without `.qmd`: lowercase letters, digits and hyphens,
+#' The file name without `.yaml`: lowercase letters, digits and hyphens,
 #' starting with a letter or digit, so it is safe as a file name, a
 #' configuration key and an HTML id on every platform.
 #' @keywords internal
@@ -109,47 +122,19 @@ episodic_plugin_problem_text <- function(problem, lang = Sys.getenv("EPISODIC_LA
   do.call(episodic_tr, c(list(paste0("plugins.problem.", problem$code)), problem$args, list(lang = lang)))
 }
 
-#' Read the YAML header of a Quarto file
-#'
-#' @param path The file.
-#' @return A list with `header` (the parsed header, or `NULL`) and
-#'   `problem` (`NULL`, or why it could not be read).
+#' One line of text: a string, not empty
 #' @keywords internal
 #' @noRd
-episodic_plugin_read_header <- function(path) {
-  lines <- tryCatch(readLines(path, encoding = "UTF-8", warn = FALSE), error = function(e) NULL)
-  if (is.null(lines)) {
-    return(list(header = NULL, problem = episodic_plugin_problem("unreadable")))
-  }
-  lines <- sub("\r$", "", lines)
-  if (length(lines) == 0 || !identical(trimws(lines[1]), "---")) {
-    return(list(header = NULL, problem = episodic_plugin_problem("no_header")))
-  }
-  close <- which(trimws(lines[-1]) %in% c("---", "...")) + 1L
-  if (length(close) == 0) {
-    return(list(header = NULL, problem = episodic_plugin_problem("no_header")))
-  }
-  header <- tryCatch(
-    yaml::yaml.load(paste(lines[2:(close[1] - 1L)], collapse = "\n")),
-    error = function(e) e,
-    warning = function(w) w
-  )
-  if (inherits(header, "condition")) {
-    return(list(header = NULL, problem = episodic_plugin_problem("bad_header", error = conditionMessage(header))))
-  }
-  if (!is.list(header) || is.null(names(header))) {
-    return(list(header = NULL, problem = episodic_plugin_problem("no_header")))
-  }
-  list(header = header, problem = NULL)
+episodic_plugin_is_text <- function(x) {
+  is.character(x) && length(x) == 1 && !is.na(x) && nzchar(trimws(x))
 }
 
-#' A per-language label, with English required
+#' A per-language text, with English required
 #' @keywords internal
 #' @noRd
 episodic_plugin_label_valid <- function(x) {
-  is.list(x) && !is.null(names(x)) && all(nzchar(names(x))) &&
-    all(vapply(x, function(v) is.character(v) && length(v) == 1 && !is.na(v) && nzchar(trimws(v)), logical(1))) &&
-    "en" %in% names(x)
+  is.list(x) && length(x) > 0 && !is.null(names(x)) && all(nzchar(names(x))) &&
+    all(vapply(x, episodic_plugin_is_text, logical(1))) && "en" %in% names(x)
 }
 
 #' A string list from YAML: `NULL` stays empty, a scalar becomes one item
@@ -160,175 +145,247 @@ episodic_plugin_strings <- function(x) {
     return(character(0))
   }
   if (is.list(x)) {
-    if (!all(vapply(x, function(v) is.character(v) && length(v) == 1, logical(1)))) {
+    if (!all(vapply(x, function(v) is.character(v) && length(v) == 1 && !is.na(v), logical(1)))) {
       return(NULL)
     }
     return(unlist(x, use.names = FALSE))
   }
-  if (is.character(x)) x else NULL
+  if (is.character(x) && !anyNA(x)) x else NULL
+}
+
+#' Whether a name is usable as an environment variable
+#' @keywords internal
+#' @noRd
+episodic_plugin_env_name_valid <- function(x) {
+  grepl("^[A-Za-z_][A-Za-z0-9_]*$", x)
 }
 
 #' Read and check one plugin file
 #'
 #' Every problem is collected, so the Plugins screen can name them all at
 #' once. A plugin with any problem is unavailable: it is listed, with the
-#' reasons, and can neither be enabled nor run.
+#' reasons, and can neither be enabled nor run. Keys the format does not
+#' define are problems too, so a misspelt key is named rather than
+#' ignored.
 #'
-#' @param path The `.qmd` file.
-#' @return A list describing the plugin: `id`, `path`, `sha256`, `title`,
-#'   `version`, `source`, `trigger`, `placement`, `label`, `description`,
-#'   `permissions`, `env`, `destination`, `packages`, `engines`, `timeout`,
-#'   and `problems` (a list of `episodic_plugin_problem()`s).
+#' @param path The `.yaml` file.
+#' @return A list describing the plugin: `id`, `path`, `sha256`, `name`,
+#'   `version`, `description`, `source`, `trigger`, `placement`, `label`,
+#'   `permissions`, `destination`, `secrets`, `packages`, `commands`,
+#'   `timeout`, `steps`, and `problems` (a list of
+#'   `episodic_plugin_problem()`s).
 #' @keywords internal
 #' @noRd
 episodic_plugin_read <- function(path) {
-  id <- sub("\\.qmd$", "", basename(path))
+  id <- sub("\\.yaml$", "", basename(path))
   plugin <- list(
-    id = id, path = path, sha256 = NA_character_, title = id, version = NA_character_,
-    source = NA_character_, trigger = NA_character_, placement = NA_character_,
-    label = NULL, description = NULL, permissions = character(0), env = character(0),
-    destination = NA_character_, packages = character(0), engines = character(0),
-    timeout = episodic_plugin_timeout_default, problems = list()
+    id = id, path = path, sha256 = NA_character_, name = id, version = NA_character_,
+    description = NULL, source = NA_character_, trigger = NA_character_,
+    placement = NA_character_, label = NULL, permissions = character(0),
+    destination = NA_character_, secrets = character(0), packages = character(0),
+    commands = character(0), timeout = episodic_plugin_timeout_default,
+    steps = list(), problems = list()
   )
   problems <- list()
   add <- function(code, ...) problems[[length(problems) + 1L]] <<- episodic_plugin_problem(code, ...)
+  done <- function() {
+    plugin$problems <- problems
+    plugin
+  }
 
   if (!episodic_plugin_id_valid(id)) {
     add("bad_id")
   }
   bytes <- tryCatch(readBin(path, "raw", file.info(path)$size), error = function(e) NULL)
-  if (!is.null(bytes)) {
-    plugin$sha256 <- sodium::bin2hex(sodium::sha256(bytes))
+  if (is.null(bytes)) {
+    add("unreadable")
+    return(done())
   }
-  read <- episodic_plugin_read_header(path)
-  if (!is.null(read$problem)) {
-    plugin$problems <- c(problems, list(read$problem))
-    return(plugin)
+  plugin$sha256 <- sodium::bin2hex(sodium::sha256(bytes))
+  text <- rawToChar(bytes)
+  Encoding(text) <- "UTF-8"
+  spec <- tryCatch(
+    yaml::yaml.load(text),
+    error = function(e) e,
+    warning = function(w) w
+  )
+  if (inherits(spec, "condition")) {
+    add("bad_yaml", error = conditionMessage(spec))
+    return(done())
   }
-  header <- read$header
-
-  if (is.character(header$title) && length(header$title) == 1 && nzchar(header$title)) {
-    plugin$title <- header$title
-  }
-  if (!is.null(header$version) && length(header$version) == 1 && nzchar(as.character(header$version))) {
-    plugin$version <- as.character(header$version)
-  } else {
-    add("bad_field", field = "version")
-  }
-  if (!identical(header$engine, "knitr")) {
-    add("bad_engine")
-  }
-  ep <- header$episodic
-  if (!is.list(ep) || is.null(names(ep))) {
-    add("no_episodic")
-    plugin$problems <- problems
-    return(plugin)
+  if (!is.list(spec) || length(spec) == 0 || is.null(names(spec))) {
+    add("not_mapping")
+    return(done())
   }
 
-  api <- suppressWarnings(as.integer(ep$api))
-  if (length(api) != 1 || is.na(api)) {
-    add("bad_field", field = "episodic.api")
-  } else if (api != episodic_plugin_api_version) {
-    add("api_unsupported", api = as.character(api), supported = as.character(episodic_plugin_api_version))
+  for (key in setdiff(names(spec), episodic_plugin_keys)) {
+    add("unknown_key", key = key)
+  }
+  for (key in setdiff(episodic_plugin_keys_required, names(spec))) {
+    add("missing_key", key = key)
   }
 
-  if (is.character(ep$trigger) && length(ep$trigger) == 1 && ep$trigger %in% episodic_plugin_triggers) {
-    plugin$trigger <- ep$trigger
-  } else {
-    add("bad_field", field = "episodic.trigger")
+  if (!is.null(spec$name)) {
+    if (episodic_plugin_is_text(spec$name)) plugin$name <- trimws(spec$name) else add("bad_field", field = "name")
+  }
+  if (!is.null(spec$version)) {
+    version <- if (is.numeric(spec$version) || is.character(spec$version)) as.character(spec$version) else NA_character_
+    if (length(version) == 1 && !is.na(version) && nzchar(version)) plugin$version <- version else add("bad_field", field = "version")
+  }
+  if (!is.null(spec$api)) {
+    api <- if (is.numeric(spec$api) && length(spec$api) == 1 && spec$api == round(spec$api)) as.integer(spec$api) else NA_integer_
+    if (is.na(api)) {
+      add("bad_field", field = "api")
+    } else if (api != episodic_plugin_api_version) {
+      add("api_unsupported", api = as.character(api), supported = as.character(episodic_plugin_api_version))
+    }
+  }
+  if (!is.null(spec$description)) {
+    if (episodic_plugin_label_valid(spec$description)) plugin$description <- spec$description else add("bad_field", field = "description")
+  }
+  if (!is.null(spec$source)) {
+    if (episodic_plugin_is_text(spec$source) && grepl("^https://", spec$source)) {
+      plugin$source <- spec$source
+    } else {
+      add("bad_field", field = "source")
+    }
   }
 
+  if (!is.null(spec$trigger)) {
+    if (episodic_plugin_is_text(spec$trigger) && spec$trigger %in% episodic_plugin_triggers) {
+      plugin$trigger <- spec$trigger
+    } else {
+      add("bad_field", field = "trigger")
+    }
+  }
   if (identical(plugin$trigger, "button")) {
-    if (is.character(ep$placement) && length(ep$placement) == 1 && ep$placement %in% episodic_plugin_placements) {
-      plugin$placement <- ep$placement
+    if (episodic_plugin_is_text(spec$placement) && spec$placement %in% episodic_plugin_placements) {
+      plugin$placement <- spec$placement
     } else {
-      add("bad_field", field = "episodic.placement")
+      add("bad_field", field = "placement")
     }
-    if (episodic_plugin_label_valid(ep$label)) {
-      plugin$label <- ep$label
-    } else {
-      add("bad_field", field = "episodic.label")
-    }
-  }
-  if (!is.null(ep$description)) {
-    if (episodic_plugin_label_valid(ep$description)) {
-      plugin$description <- ep$description
-    } else {
-      add("bad_field", field = "episodic.description")
+    if (episodic_plugin_label_valid(spec$label)) plugin$label <- spec$label else add("bad_field", field = "label")
+  } else if (!is.na(plugin$trigger)) {
+    for (key in intersect(c("placement", "label"), names(spec))) {
+      add("button_only", key = key)
     }
   }
 
-  permissions <- episodic_plugin_strings(ep$permissions)
+  permissions <- episodic_plugin_strings(spec$permissions)
   if (is.null(permissions) || anyDuplicated(permissions)) {
-    add("bad_field", field = "episodic.permissions")
+    add("bad_field", field = "permissions")
   } else {
     allowed <- if (is.na(plugin$trigger)) character(0) else episodic_plugin_permissions[[plugin$trigger]]
     unknown <- setdiff(permissions, allowed)
-    if (length(unknown) > 0) {
+    if (length(unknown) > 0 && !is.na(plugin$trigger)) {
       add("bad_permission", permission = paste(unknown, collapse = ", "))
     }
     plugin$permissions <- permissions
   }
 
-  env <- episodic_plugin_strings(ep$env)
-  if (is.null(env) || anyDuplicated(env) || !all(grepl("^[A-Za-z_][A-Za-z0-9_]*$", env))) {
-    add("bad_field", field = "episodic.env")
-  } else if (any(grepl("^EPISODIC_", env))) {
-    add("episodic_env", variable = paste(env[grepl("^EPISODIC_", env)], collapse = ", "))
-  } else {
-    plugin$env <- env
-  }
-
-  if (!is.null(ep$destination)) {
-    if (is.character(ep$destination) && length(ep$destination) == 1 && nzchar(trimws(ep$destination))) {
-      plugin$destination <- trimws(ep$destination)
-    } else {
-      add("bad_field", field = "episodic.destination")
-    }
+  if (!is.null(spec$destination)) {
+    if (episodic_plugin_is_text(spec$destination)) plugin$destination <- trimws(spec$destination) else add("bad_field", field = "destination")
   }
   if ("cluster_cases" %in% plugin$permissions && is.na(plugin$destination)) {
     add("no_destination")
   }
 
-  if (!is.null(ep$source)) {
-    if (is.character(ep$source) && length(ep$source) == 1 && grepl("^https://", ep$source)) {
-      plugin$source <- ep$source
-    } else {
-      add("bad_field", field = "episodic.source")
-    }
-  }
-
-  if (!is.null(ep$timeout)) {
-    timeout <- suppressWarnings(as.integer(ep$timeout))
-    if (length(timeout) != 1 || is.na(timeout) || timeout < 1 || timeout > episodic_plugin_timeout_max ||
-      !identical(as.numeric(ep$timeout), as.numeric(timeout))) {
-      add("bad_timeout", max = as.character(episodic_plugin_timeout_max))
-    } else {
-      plugin$timeout <- timeout
-    }
-  }
-
-  requires <- ep$requires %||% list()
-  if (!is.list(requires) || (length(requires) > 0 && is.null(names(requires))) ||
-    length(setdiff(names(requires), c("packages", "engines"))) > 0) {
-    add("bad_field", field = "episodic.requires")
+  secrets <- episodic_plugin_strings(spec$secrets)
+  if (is.null(secrets) || anyDuplicated(secrets) || !all(episodic_plugin_env_name_valid(secrets))) {
+    add("bad_field", field = "secrets")
+  } else if (any(grepl("^EPISODIC_", secrets))) {
+    add("episodic_secret", variable = paste(secrets[grepl("^EPISODIC_", secrets)], collapse = ", "))
   } else {
-    packages <- episodic_plugin_strings(requires$packages)
-    engines <- episodic_plugin_strings(requires$engines)
-    if (is.null(packages)) {
-      add("bad_field", field = "episodic.requires.packages")
+    plugin$secrets <- secrets
+  }
+
+  if (!is.null(spec$timeout)) {
+    timeout <- spec$timeout
+    if (is.numeric(timeout) && length(timeout) == 1 && timeout == round(timeout) &&
+      timeout >= 1 && timeout <= episodic_plugin_timeout_max) {
+      plugin$timeout <- as.integer(timeout)
     } else {
-      plugin$packages <- packages
-    }
-    if (is.null(engines) || length(setdiff(engines, episodic_plugin_engines)) > 0) {
-      add("bad_field", field = "episodic.requires.engines")
-    } else {
-      plugin$engines <- engines
+      add("bad_timeout", max = as.character(episodic_plugin_timeout_max))
     }
   }
 
-  plugin$problems <- c(problems, episodic_plugin_requirements(plugin))
-  plugin
+  requires <- spec$requires %||% list()
+  if (!is.list(requires) || (length(requires) > 0 && is.null(names(requires)))) {
+    add("bad_field", field = "requires")
+  } else {
+    for (key in setdiff(names(requires), c("packages", "commands"))) {
+      add("unknown_key", key = paste0("requires.", key))
+    }
+    packages <- episodic_plugin_strings(requires$packages)
+    commands <- episodic_plugin_strings(requires$commands)
+    if (is.null(packages)) add("bad_field", field = "requires.packages") else plugin$packages <- packages
+    if (is.null(commands)) add("bad_field", field = "requires.commands") else plugin$commands <- commands
+  }
+
+  if (!is.null(spec$steps)) {
+    steps <- spec$steps
+    if (!is.list(steps) || length(steps) == 0 || !is.null(names(steps))) {
+      add("bad_field", field = "steps")
+    } else {
+      plugin$steps <- lapply(seq_along(steps), function(i) {
+        step <- steps[[i]]
+        where <- paste0("steps[", i, "]")
+        if (!is.list(step) || is.null(names(step))) {
+          add("bad_field", field = where)
+          return(NULL)
+        }
+        for (key in setdiff(names(step), episodic_plugin_step_keys)) {
+          add("unknown_key", key = paste0(where, ".", key))
+        }
+        if (!(episodic_plugin_is_text(step$shell) && step$shell %in% episodic_plugin_shells)) {
+          add("bad_field", field = paste0(where, ".shell"))
+        }
+        if (!episodic_plugin_is_text(step$run)) {
+          add("bad_field", field = paste0(where, ".run"))
+        }
+        if (!is.null(step$name) && !episodic_plugin_is_text(step$name)) {
+          add("bad_field", field = paste0(where, ".name"))
+        }
+        env <- step$env %||% list()
+        env_ok <- is.list(env) && (length(env) == 0 || (!is.null(names(env)) &&
+          all(episodic_plugin_env_name_valid(names(env))) &&
+          all(vapply(env, function(v) (is.character(v) || is.numeric(v) || is.logical(v)) && length(v) == 1 && !is.na(v), logical(1)))))
+        if (!env_ok) {
+          add("bad_field", field = paste0(where, ".env"))
+        } else if (any(grepl("^EPISODIC_", names(env)))) {
+          add("episodic_secret", variable = paste(grep("^EPISODIC_", names(env), value = TRUE), collapse = ", "))
+        }
+        list(
+          name = if (episodic_plugin_is_text(step$name)) trimws(step$name) else paste("Step", i),
+          shell = step$shell,
+          run = step$run,
+          env = if (env_ok) vapply(env, function(v) if (is.logical(v)) tolower(as.character(v)) else as.character(v), character(1)) else character(0)
+        )
+      })
+    }
+  }
+
+  if (length(problems) == 0) {
+    problems <- episodic_plugin_requirements(plugin)
+  }
+  done()
+}
+
+#' The program that runs a step written in `shell`, or `""` if absent
+#' @keywords internal
+#' @noRd
+episodic_plugin_shell_program <- function(shell) {
+  switch(shell,
+    r = {
+      rscript <- file.path(R.home("bin"), if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript")
+      if (file.exists(rscript)) rscript else ""
+    },
+    bash = unname(Sys.which("bash")),
+    python = {
+      python <- unname(Sys.which("python3"))
+      if (nzchar(python)) python else unname(Sys.which("python"))
+    }
+  )
 }
 
 #' Whether what a plugin requires is present on this server
@@ -341,24 +398,24 @@ episodic_plugin_read <- function(path) {
 episodic_plugin_requirements <- function(plugin) {
   problems <- list()
   add <- function(code, ...) problems[[length(problems) + 1L]] <<- episodic_plugin_problem(code, ...)
-  if (!episodic_quarto_available()) {
-    add("no_quarto")
+  if (!requireNamespace("processx", quietly = TRUE)) {
+    add("missing_package", package = "processx")
   }
   for (package in plugin$packages) {
     if (!requireNamespace(package, quietly = TRUE)) {
       add("missing_package", package = package)
     }
   }
-  if ("python" %in% plugin$engines) {
-    if (!requireNamespace("reticulate", quietly = TRUE)) {
-      add("missing_package", package = "reticulate")
-    }
-    if (!nzchar(Sys.which("python3")) && !nzchar(Sys.which("python"))) {
-      add("missing_engine", engine = "Python")
+  shells <- unique(vapply(plugin$steps, function(s) s$shell, character(1)))
+  for (shell in shells) {
+    if (!nzchar(episodic_plugin_shell_program(shell))) {
+      add("missing_command", command = c(r = "Rscript", bash = "bash", python = "python3")[[shell]])
     }
   }
-  if ("bash" %in% plugin$engines && !nzchar(Sys.which("bash"))) {
-    add("missing_engine", engine = "Bash")
+  for (command in plugin$commands) {
+    if (!nzchar(Sys.which(command))) {
+      add("missing_command", command = command)
+    }
   }
   problems
 }
@@ -368,7 +425,7 @@ episodic_plugin_requirements <- function(plugin) {
 #' @param config The resolved configuration.
 #' @param id The plugin's id.
 #' @return `NULL` when the plugin is not enabled, else a list with
-#'   `permissions` and `env`.
+#'   `permissions` and `secrets`.
 #' @keywords internal
 #' @noRd
 episodic_plugin_grant <- function(config, id) {
@@ -382,7 +439,7 @@ episodic_plugin_grant <- function(config, id) {
   }
   list(
     permissions = episodic_plugin_strings(entry$permissions) %||% character(0),
-    env = episodic_plugin_strings(entry$env) %||% character(0)
+    secrets = episodic_plugin_strings(entry$secrets) %||% character(0)
   )
 }
 
@@ -392,7 +449,7 @@ episodic_plugin_grant <- function(config, id) {
 #' - `"enabled"`: listed in `plugins.enabled`, with everything it declares granted;
 #' - `"disabled"`: in the folder, not listed;
 #' - `"needs_approval"`: listed, but the file now declares a permission or
-#'   variable it was not granted, so it does not run until enabled again;
+#'   secret it was not granted, so it does not run until enabled again;
 #' - `"unavailable"`: the file has a problem;
 #' - `"missing"`: listed in the configuration, but no file is there.
 #'
@@ -404,7 +461,7 @@ episodic_plugin_grant <- function(config, id) {
 #' @noRd
 episodic_plugins <- function(config = episodic_config_resolve(), dir = episodic_plugin_dir()) {
   files <- if (!is.null(dir) && dir.exists(dir)) {
-    sort(list.files(dir, pattern = "\\.qmd$", full.names = TRUE))
+    sort(list.files(dir, pattern = "\\.yaml$", full.names = TRUE))
   } else {
     character(0)
   }
@@ -418,7 +475,7 @@ episodic_plugins <- function(config = episodic_config_resolve(), dir = episodic_
     plugin$ungranted <- if (is.null(grant)) {
       character(0)
     } else {
-      c(setdiff(plugin$permissions, grant$permissions), setdiff(plugin$env, grant$env))
+      c(setdiff(plugin$permissions, grant$permissions), setdiff(plugin$secrets, grant$secrets))
     }
     plugin$status <- if (length(plugin$problems) > 0) {
       "unavailable"
@@ -434,8 +491,8 @@ episodic_plugins <- function(config = episodic_config_resolve(), dir = episodic_
 
   for (id in setdiff(names(config$plugins$enabled %||% list()), names(plugins))) {
     plugins[[id]] <- list(
-      id = id, path = if (is.null(dir)) NA_character_ else file.path(dir, paste0(id, ".qmd")),
-      title = id, version = NA_character_, status = "missing",
+      id = id, path = if (is.null(dir)) NA_character_ else file.path(dir, paste0(id, ".yaml")),
+      name = id, version = NA_character_, status = "missing",
       problems = list(episodic_plugin_problem("file_missing")),
       grant = episodic_plugin_grant(config, id), ungranted = character(0)
     )
@@ -459,7 +516,7 @@ episodic_plugins_runnable <- function(plugins, trigger, placement = NULL) {
 episodic_plugin_label <- function(plugin, lang = Sys.getenv("EPISODIC_LANGUAGE")) {
   label <- plugin$label
   if (is.null(label)) {
-    return(plugin$title)
+    return(plugin$name)
   }
   lang <- episodic_lang(lang)
   base <- sub("-.*$", "", lang)
@@ -477,11 +534,11 @@ episodic_plugin_label <- function(plugin, lang = Sys.getenv("EPISODIC_LANGUAGE")
 #'
 #' @param episodic_config_path The configuration file. Defaults to the
 #'   `EPISODIC_CONFIG` environment variable.
-#' @return A data frame with one row per plugin: `id`, `title`,
+#' @return A data frame with one row per plugin: `id`, `name`,
 #'   `version`, `trigger`, `placement`, `status` (`"enabled"`,
 #'   `"disabled"`, `"needs_approval"`, `"unavailable"` or `"missing"`),
-#'   `permissions`, `env`, `destination` and `problems` (the reasons, as
-#'   text, separated by `"; "`).
+#'   `permissions`, `secrets`, `destination` and `problems` (the reasons,
+#'   as text, separated by `"; "`).
 #' @seealso [episodic_plugin_install()], [episodic_plugin_enable()],
 #'   [episodic_plugin_run()], `vignette("plugins")`
 #' @examples
@@ -497,13 +554,13 @@ episodic_plugin_list <- function(episodic_config_path = Sys.getenv("EPISODIC_CON
   text <- function(x) if (is.null(x) || length(x) == 0 || all(is.na(x))) NA_character_ else paste(x, collapse = ", ")
   data.frame(
     id = vapply(plugins, function(p) p$id, character(1)),
-    title = vapply(plugins, function(p) p$title %||% p$id, character(1)),
+    name = vapply(plugins, function(p) p$name %||% p$id, character(1)),
     version = vapply(plugins, function(p) p$version %||% NA_character_, character(1)),
     trigger = vapply(plugins, function(p) p$trigger %||% NA_character_, character(1)),
     placement = vapply(plugins, function(p) p$placement %||% NA_character_, character(1)),
     status = vapply(plugins, function(p) p$status, character(1)),
     permissions = vapply(plugins, function(p) text(p$permissions), character(1)),
-    env = vapply(plugins, function(p) text(p$env), character(1)),
+    secrets = vapply(plugins, function(p) text(p$secrets), character(1)),
     destination = vapply(plugins, function(p) p$destination %||% NA_character_, character(1)),
     problems = vapply(plugins, function(p) {
       if (length(p$problems) == 0) {

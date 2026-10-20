@@ -54,6 +54,7 @@ Suggests:
     knitr,
     Microsoft365R,
     pkgdown,
+    processx,
     quarto,
     RMariaDB,
     rmarkdown,

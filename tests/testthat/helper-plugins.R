@@ -18,7 +18,7 @@
 # ===================================================================== #
 
 # Fixtures for the plugin tests: a configuration file and plugin folder
-# of the calling test's own, and plugin files written from a header.
+# of the calling test's own, and plugin files written from a list.
 
 plugin_test_instance <- function(env = parent.frame()) {
   root <- tempfile("episodic_plugins_")
@@ -30,42 +30,39 @@ plugin_test_instance <- function(env = parent.frame()) {
   list(root = root, config_path = config_path, dir = file.path(root, "plugins"))
 }
 
-plugin_test_header <- function(...) {
-  episodic <- list(
+plugin_test_spec <- function(...) {
+  spec <- list(
+    name = "Share with the regional platform",
+    version = "0.1.0",
     api = 1L,
     trigger = "button",
     placement = "outbreak",
     label = list(en = "Share", nl = "Delen"),
-    permissions = list("cluster_summary")
+    permissions = list("cluster_summary"),
+    steps = list(plugin_test_step())
   )
-  # Assigned one by one: utils::modifyList() leaves an unnamed list as it was.
+  # Assigned one by one: utils::modifyList() leaves an unnamed list as it
+  # was, and NULL removes a key.
   overrides <- list(...)
   for (name in names(overrides)) {
-    episodic[name] <- list(overrides[[name]])
+    if (is.null(overrides[[name]])) {
+      spec[[name]] <- NULL
+    } else {
+      spec[name] <- list(overrides[[name]])
+    }
   }
-  list(
-    title = "Share with the regional platform",
-    version = "0.1.0",
-    engine = "knitr",
-    episodic = episodic,
-    params = list(payload_path = "", result_path = "")
-  )
+  spec
 }
 
-plugin_test_write <- function(dir, id, header = plugin_test_header(), body = plugin_test_body()) {
+plugin_test_step <- function(run = "cat('message=Shared\\n', file = Sys.getenv('EPISODIC_RESULT'))", shell = "r", ...) {
+  list(name = "Send", shell = shell, run = run, ...)
+}
+
+plugin_test_write <- function(dir, id, spec = plugin_test_spec()) {
   dir.create(dir, showWarnings = FALSE, recursive = TRUE)
-  path <- file.path(dir, paste0(id, ".qmd"))
-  writeLines(c("---", sub("\n$", "", yaml::as.yaml(header)), "---", "", body), path)
+  path <- file.path(dir, paste0(id, ".yaml"))
+  writeLines(sub("\n$", "", yaml::as.yaml(spec)), path)
   path
-}
-
-plugin_test_body <- function() {
-  c(
-    "```{r}",
-    "payload <- jsonlite::read_json(params$payload_path)",
-    "jsonlite::write_json(list(status = \"success\", message = \"Shared.\"), params$result_path, auto_unbox = TRUE)",
-    "```"
-  )
 }
 
 plugin_test_codes <- function(plugin) {
