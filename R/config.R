@@ -259,7 +259,8 @@ episodic_config_file_hash <- function(path) {
 episodic_config_open_sections <- list(
   "notifications",
   c("same_place", "overrides"),
-  c("rare_trigger", "pathogens")
+  c("rare_trigger", "pathogens"),
+  c("plugins", "enabled")
 )
 
 #' Settings that mean something by an explicit YAML `null`
@@ -719,13 +720,17 @@ episodic_pathogen_config_merge <- function(defaults, overlay, source_label = "op
 #' what leaves the instance, never what a detection run computes. Each
 #' export records the field set it actually used in its own audit row.
 #'
+#' `plugins` is here because plugins never touch detection: a plugin acts
+#' on what a run has already computed, so which plugins are enabled cannot
+#' change a run's result.
+#'
 #' `geography` is deliberately *not* here. `region_code` and the area
 #' rule both feed `episodic_stream_key()`, so a change to either changes
 #' every geographic stream's identity - which is exactly the kind of
 #' difference the hash exists to make visible.
 #' @keywords internal
 #' @noRd
-episodic_config_unhashed_sections <- c("notifications", "access", "report", "database", "export")
+episodic_config_unhashed_sections <- c("notifications", "access", "report", "database", "export", "plugins")
 
 #' The scale a lattice level belongs to
 #'
