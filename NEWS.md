@@ -37,6 +37,10 @@
 - `episodic_config_resolve()` no longer takes a database connection
 - The Settings screen no longer lists a configuration change history, since settings saved in the database are no longer applied
 - Which plugins are enabled is written to the configuration file (`plugins.enabled`), outside `config_hash`
+- The README states what has and has not been measured: synthetic validation only, no correction for testing intensity or multiplicity, and PPV over assessed clusters only
+- The vignettes "Detection and reconciliation", "Measuring detection against known truth", "Tuning detection" and "Overview" document denominators, the limits of synthetic validation, and the selection bias in PPV from verdicts
+- The README no longer claims that set-up takes minutes or that the software is perfectly safe
+- The pkgdown site no longer publishes CLAUDE.md, and is always built from a clean directory
 
 # EpiSODIC 0.24.0
 

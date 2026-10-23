@@ -76,6 +76,8 @@ The rest of the dashboard, Performance, Archive, Streams, Activity, and Info, ro
 
 Detection timeliness and positive predictive value per detector and pathogen, computed from stored verdicts on outbreaks (L1-L3). Both fill in as outbreaks get assessed, so tuning `EPISODIC_CONFIG` against your own signal volume is an evidence-based exercise rather than a guess, once your board has classified enough outbreaks to have a baseline.
 
+Every assessment is stored as an event with its author and time, so the verdicts together form a labelled dataset of detections. Two limits apply to what it can show. It says nothing about sensitivity, because a missed outbreak never becomes a cluster to judge; that is measured against synthetic ground truth instead (`vignette("detection-validation")`). And only assessed clusters carry a label: clusters that close unassessed are absent from it, so PPV describes the clusters the board chose to look at (`vignette("tuning-detection")`, "Against your own board's verdicts"). Thresholds are not calibrated from these verdicts automatically.
+
 <p align="center">
   <img src="../man/figures/performance_screen.png" alt="The Performance screen" width="800">
 </p>
