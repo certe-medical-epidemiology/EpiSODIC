@@ -114,7 +114,7 @@ without_mem <- episodic_validate_detection(
 
 ## What this does not measure
 
-Everything above is measured on synthetic data. The generator and the detectors were developed side by side, so the outbreak shapes it injects are shapes the detectors were designed to find, and its background is cleaner than any real laboratory feed: no changes in testing policy, no coding changes, no reporting delays beyond those modelled. A good result here shows that the machinery works as intended; it does not show how EpiSODIC performs in a real catchment.
+Everything above is measured on synthetic data. The generator and the detectors were developed side by side, so the outbreak shapes it injects are shapes the detectors were designed to find, and its background is cleaner than any real laboratory feed: no changes in testing policy, no coding changes, and every result in the extract on the day it was sampled. A good result here shows that the machinery works as intended; it does not show how EpiSODIC performs in a real catchment.
 
 A retrospective evaluation against documented outbreaks in real laboratory data, measuring sensitivity, timeliness and false alarms the same way, has not yet been done.
 
