@@ -33,6 +33,8 @@
   "activity.run_modal_autoclosed_line": "{closed} automatisch afgesloten",
   "activity.run_modal_detection": "Wat de detectie heeft opgeleverd",
   "activity.run_modal_detection_line": "{streams} streams gemonitord, {detections} detecties, {new} nieuwe signalen, {updated} bijgewerkt",
+  "activity.run_modal_detector_tested": "{detector}: {tests} streamweken getoetst, {detections} detecties. Als er nergens iets speelde, zouden gemiddeld {expected} valse alarmen te verwachten zijn.",
+  "activity.run_modal_detector_untested": "{detector}: {detections} detecties. Geen statistische toets, dus zonder vals-alarmfrequentie.",
   "activity.run_modal_error": "Waarom deze run is mislukt",
   "activity.run_modal_load": "Wat deze run heeft ingelezen",
   "activity.run_modal_no_load": "Deze run heeft geen aantallen vastgelegd: hij stopte voordat er data was gelezen.",

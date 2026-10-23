@@ -33,6 +33,8 @@
   "activity.run_modal_autoclosed_line": "{closed} स्वतः बंद",
   "activity.run_modal_detection": "डिटेक्शन से क्या मिला",
   "activity.run_modal_detection_line": "{streams} स्ट्रीम पर निगरानी, {detections} डिटेक्शन, {new} नए सिग्नल, {updated} अद्यतन",
+  "activity.run_modal_detector_tested": "{detector}: {tests} स्ट्रीम-सप्ताहों का परीक्षण, {detections} डिटेक्शन। यदि कहीं कुछ न हो रहा होता, तो औसतन {expected} झूठे अलार्म अपेक्षित होते।",
+  "activity.run_modal_detector_untested": "{detector}: {detections} डिटेक्शन। यह सांख्यिकीय परीक्षण नहीं है, इसलिए इसकी कोई झूठी-अलार्म दर नहीं है।",
   "activity.run_modal_error": "यह रन क्यों विफल हुआ",
   "activity.run_modal_load": "इस रन ने क्या लोड किया",
   "activity.run_modal_no_load": "इस रन ने कोई लोड गणना दर्ज नहीं की: यह डेटा पढ़ने से पहले ही रुक गया।",

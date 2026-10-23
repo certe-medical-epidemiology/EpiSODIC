@@ -33,6 +33,8 @@
   "activity.run_modal_autoclosed_line": "{closed} cerrados automáticamente",
   "activity.run_modal_detection": "Qué produjo la detección",
   "activity.run_modal_detection_line": "{streams} flujos monitorizados, {detections} detecciones, {new} señales nuevas, {updated} actualizadas",
+  "activity.run_modal_detector_tested": "{detector}: {tests} semanas-flujo evaluadas, {detections} detecciones. Si no ocurriera nada en ningún lugar, se esperarían de media {expected} falsas alarmas.",
+  "activity.run_modal_detector_untested": "{detector}: {detections} detecciones. No es una prueba estadística, por lo que no tiene tasa de falsas alarmas.",
   "activity.run_modal_error": "Por qué falló esta ejecución",
   "activity.run_modal_load": "Qué cargó esta ejecución",
   "activity.run_modal_no_load": "Esta ejecución no registró recuentos: se detuvo antes de leer datos.",

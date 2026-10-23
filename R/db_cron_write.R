@@ -402,7 +402,8 @@ episodic_db_stream_trend_upsert <- function(con,
                                             week_start,
                                             n_cases,
                                             expected = NA,
-                                            upperbound = NA) {
+                                            upperbound = NA,
+                                            p_value = NA) {
   params <- list(stream_id, week_start)
   existing <- episodic_db_get_query(
     con,
@@ -410,19 +411,21 @@ episodic_db_stream_trend_upsert <- function(con,
     params = params
   )
   if (nrow(existing) > 0) {
-    params <- list(n_cases, expected, upperbound, stream_id, week_start)
+    params <- list(n_cases, expected, upperbound, p_value, stream_id, week_start)
     episodic_db_execute(
       con,
-      "UPDATE episodic_stream_trend SET n_cases = ?, expected = ?, upperbound = ?
-       WHERE stream_id = ? AND week_start = ?",
+      "UPDATE episodic_stream_trend
+          SET n_cases = ?, expected = ?, upperbound = ?, p_value = ?
+        WHERE stream_id = ? AND week_start = ?",
       params = params
     )
   } else {
-    params <- list(stream_id, week_start, n_cases, expected, upperbound)
+    params <- list(stream_id, week_start, n_cases, expected, upperbound, p_value)
     episodic_db_execute(
       con,
-      "INSERT INTO episodic_stream_trend (stream_id, week_start, n_cases, expected, upperbound)
-       VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO episodic_stream_trend
+         (stream_id, week_start, n_cases, expected, upperbound, p_value)
+       VALUES (?, ?, ?, ?, ?, ?)",
       params = params
     )
   }
@@ -477,7 +480,9 @@ episodic_db_detection_insert <- function(con,
                                          expected = NA,
                                          upperbound = NA,
                                          params_json,
-                                         cluster_id = NA) {
+                                         cluster_id = NA,
+                                         p_value = NA,
+                                         alpha = NA) {
   params <- list(
     run_id,
     stream_id,
@@ -489,17 +494,53 @@ episodic_db_detection_insert <- function(con,
     expected,
     upperbound,
     params_json,
-    episodic_now()
+    episodic_now(),
+    p_value,
+    alpha
   )
   episodic_db_execute(
     con,
     "INSERT INTO episodic_detection
       (run_id, stream_id, cluster_id, detector, first_day, last_day, n_cases, expected,
-       upperbound, params, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+       upperbound, params, created_at, p_value, alpha)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     params = params
   )
   episodic_db_last_insert_id(con)
+}
+
+#' Record what one detector did in a run
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param run_id The run.
+#' @param detector The detector.
+#' @param n_tests Hypotheses tested, or `NA` for a detector that performs
+#'   no test.
+#' @param n_detections Detections it reported.
+#' @param expected_false_alarms The sum of the significance levels it
+#'   tested at, or `NA` with `n_tests`.
+#' @keywords internal
+#' @noRd
+episodic_db_run_detector_insert <- function(con,
+                                            run_id,
+                                            detector,
+                                            n_tests,
+                                            n_detections,
+                                            expected_false_alarms) {
+  episodic_db_execute(
+    con,
+    "INSERT INTO episodic_detection_run_detector
+       (run_id, detector, n_tests, n_detections, expected_false_alarms)
+     VALUES (?, ?, ?, ?, ?)",
+    params = list(
+      run_id,
+      detector,
+      n_tests,
+      n_detections,
+      expected_false_alarms
+    )
+  )
+  invisible(NULL)
 }
 
 #' @keywords internal

@@ -33,6 +33,8 @@
   "activity.run_modal_autoclosed_line": "{closed} 个自动结案",
   "activity.run_modal_detection": "检测产生的结果",
   "activity.run_modal_detection_line": "监测 {streams} 个数据流，{detections} 次检测，{new} 个新信号，{updated} 个已更新",
+  "activity.run_modal_detector_tested": "{detector}：检验了 {tests} 个数据流周，{detections} 次检测。若各处均无异常，平均预计会有 {expected} 次误报。",
+  "activity.run_modal_detector_untested": "{detector}：{detections} 次检测。并非统计检验，因此没有误报率可言。",
   "activity.run_modal_error": "本次运行失败的原因",
   "activity.run_modal_load": "本次运行载入的数据",
   "activity.run_modal_no_load": "本次运行没有记录任何载入计数：它在读取数据前就已停止。",

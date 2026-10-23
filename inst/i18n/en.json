@@ -33,6 +33,8 @@
   "activity.run_modal_autoclosed_line": "{closed} auto-closed",
   "activity.run_modal_detection": "What detection produced",
   "activity.run_modal_detection_line": "{streams} streams monitored, {detections} detections, {new} new signals, {updated} updated",
+  "activity.run_modal_detector_tested": "{detector}: {tests} stream-weeks tested, {detections} detections. Were nothing happening anywhere, {expected} false alarms would be expected on average.",
+  "activity.run_modal_detector_untested": "{detector}: {detections} detections. Not a statistical test, so it has no false-alarm rate to state.",
   "activity.run_modal_error": "Why this run failed",
   "activity.run_modal_load": "What this run loaded",
   "activity.run_modal_no_load": "This run recorded no load counts: it stopped before it read any data.",

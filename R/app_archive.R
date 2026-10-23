@@ -389,7 +389,11 @@ episodic_ui_run_modal <- function(con,
           "activity.run_modal_autoclosed_line",
           closed = num(episodic_db_run_autoclosed_count(con, run)),
           lang = lang
-        ))
+        )),
+        episodic_app_run_detector_lines(
+          episodic_db_run_detectors(con, run$run_id),
+          lang = lang
+        )
       )
     },
     if (isTRUE(failed)) {
@@ -416,4 +420,41 @@ episodic_ui_run_modal <- function(con,
       )
     )
   )
+}
+
+#' One line per detector: what it tested, what it reported
+#'
+#' A detector that performs a statistical test states how many hypotheses
+#' it tested and the false alarms that implies; one that does not says
+#' so, rather than showing a rate of zero.
+#'
+#' @param rows From `episodic_db_run_detectors()`.
+#' @param lang Session language.
+#' @return A `shiny::tagList()`, empty for a run with no rows.
+#' @keywords internal
+#' @noRd
+episodic_app_run_detector_lines <- function(rows, lang) {
+  num <- function(x, ...) episodic_format_number(x, ..., lang = lang)
+  shiny::tagList(lapply(seq_len(nrow(rows)), function(i) {
+    row <- rows[i, ]
+    detector <- episodic_ui_code_join(row$detector)
+    line <- if (is.na(row$n_tests)) {
+      episodic_tr(
+        "activity.run_modal_detector_untested",
+        detector = detector,
+        detections = num(row$n_detections),
+        lang = lang
+      )
+    } else {
+      episodic_tr(
+        "activity.run_modal_detector_tested",
+        detector = detector,
+        tests = num(row$n_tests),
+        detections = num(row$n_detections),
+        expected = num(row$expected_false_alarms, digits = 2, fixed = TRUE),
+        lang = lang
+      )
+    }
+    shiny::tags$p(shiny::HTML(line))
+  }))
 }

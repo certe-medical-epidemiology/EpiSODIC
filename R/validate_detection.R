@@ -338,7 +338,7 @@ episodic_validation_km_from <- function(outbreaks) {
 #' @keywords internal
 #' @noRd
 episodic_validation_detectors <- function() {
-  c("farrington", "mem", "same_place", "rare_trigger")
+  episodic_detectors
 }
 
 #' One replicate: one seed, its own database, its own weekly replay

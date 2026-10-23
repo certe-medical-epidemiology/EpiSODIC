@@ -808,3 +808,27 @@ test_that("the Archive's controls keep the search that was typed", {
   expect_true(grepl('value="noro"', html, fixed = TRUE))
   expect_true(grepl("archive_level_filter", html, fixed = TRUE))
 })
+
+test_that("the run modal states each detector's tests and false-alarm rate, and none for a rule", {
+  rows <- data.frame(
+    detector = c("farrington", "same_place"),
+    n_tests = c(1234L, NA),
+    n_detections = c(3L, 2L),
+    expected_false_alarms = c(61.7, NA),
+    stringsAsFactors = FALSE
+  )
+  en <- as.character(episodic_app_run_detector_lines(rows, lang = "en"))
+  expect_true(grepl("<code>farrington</code>: 1,234 stream-weeks tested, 3 detections", en, fixed = TRUE))
+  expect_true(grepl("61.70 false alarms", en, fixed = TRUE))
+  expect_true(grepl("<code>same_place</code>: 2 detections. Not a statistical test", en, fixed = TRUE))
+  expect_false(grepl("NA", en, fixed = TRUE))
+
+  nl <- as.character(episodic_app_run_detector_lines(rows, lang = "nl"))
+  expect_true(grepl("61,70", nl, fixed = TRUE))
+
+  # A run from before these were recorded shows nothing, not zeros.
+  expect_equal(
+    as.character(episodic_app_run_detector_lines(rows[0, ], lang = "en")),
+    ""
+  )
+})
