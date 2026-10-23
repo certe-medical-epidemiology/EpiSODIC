@@ -322,6 +322,8 @@ This measures the machinery against known truth: does the change improve sensiti
 
 The Performance screen measures the instance against its own epidemiologists' verdicts: what share of clusters the board classified as noise (positive predictive value), and how quickly real signals were detected (time-to-detection). This is not circular for the question "did this change reduce false alarms", which is exactly what PPV answers. It cannot measure sensitivity, because an outbreak the detectors miss never becomes a cluster for anyone to judge.
 
+PPV is also computed only over clusters that received a terminal verdict, and that is a selected subset. An unassessed cluster, or one with only `cluster_not_yet`, is left out, and a cluster that closes on its own after `reconciliation.close_after_runs` without anyone assessing it never gets a verdict at all. If the board assesses the obvious signals first and lets marginal ones close by themselves, PPV describes the clusters someone chose to look at, not every cluster raised. Report the share of clusters assessed beside any PPV quoted from this screen.
+
 `config_hash` lets you compare runs before and after a change: filter the Performance screen or the `episodic_detection_run` table by hash to see the metrics under the old settings beside the new ones.
 
 
