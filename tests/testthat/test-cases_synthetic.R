@@ -347,3 +347,26 @@ test_that("an epidemic-shaped season concentrates its year in a short winter wav
   bad$shape <- "triangle"
   expect_error(episodic_synthetic_seasonal_mean(dates, bad), "Unknown synthetic season shape")
 })
+
+test_that("pathogen copies leave the original cases and outbreaks exactly as they were", {
+  window <- list(start_date = as.Date("2025-01-01"), end_date = as.Date("2025-06-30"), seed = 2)
+  one <- do.call(episodic_synthetic_cases, window)
+  three <- do.call(episodic_synthetic_cases, c(window, pathogen_copies = 3L))
+  copy <- grepl(" #[0-9]+$", three$pathogen)
+  originals <- three[!copy, ]
+  key <- function(d) sort(paste(d$source_key, d$sample_date, d$pathogen, d$patient_key, d$ward))
+  expect_equal(key(originals), key(one))
+  expect_equal(
+    episodic_synthetic_ground_truth(three)$outbreaks,
+    episodic_synthetic_ground_truth(one)$outbreaks
+  )
+  expect_setequal(
+    unique(three$pathogen[copy]),
+    episodic_synthetic_copy_name(
+      rep(episodic_synthetic_pathogen_profiles()$pathogen, 2),
+      rep(2:3, each = 8)
+    )
+  )
+  expect_true(all(is.na(three$outbreak_id[copy])))
+  expect_error(do.call(episodic_synthetic_cases, c(window, pathogen_copies = 0)), "pathogen_copies")
+})

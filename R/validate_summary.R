@@ -35,6 +35,8 @@
 #' @param clusters Per-(seed, cluster) rows, from
 #'   `episodic_validation_cluster_rows()` with a `seed` column added.
 #' @param runs Per-(seed, run) rows: `seed`, `run_date`, `n_streams`,
+#'   `stream_weeks`, `weeks`, `n_farrington_tests`,
+#'   `n_farrington_detections`, `farrington_expected_false_alarms`,
 #'   `n_clusters_new`, `n_clusters_new_visible`.
 #' @return A data frame in `episodic_validation_summary_empty()`'s shape.
 #' @keywords internal
@@ -133,7 +135,57 @@ episodic_validation_summarise <- function(outbreaks, clusters, runs) {
     ))
   }
 
-  stream_weeks <- per_seed(runs, function(d) sum(d$n_streams))
+  stream_weeks <- per_seed(runs, function(d) sum(d$stream_weeks))
+  weeks <- per_seed(runs, function(d) sum(d$weeks))
+  add(episodic_validation_rate_row(
+    "false_alarms",
+    "overall",
+    "all clusters raised, per week watched",
+    per_seed(counted, function(d) sum(!d$true_positive)),
+    weeks,
+    unit = "per week"
+  ))
+  for (detector in episodic_validation_detector_groups(counted$first_detector)) {
+    add(episodic_validation_rate_row(
+      "false_alarms",
+      "first_detector",
+      detector,
+      per_seed(counted, function(d) {
+        sum(!d$true_positive & d$first_detector %in% detector)
+      }),
+      stream_weeks,
+      unit = "per stream-week"
+    ))
+  }
+  # What Farrington's own significance level promises, beside what it
+  # delivered: the sum of the levels it tested at is the number of false
+  # alarms it would raise on average with nothing happening anywhere.
+  if (any(!is.na(runs$n_farrington_tests))) {
+    add(episodic_validation_value_row(
+      "farrington_tests",
+      "overall",
+      "stream-weeks tested per run",
+      runs$seed,
+      runs$n_farrington_tests,
+      unit = "per run"
+    ))
+    add(episodic_validation_value_row(
+      "farrington_nominal_false_alarms",
+      "overall",
+      "sum of the significance levels tested at",
+      runs$seed,
+      runs$farrington_expected_false_alarms,
+      unit = "per run"
+    ))
+    add(episodic_validation_value_row(
+      "farrington_detections",
+      "overall",
+      "detections reported",
+      runs$seed,
+      runs$n_farrington_detections,
+      unit = "per run"
+    ))
+  }
   add(episodic_validation_rate_row(
     "false_alarms",
     "overall",

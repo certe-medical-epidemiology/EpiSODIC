@@ -121,6 +121,23 @@
 #'   columns from `inst/config/episodic_default_pathogen_config.csv`.
 #'   Merged row-by-row over the shipped defaults the same way
 #'   `EPISODIC_PATHOGEN_CONFIG` is.
+#' @param pathogen_copies Passed to [episodic_synthetic_cases()]: how
+#'   many independent copies of the endemic pathogens to watch. Each copy
+#'   inherits its original's per-pathogen configuration and `same_place`
+#'   rule, so it is watched exactly as the original is. With
+#'   `outbreaks = FALSE` this measures how the false-alarm burden grows
+#'   with the number of pathogens an instance watches.
+#' @param run_interval_days Days between runs: 7 (the default) replays
+#'   one run a week, 1 replays a nightly schedule, on which the last
+#'   complete week is tested again by every run until the next one
+#'   completes.
+#' @param reporting_delay_days The mean number of days from sampling until
+#'   a result is in the laboratory's extract. Each case's delay is drawn
+#'   from a Poisson distribution with this mean, independently of the
+#'   cases themselves, and a run is handed only the cases whose result is
+#'   in by its date. 0 (the default) hands every run every case sampled on
+#'   or before it. With a delay and a nightly `run_interval_days`, a week
+#'   is retested as its late results arrive, which is what this measures.
 #' @param quiet If `TRUE` (the default), the per-run progress
 #'   [episodic_run_cron()] writes is suppressed; a replay is hundreds of
 #'   lines of it. Warnings and errors are not suppressed.
@@ -133,8 +150,10 @@
 #'     \item{`clusters`}{One row per (seed, cluster raised): its case-set
 #'       precision, whether it counts as a true positive, its priority
 #'       score, and which detectors fired on it.}
-#'     \item{`runs`}{One row per (seed, run): streams watched, clusters
-#'       raised, and how many of those survived lattice suppression.}
+#'     \item{`runs`}{One row per (seed, run): streams watched, the
+#'       stream-weeks they stand for, the hypotheses Farrington tested and
+#'       the false alarms that implied, clusters raised, and how many of
+#'       those survived lattice suppression.}
 #'     \item{`overlap`}{Every (run, cluster, outbreak) that shared a
 #'       case, which is the raw material both tables above are derived
 #'       from.}
@@ -172,8 +191,25 @@ episodic_validate_detection <- function(seeds = 1,
                                         detectors = episodic_validation_detectors(),
                                         config = NULL,
                                         pathogen_config = NULL,
+                                        pathogen_copies = 1L,
+                                        run_interval_days = 7L,
+                                        reporting_delay_days = 0,
                                         quiet = TRUE) {
   seeds <- episodic_validation_check_seeds(seeds)
+  if (!is.numeric(pathogen_copies) || length(pathogen_copies) != 1 ||
+    is.na(pathogen_copies) || pathogen_copies < 1 ||
+    pathogen_copies != round(pathogen_copies)) {
+    stop("`pathogen_copies` must be a single whole number of at least 1.", call. = FALSE)
+  }
+  if (!is.numeric(run_interval_days) || length(run_interval_days) != 1 ||
+    is.na(run_interval_days) || !run_interval_days %in% 1:7) {
+    stop("`run_interval_days` must be a whole number of days from 1 to 7.", call. = FALSE)
+  }
+  if (!is.numeric(reporting_delay_days) || length(reporting_delay_days) != 1 ||
+    is.na(reporting_delay_days) || reporting_delay_days < 0 ||
+    !is.finite(reporting_delay_days)) {
+    stop("`reporting_delay_days` must be a single number of days, 0 or more.", call. = FALSE)
+  }
   episodic_validation_check_threshold(min_recall, "min_recall")
   episodic_validation_check_threshold(min_precision, "min_precision")
   if (!is.numeric(evaluation_weeks) || length(evaluation_weeks) != 1 ||
@@ -188,10 +224,24 @@ episodic_validate_detection <- function(seeds = 1,
   config_path <- episodic_validation_config_file(detectors, config)
   on.exit(unlink(dirname(config_path), recursive = TRUE), add = TRUE)
   resolved <- episodic_config_resolve(config_path)
+  if (pathogen_copies > 1) {
+    # The copies' same_place rules can only be read off the resolved
+    # configuration, so the file is written twice.
+    config <- episodic_validation_copy_settings(config, resolved, pathogen_copies)
+    unlink(dirname(config_path), recursive = TRUE)
+    config_path <- episodic_validation_config_file(detectors, config)
+    resolved <- episodic_config_resolve(config_path)
+    pathogen_config <- episodic_validation_copy_pathogen_config(
+      pathogen_config,
+      pathogen_copies
+    )
+  }
   config_hash <- episodic_config_hash(resolved)$hash
 
   pc_path <- episodic_validation_pathogen_config_file(pathogen_config)
-  if (!is.na(pc_path)) {
+  # Only the file written here from a data frame; a path the caller
+  # passed is theirs.
+  if (is.data.frame(pathogen_config)) {
     on.exit(unlink(pc_path), add = TRUE)
   }
 
@@ -199,7 +249,7 @@ episodic_validate_detection <- function(seeds = 1,
   run_dates <- seq(
     last_run - 7 * (as.integer(evaluation_weeks) - 1L),
     last_run,
-    by = 7
+    by = as.integer(run_interval_days)
   )
   generate_from <- min(run_dates) - round(history_years * 365)
 
@@ -215,7 +265,10 @@ episodic_validate_detection <- function(seeds = 1,
       pathogen_config_path = pc_path,
       min_recall = min_recall,
       min_precision = min_precision,
-      quiet = quiet
+      quiet = quiet,
+      pathogen_copies = pathogen_copies,
+      run_interval_days = run_interval_days,
+      reporting_delay_days = reporting_delay_days
     )
   })
 
@@ -260,7 +313,10 @@ episodic_validate_detection <- function(seeds = 1,
         min_precision = min_precision,
         outbreaks_injected = outbreaks,
         outbreak_offsets = outbreak_offsets,
-        n_stream_weeks = sum(run_rows$n_streams),
+        pathogen_copies = pathogen_copies,
+        run_interval_days = run_interval_days,
+        reporting_delay_days = reporting_delay_days,
+        n_stream_weeks = sum(run_rows$stream_weeks),
         generated_at = Sys.time()
       )
     ),
@@ -360,13 +416,17 @@ episodic_validation_replicate <- function(seed,
                                           pathogen_config_path = NA,
                                           min_recall,
                                           min_precision,
-                                          quiet) {
+                                          quiet,
+                                          pathogen_copies = 1L,
+                                          run_interval_days = 7L,
+                                          reporting_delay_days = 0) {
   cases <- episodic_synthetic_cases(
     start_date = generate_from,
     end_date = generate_to,
     seed = seed,
     outbreaks = outbreaks,
-    outbreak_offsets = outbreak_offsets
+    outbreak_offsets = outbreak_offsets,
+    pathogen_copies = pathogen_copies
   )
   truth <- episodic_synthetic_ground_truth(cases)
   truth_cases <- merge(
@@ -378,13 +438,14 @@ episodic_validation_replicate <- function(seed,
   db_path <- tempfile(pattern = "episodic-validation-", fileext = ".sqlite")
   on.exit(unlink(db_path), add = TRUE)
 
-  sample_dates <- as.Date(cases$sample_date)
+  available <- as.Date(cases$sample_date) +
+    episodic_validation_reporting_delays(nrow(cases), reporting_delay_days, seed)
   membership <- list()
   cluster_snapshots <- list()
   run_rows <- list()
 
   for (run_date in as.list(run_dates)) {
-    extract <- cases[sample_dates <= run_date, , drop = FALSE]
+    extract <- cases[available <= run_date, , drop = FALSE]
     run <- function() {
       episodic_run_cron(
         cases = extract,
@@ -399,7 +460,12 @@ episodic_validation_replicate <- function(seed,
     }
     run_id <- if (isTRUE(quiet)) suppressMessages(run()) else run()
 
-    captured <- episodic_validation_capture(db_path, run_id, run_date)
+    captured <- episodic_validation_capture(
+      db_path,
+      run_id,
+      run_date,
+      run_interval_days
+    )
     membership[[length(membership) + 1]] <- captured$membership
     cluster_snapshots[[length(cluster_snapshots) + 1]] <- captured$clusters
     run_rows[[length(run_rows) + 1]] <- captured$run
@@ -474,10 +540,35 @@ episodic_validation_replicate <- function(seed,
   )
 }
 
+#' Days from sampling until each result is in the extract
+#'
+#' Drawn from a stream of its own, seeded from the replicate's seed, so
+#' the cases are the same whatever the delay, and the generator's own
+#' random stream and the caller's are left as they were.
+#'
+#' @param n The number of cases.
+#' @param mean_days `reporting_delay_days`; 0 means none at all.
+#' @param seed The replicate's seed.
+#' @return An integer vector of `n` delays in days.
+#' @keywords internal
+#' @noRd
+episodic_validation_reporting_delays <- function(n, mean_days, seed) {
+  if (mean_days == 0) {
+    return(integer(n))
+  }
+  previous_seed <- episodic_seed_snapshot()
+  on.exit(episodic_seed_restore(previous_seed), add = TRUE)
+  set.seed(seed + 104729L)
+  stats::rpois(n, mean_days)
+}
+
 #' What one completed run leaves behind, read back
 #' @keywords internal
 #' @noRd
-episodic_validation_capture <- function(db_path, run_id, run_date) {
+episodic_validation_capture <- function(db_path,
+                                        run_id,
+                                        run_date,
+                                        run_interval_days = 7L) {
   con <- episodic_db_connect(db_path)
   on.exit(DBI::dbDisconnect(con), add = TRUE)
 
@@ -498,6 +589,22 @@ episodic_validation_capture <- function(db_path, run_id, run_date) {
       call. = FALSE
     )
   }
+  farrington <- episodic_db_get_query(
+    con,
+    "SELECT n_tests, n_detections, expected_false_alarms
+       FROM episodic_detection_run_detector
+      WHERE run_id = ? AND detector = 'farrington'",
+    params = list(run_id)
+  )
+  # A replay with Farrington switched off tested nothing with it: NA,
+  # not zero tests.
+  if (nrow(farrington) == 0) {
+    farrington <- data.frame(
+      n_tests = NA_integer_,
+      n_detections = NA_integer_,
+      expected_false_alarms = NA_real_
+    )
+  }
   clusters <- episodic_db_get_query(
     con,
     "SELECT cluster_id, n_cases, priority_score, suppressed_by, merged_into
@@ -514,7 +621,16 @@ episodic_validation_capture <- function(db_path, run_id, run_date) {
       run_date = run_date,
       run_id = run$run_id[1],
       n_streams = as.integer(run$n_streams[1]),
+      # What this run's streams stand for in calendar time: a nightly run
+      # watches each stream for a day of the week, not a whole week.
+      stream_weeks = as.integer(run$n_streams[1]) * run_interval_days / 7,
+      weeks = run_interval_days / 7,
       n_detections = as.integer(run$n_detections[1]),
+      n_farrington_tests = as.integer(farrington$n_tests[1]),
+      n_farrington_detections = as.integer(farrington$n_detections[1]),
+      farrington_expected_false_alarms = as.numeric(
+        farrington$expected_false_alarms[1]
+      ),
       stringsAsFactors = FALSE
     ),
     clusters = episodic_validation_stamp(
@@ -734,6 +850,64 @@ episodic_validation_pathogen_config_file <- function(pathogen_config) {
     "`pathogen_config` must be NULL, a data frame, or a path to a CSV.",
     call. = FALSE
   )
+}
+
+#' The `same_place` rules of the pathogen copies, added to `config`
+#'
+#' A copy is watched exactly as its original is, so an original with a
+#' rule of its own passes it on.
+#'
+#' @param config The caller's configuration list, or `NULL`.
+#' @param resolved The configuration resolved from it.
+#' @param copies `pathogen_copies`.
+#' @return `config`, with `same_place.overrides` for every copy of an
+#'   overridden synthetic pathogen.
+#' @keywords internal
+#' @noRd
+episodic_validation_copy_settings <- function(config, resolved, copies) {
+  config <- if (is.null(config)) list() else config
+  overrides <- resolved$same_place$overrides
+  originals <- intersect(
+    episodic_synthetic_pathogen_profiles()$pathogen,
+    names(overrides)
+  )
+  for (pathogen in originals) {
+    for (j in seq(2L, copies)) {
+      name <- episodic_synthetic_copy_name(pathogen, j)
+      config$same_place$overrides[[name]] <- overrides[[pathogen]]
+    }
+  }
+  config
+}
+
+#' The per-pathogen configuration of the pathogen copies
+#'
+#' @param pathogen_config The caller's `pathogen_config`: `NULL`, a data
+#'   frame or a path.
+#' @param copies `pathogen_copies`.
+#' @return A data frame: the whole resolved per-pathogen configuration
+#'   (shipped defaults with the caller's rows over them), plus one row per
+#'   copy of each synthetic pathogen, carrying its original's values.
+#' @keywords internal
+#' @noRd
+episodic_validation_copy_pathogen_config <- function(pathogen_config, copies) {
+  overlay_path <- episodic_validation_pathogen_config_file(pathogen_config)
+  if (is.data.frame(pathogen_config)) {
+    on.exit(unlink(overlay_path), add = TRUE)
+  }
+  resolved <- episodic_pathogen_config_resolve(overlay_path)
+  originals <- resolved[
+    resolved$pathogen %in% episodic_synthetic_pathogen_profiles()$pathogen, ,
+    drop = FALSE
+  ]
+  copied <- lapply(seq(2L, copies), function(j) {
+    copy <- originals
+    copy$pathogen <- episodic_synthetic_copy_name(originals$pathogen, j)
+    copy
+  })
+  out <- do.call(rbind, c(list(resolved), copied))
+  rownames(out) <- NULL
+  out
 }
 
 #' The last run date of a replay: the end of the last complete week
