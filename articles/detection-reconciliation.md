@@ -29,9 +29,11 @@ on - which is what makes suppression (below) meaningful.
 - **`farrington`**
   ([`surveillance::farringtonFlexible()`](https://rdrr.io/pkg/surveillance/man/farringtonFlexible.html)) -
   the standard statistical aberration detector for streams with enough
-  baseline history, run at L1/L2 with a patient-day population offset
-  where one exists, so a busy month and a quiet one at identical
-  transmission-per-patient-day read as the same signal strength.
+  baseline history, run on every stream that passes the eligibility
+  gate. At institution level (L2) it takes a patient-day population
+  offset where institution activity is supplied, so a busy month and a
+  quiet one at identical transmission-per-patient-day read as the same
+  signal strength; see “Denominators and testing intensity” below.
 - **`same_place`** - a rule-based detector needing no baseline at all:
   *n* or more cases of the same organism at the same place within *k*
   days. This is what catches long-term care institutions, which are
@@ -57,6 +59,44 @@ A stream’s own history feeds back into its baseline: a period an
 epidemiologist confirmed as a real epidemic is excluded from what
 `farringtonFlexible()` sees on subsequent runs for that stream, so last
 winter’s outbreak does not silently raise this winter’s threshold.
+
+## Denominators and testing intensity
+
+A count of positives rises when there is more infection, and also when
+more people are tested. The detectors separate the two only in part, and
+it matters to know where:
+
+- **`farrington` at institution level (L2)** is the only detection with
+  a denominator: weekly patient-days from
+  `episodic_institution_activity`, as a population offset, when the
+  operator supplies institution activity
+  ([`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)).
+  It corrects for occupancy, not for testing intensity.
+- **`farrington` at every other level**, including wards (L1, for which
+  no activity table exists), and **`mem`** fit raw weekly case counts.
+- **`same_place` and `rare_trigger`** count cases with no denominator at
+  all (their detections carry `denominator = "none"`). A ward that
+  starts screening every admission will see `same_place` fire on what
+  the screening finds, whether or not transmission has changed.
+
+What does hold for every detector is that repeat testing of the same
+patient does not inflate a count. Before any detector sees the data,
+[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+deduplicates positives to one case per patient per pathogen per episode
+(`episode_days` in the pathogen configuration, through
+[`AMR::get_episode()`](https://amr-for-r.org/reference/get_episode.html)),
+including against episodes already stored from earlier runs. Follow-up
+cultures and repeated screening swabs within one episode therefore add
+nothing. Testing *more patients* is not corrected for.
+
+Positivity metadata (`denominators`, optional) is an interpretive aid
+only and never a detection input. When supplied, the dossier and the
+Pathogen screen show tests performed and positivity per week, so an
+epidemiologist can see whether a rise in cases coincided with a rise in
+testing. It is not used in detection because it can only be produced
+meaningfully for closed test panels such as multiplex PCR, not for
+open-ended culture, so a detector that relied on it would behave
+differently per pathogen depending on how it happens to be diagnosed.
 
 ## Scale routing: outbreaks and epidemics
 

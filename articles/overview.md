@@ -138,6 +138,19 @@ in as outbreaks get assessed, so tuning `EPISODIC_CONFIG` against your
 own signal volume is an evidence-based exercise rather than a guess,
 once your board has classified enough outbreaks to have a baseline.
 
+Every assessment is stored as an event with its author and time, so the
+verdicts together form a labelled dataset of detections. Two limits
+apply to what it can show. It says nothing about sensitivity, because a
+missed outbreak never becomes a cluster to judge; that is measured
+against synthetic ground truth instead
+([`vignette("detection-validation")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.md)).
+And only assessed clusters carry a label: clusters that close unassessed
+are absent from it, so PPV describes the clusters the board chose to
+look at
+([`vignette("tuning-detection")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.md),
+“Against your own board’s verdicts”). Thresholds are not calibrated from
+these verdicts automatically.
+
 ![The Performance screen](../reference/figures/performance_screen.png)
 
 ### The Archive screen: last winter’s precedent
