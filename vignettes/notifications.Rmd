@@ -250,12 +250,13 @@ Requires `httr2` (`install.packages("httr2")`).
 
 ## Triggers
 
-Two triggers are available. Both are independently toggleable:
+Three triggers are available, each independently toggleable:
 
 | Trigger        | Fires when                                    | Default                          |
 | -------------- | --------------------------------------------- | -------------------------------- |
 | `new_clusters` | The cron run created at least one new cluster | Must be explicitly set to `true` |
 | `run_failure`  | The cron run's status is `"failed"`, including a run that stopped before it began: case data that failed its checks, or a database it would not open (see "Upgrading EpiSODIC" in `vignette("deployment")`) | Must be explicitly set to `true` |
+| `stale_data`   | No new case of this instance's own has arrived for more than `stale_data.max_days_without_new_cases` days (see below) | Must be explicitly set to `true` |
 
 ```yaml
 notifications:
@@ -263,9 +264,23 @@ notifications:
   triggers:
     new_clusters: true
     run_failure: true
+    stale_data: true
 ```
 
-If both triggers fire on the same run (new clusters were detected, but something else in the run also failed), two separate notifications are sent.
+When more than one trigger fires on the same run, each sends a notification of its own.
+
+### Stale data
+
+A case feed that stops refreshing does not make a run fail. Every run succeeds, takes in nothing new and raises nothing, which looks exactly like a quiet week. So every run counts the days since the last run that took in a new case of this instance's own, and a run that finds more than `stale_data.max_days_without_new_cases` (default 2) logs a warning and, with the `stale_data` trigger on, sends a notification through the same channels as every other message. It does so on every run while the feed stays stale.
+
+The count is taken on runs, not on sample dates: a result for a sample taken last week that arrives today is new data, and a feed handing over the same rows every day is not. Imported cases are not counted, since they come through another laboratory's feed. An instance where days without a single positive result are normal raises the threshold; `~` switches the check off:
+
+```yaml
+stale_data:
+  max_days_without_new_cases: 4
+```
+
+The check runs inside the run, so it cannot notice a run that never starts. A scheduler that stops starting runs is noticed only by its absence from the run log.
 
 ## Dashboard link
 
@@ -291,6 +306,7 @@ notifications:
   triggers:
     new_clusters: true
     run_failure: true
+    stale_data: true
   channels:
     ntfy:
       enabled: true

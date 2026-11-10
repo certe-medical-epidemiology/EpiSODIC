@@ -39,8 +39,8 @@ NULL
 #' Dispatch notifications after a cron run
 #'
 #' Called by [episodic_run_cron()] after the transaction commits. Checks
-#' which triggers fired (new clusters, run failure), builds the message,
-#' and sends it through every enabled channel.
+#' which triggers fired (new clusters, run failure, stale data), builds
+#' the message, and sends it through every enabled channel.
 #'
 #' @param con A [DBI::DBIConnection-class], for querying cluster details.
 #' @param config The resolved configuration (including `notifications`).
@@ -72,8 +72,13 @@ episodic_notify <- function(con, config, result, run_id, run_date, host) {
     n_new > 0
   trigger_failure <- isTRUE(triggers$run_failure) &&
     identical(status, "failed")
+  # Every run while the feed stays stale, not only the first: each one is
+  # another day of surveillance on data that is not coming in.
+  trigger_stale <- isTRUE(triggers$stale_data) &&
+    !identical(status, "failed") &&
+    isTRUE(result$stale_data$stale)
 
-  if (!trigger_new && !trigger_failure) {
+  if (!trigger_new && !trigger_failure && !trigger_stale) {
     return(invisible(NULL))
   }
 
@@ -118,6 +123,17 @@ episodic_notify <- function(con, config, result, run_id, run_date, host) {
       result$error_text,
       run_date,
       host,
+      lang = lang
+    )
+    episodic_notify_dispatch(channels, message)
+  }
+
+  if (trigger_stale) {
+    message <- episodic_notify_build_stale_data(
+      result$stale_data,
+      run_date,
+      host,
+      dashboard_url,
       lang = lang
     )
     episodic_notify_dispatch(channels, message)
@@ -603,6 +619,125 @@ episodic_notify_build_failure <- function(error_text,
     title = title,
     plain = plain,
     html = html,
+    teams_card = teams_card,
+    slack_text = slack_text
+  )
+}
+
+#' Build a notification message for a case feed that has gone stale
+#'
+#' @param check From `episodic_stale_data_check()`, with `stale` true.
+#' @param run_date The run date.
+#' @param host The host name.
+#' @param dashboard_url Optional dashboard URL, linked from the message.
+#' @param lang Language to render the message in. Defaults to
+#'   `EPISODIC_LANGUAGE`, falling back to `"en"`, the same as the
+#'   dashboard.
+#' @param style Inline styles for the email body, from
+#'   `episodic_mail_style()`.
+#' @return A list with `title`, `plain`, `html`, `html_content`,
+#'   `teams_card`, `slack_text`.
+#' @keywords internal
+#' @noRd
+episodic_notify_build_stale_data <- function(check,
+                                             run_date,
+                                             host,
+                                             dashboard_url = NULL,
+                                             lang = episodic_lang(),
+                                             style = episodic_mail_style()) {
+  days_phrase <- episodic_count_phrase(
+    check$days,
+    episodic_tr("unit.day", lang = lang),
+    episodic_tr("unit.days", lang = lang),
+    lang = lang
+  )
+  last_date <- episodic_format_date(check$last_new_cases_date, lang = lang)
+  title <- episodic_tr("notif.title_stale_data", days = days_phrase, lang = lang)
+  body <- episodic_tr("notif.stale_data.body", date = last_date, lang = lang)
+  facts <- list(
+    list(
+      title = episodic_tr("notif.label.date", lang = lang),
+      value = episodic_format_date(run_date, lang = lang)
+    ),
+    list(
+      title = episodic_tr("notif.label.last_new_cases", lang = lang),
+      value = last_date
+    ),
+    list(
+      title = episodic_tr("notif.label.days_without_new_cases", lang = lang),
+      value = episodic_format_number(check$days, lang = lang)
+    ),
+    list(
+      title = episodic_tr("notif.label.max_days_without_new_cases", lang = lang),
+      value = episodic_format_number(check$threshold, lang = lang)
+    ),
+    list(
+      title = episodic_tr("notif.label.host", lang = lang),
+      value = host
+    )
+  )
+
+  fact_lines <- vapply(facts, function(f) paste0(f$title, ": ", f$value), character(1))
+  has_url <- !is.null(dashboard_url) && nzchar(dashboard_url)
+  plain <- paste0(
+    title,
+    "\n\n",
+    body,
+    "\n\n",
+    paste(fact_lines, collapse = "\n"),
+    if (has_url) paste0("\n\n", dashboard_url) else ""
+  )
+  p_open <- paste0("<p", episodic_mail_style_attr(style$paragraph), ">")
+  body_html <- paste0(
+    p_open, episodic_html_escape(body), "</p>",
+    paste0(
+      vapply(facts, function(f) {
+        paste0(
+          p_open, "<strong>", episodic_html_escape(f$title), ":</strong> ",
+          episodic_html_escape(f$value), "</p>"
+        )
+      }, character(1)),
+      collapse = ""
+    )
+  )
+  html_content <- episodic_notify_html_content(
+    title,
+    body_html,
+    dashboard_url,
+    lang = lang,
+    style = style
+  )
+  teams_card <- episodic_notify_teams_card(
+    title,
+    facts,
+    dashboard_url,
+    lang = lang
+  )
+  slack_text <- paste0(
+    "*",
+    title,
+    "*\n\n",
+    body,
+    "\n\n",
+    paste(fact_lines, collapse = "\n"),
+    if (has_url) {
+      paste0(
+        "\n\n<",
+        dashboard_url,
+        "|",
+        episodic_tr("notif.open_dashboard", lang = lang),
+        ">"
+      )
+    } else {
+      ""
+    }
+  )
+
+  list(
+    title = title,
+    plain = plain,
+    html = episodic_notify_html_document(html_content, style = style),
+    html_content = html_content,
     teams_card = teams_card,
     slack_text = slack_text
   )

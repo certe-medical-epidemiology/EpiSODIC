@@ -1124,6 +1124,11 @@ episodic_run_cron_body <- function(con,
   episodic_db_import_record(con, run_id, import_entries)
   imports_failed <- Filter(function(e) identical(e$status, "failed"), import_entries)
 
+  # After this run's own cases are in, so a run that took some in counts
+  # as fresh. Inside the transaction, so it reads what this run commits.
+  stale_data <- episodic_stale_data_check(con, config, run_date)
+  episodic_stale_data_trace(stale_data)
+
   denominators <- episodic_resolve_data(denominators)
   if (!is.null(denominators)) {
     episodic_trace("Loading denominator (positivity) data")
@@ -2027,6 +2032,7 @@ episodic_run_cron_body <- function(con,
     n_activity_skipped = activity_counts$n_skipped,
     new_cluster_ids = new_cluster_ids_all,
     is_backfill = backfill,
+    stale_data = stale_data,
     # A run that finished but could not take in a registered import source
     # says which and why on its own row, not only in the import records.
     error_text = if (length(imports_failed) > 0) {

@@ -426,6 +426,50 @@ episodic_plugin_placeholder_problems <- function(value, field, plugin) {
   problems
 }
 
+#' The bash that runs a bash step, or `""` if there is none
+#'
+#' On Windows the first `bash` on the path is usually
+#' `C:\\Windows\\System32\\bash.exe`, the launcher of the Windows
+#' Subsystem for Linux: it runs the script in a Linux distribution, if one
+#' is installed, with a file system and environment of its own, and
+#' otherwise does not run it at all. It is passed over, as is the
+#' `WindowsApps` alias, for the bash of Git for Windows, found beside
+#' `git` when it is not on the path itself.
+#'
+#' @param which `Sys.which()`, as an argument so the Windows rule can be
+#'   tested on any platform.
+#' @param windows Whether to apply the Windows rule.
+#' @return A path, or `""`.
+#' @keywords internal
+#' @noRd
+episodic_plugin_bash_program <- function(which = Sys.which,
+                                         windows = .Platform$OS.type == "windows") {
+  bash <- unname(which("bash"))
+  if (!windows) {
+    return(bash)
+  }
+  launcher <- function(path) {
+    path <- tolower(gsub("\\\\", "/", path))
+    grepl("/windows/system32/", path, fixed = TRUE) || grepl("/windowsapps/", path, fixed = TRUE)
+  }
+  if (nzchar(bash) && !launcher(bash)) {
+    return(bash)
+  }
+  git <- unname(which("git"))
+  if (!nzchar(git)) {
+    return("")
+  }
+  # Git for Windows puts git.exe in cmd/ or bin/, and bash.exe in bin/
+  # and usr/bin/ of the same installation.
+  root <- dirname(dirname(git))
+  for (candidate in file.path(root, c("bin/bash.exe", "usr/bin/bash.exe"))) {
+    if (file.exists(candidate)) {
+      return(normalizePath(candidate, winslash = "/"))
+    }
+  }
+  ""
+}
+
 #' The program that runs a step written in `shell`, or `""` if absent
 #' @keywords internal
 #' @noRd
@@ -435,7 +479,7 @@ episodic_plugin_shell_program <- function(shell) {
       rscript <- file.path(R.home("bin"), if (.Platform$OS.type == "windows") "Rscript.exe" else "Rscript")
       if (file.exists(rscript)) rscript else ""
     },
-    bash = unname(Sys.which("bash")),
+    bash = episodic_plugin_bash_program(),
     python = {
       python <- unname(Sys.which("python3"))
       if (nzchar(python)) python else unname(Sys.which("python"))

@@ -31,16 +31,28 @@
 #' proxies and certificate stores hospital networks commonly require, and
 #' nothing else: none of EpiSODIC's own variables (database, mail and
 #' Microsoft 365 credentials), and none of the server's other secrets.
+#'
+#' Windows needs more of its own variables than the program's name
+#' suggests: a process started without the temporary directory, the
+#' system drive or the processor description can start, run plain R, and
+#' then crash with an access violation once it loads the libraries behind
+#' a network request. Those variables describe the machine, never a
+#' secret, so they are passed on.
 #' @keywords internal
 #' @noRd
 episodic_plugin_env_allowlist <- c(
-  "PATH", "HOME", "USER", "LOGNAME", "LANG", "LANGUAGE", "TZ",
+  "PATH", "HOME", "USER", "LOGNAME", "LANG", "LANGUAGE", "TZ", "TMPDIR",
   "LC_ALL", "LC_CTYPE", "LC_COLLATE", "LC_MESSAGES", "LC_NUMERIC", "LC_TIME", "LC_MONETARY",
   "R_LIBS_USER", "R_LIBS_SITE",
   "http_proxy", "https_proxy", "no_proxy", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY",
   "SSL_CERT_FILE", "SSL_CERT_DIR", "CURL_CA_BUNDLE", "REQUESTS_CA_BUNDLE",
-  "SYSTEMROOT", "SystemRoot", "WINDIR", "COMSPEC", "PATHEXT", "USERPROFILE",
-  "APPDATA", "LOCALAPPDATA", "PROGRAMDATA", "ProgramFiles", "ProgramFiles(x86)"
+  "SYSTEMROOT", "SystemRoot", "SystemDrive", "WINDIR", "COMSPEC", "PATHEXT",
+  "TEMP", "TMP", "USERPROFILE", "USERNAME", "USERDOMAIN", "COMPUTERNAME",
+  "HOMEDRIVE", "HOMEPATH", "ALLUSERSPROFILE", "PUBLIC",
+  "APPDATA", "LOCALAPPDATA", "PROGRAMDATA", "ProgramFiles", "ProgramFiles(x86)", "ProgramW6432",
+  "CommonProgramFiles", "CommonProgramFiles(x86)", "CommonProgramW6432",
+  "OS", "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE", "PROCESSOR_IDENTIFIER",
+  "PROCESSOR_LEVEL", "PROCESSOR_REVISION"
 )
 
 #' The values of the named environment variables, named, `NA` when unset
@@ -194,6 +206,25 @@ episodic_plugin_tail <- function(text, n = 2000L) {
   if (nchar(text) > n) paste0("...", substr(text, nchar(text) - n + 1L, nchar(text))) else text
 }
 
+#' What a step wrote to a file, as UTF-8 text
+#'
+#' @param path The file; absent when the step wrote nothing.
+#' @return A single string, empty when there is nothing to read.
+#' @keywords internal
+#' @noRd
+episodic_plugin_read_output <- function(path) {
+  if (!file.exists(path)) {
+    return("")
+  }
+  size <- file.size(path)
+  if (is.na(size) || size == 0) {
+    return("")
+  }
+  text <- readChar(path, size, useBytes = TRUE)
+  Encoding(text) <- "UTF-8"
+  text
+}
+
 #' Run a plugin's steps against a payload
 #'
 #' Steps run in order, each as a process of its own with
@@ -255,6 +286,12 @@ episodic_plugin_execute <- function(plugin, grant, payload, lang = Sys.getenv("E
     if (!nzchar(program)) {
       return(outcome("failed", step = step$name, detail = paste0("No program is available to run a ", step$shell, " step.")))
     }
+    # Output goes to a file rather than a pipe: reading a pipe waits until
+    # every process holding it has closed it, and a process the step left
+    # behind outside its own process tree (WSL on Windows, a daemon) would
+    # hold the step open past its deadline. Outside the working directory,
+    # so a step cannot read or overwrite it as one of its own files.
+    stderr_file <- tempfile("episodic_plugin_stderr_")
     run <- tryCatch(
       processx::run(
         program,
@@ -264,13 +301,17 @@ episodic_plugin_execute <- function(plugin, grant, payload, lang = Sys.getenv("E
         timeout = remaining,
         error_on_status = FALSE,
         cleanup_tree = TRUE,
-        encoding = "UTF-8"
+        stdout = NULL,
+        stderr = stderr_file
       ),
       error = function(e) e
     )
     if (inherits(run, "error")) {
+      unlink(stderr_file)
       return(outcome("failed", step = step$name, detail = episodic_plugin_mask(conditionMessage(run), secret_values)))
     }
+    run$stderr <- episodic_plugin_read_output(stderr_file)
+    unlink(stderr_file)
     if (isTRUE(run$timeout)) {
       return(outcome("timeout", step = step$name, detail = episodic_plugin_mask(episodic_plugin_tail(run$stderr), secret_values)))
     }

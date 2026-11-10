@@ -30,6 +30,9 @@ permissions: read-all
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
+    # A full check takes about 15 minutes; a job still running after an
+    # hour is stuck, and is stopped instead of holding a runner for six.
+    timeout-minutes: 60
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 

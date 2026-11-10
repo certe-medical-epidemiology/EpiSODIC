@@ -1012,6 +1012,32 @@ episodic_db_run_detectors <- function(con, run_id) {
   rows[order(match(rows$detector, episodic_detectors)), , drop = FALSE]
 }
 
+#' The date of the last run that took in a new case of this instance's own
+#'
+#' Imported cases (`origin_instance_id` set) are left out: they arrive
+#' through another laboratory's feed, and would hide a stalled own feed
+#' behind a partner's. Runs dated after `run_date` are left out too, so a
+#' replay of an earlier date is judged on what was known then.
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param run_date The date of the run being judged.
+#' @return A `Date`, or `NA` when no case of this instance's own has
+#'   arrived on or before `run_date`.
+#' @keywords internal
+#' @noRd
+episodic_db_last_new_cases_date <- function(con, run_date) {
+  res <- episodic_db_get_query(
+    con,
+    "SELECT MAX(r.run_date) AS last_date
+       FROM episodic_case c
+       JOIN episodic_detection_run r ON r.run_id = c.first_seen_run
+      WHERE c.origin_instance_id IS NULL
+        AND r.run_date <= ?",
+    params = list(format(as.Date(run_date)))
+  )
+  as.Date(res$last_date[1])
+}
+
 #' How many of these clusters the system has already closed
 #'
 #' Used by a backfill run to say what it did: a run that reports the
