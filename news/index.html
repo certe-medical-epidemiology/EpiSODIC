@@ -70,6 +70,15 @@
 <code>EPISODIC_PLUGIN_DIR</code> sets the plugin folder, by default a <code>plugins</code> folder beside the configuration file</li>
 <li>A reference plugin, <code>share-outbreak-http.yaml</code>, sends an outbreak’s summary to an HTTP(S) endpoint</li>
 <li>The new vignette “Plugins” covers the plugin format, the payload and result, installing, enabling, running and security</li>
+<li>Each Farrington detection stores its p-value and the significance level it was judged against, and each trend week its p-value (schema version 17)</li>
+<li>Each run records per detector the hypotheses it tested, the detections it reported and the false alarms its significance levels imply, in <code>episodic_detection_run_detector</code>
+</li>
+<li>The run modal states per detector what it tested and what it reported</li>
+<li>
+<code><a href="../reference/episodic_validate_detection.html">episodic_validate_detection()</a></code> takes <code>pathogen_copies</code>, <code>run_interval_days</code> and <code>reporting_delay_days</code>, to measure the alarm burden of watching more pathogens, of nightly runs and of late results</li>
+<li>
+<code><a href="../reference/episodic_synthetic_cases.html">episodic_synthetic_cases()</a></code> takes <code>pathogen_copies</code>, independent copies of the endemic pathogens with no outbreak seeded in them</li>
+<li>The validation summary gives false alarms per week watched, false alarms per stream-week by first detector, and Farrington’s tests, nominal false alarms and detections per run</li>
 </ul></div>
 <div class="section level3">
 <h3 id="changed-0-25-0">Changed<a class="anchor" aria-label="anchor" href="#changed-0-25-0"></a></h3>
@@ -89,6 +98,11 @@
 <li>The vignettes “Detection and reconciliation”, “Measuring detection against known truth”, “Tuning detection” and “Overview” document denominators, the limits of synthetic validation, and the selection bias in PPV from verdicts</li>
 <li>The README no longer claims that set-up takes minutes or that the software is perfectly safe</li>
 <li>The pkgdown site no longer publishes CLAUDE.md, and is always built from a clean directory</li>
+</ul></div>
+<div class="section level3">
+<h3 id="fixed-0-25-0">Fixed<a class="anchor" aria-label="anchor" href="#fixed-0-25-0"></a></h3>
+<ul><li>
+<code><a href="../reference/episodic_validate_detection.html">episodic_validate_detection()</a></code> no longer deletes a pathogen configuration file passed to it as a path</li>
 </ul></div>
 </div>
     <div class="section level2">

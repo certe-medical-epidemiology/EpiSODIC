@@ -62,7 +62,8 @@ worked example of the shape your own data should have (see
 <span>  end_date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.time.html" class="external-link">Sys.Date</a></span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  outbreaks <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  outbreak_offsets <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  outbreak_offsets <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pathogen_copies <span class="op">=</span> <span class="fl">1L</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -107,6 +108,16 @@ dispersed across the window instead. Either a single number applied
 to all of them, or a named vector giving days per outbreak
 identifier (any not named stays at 0). <code>NULL</code>, the default, leaves
 every outbreak anchored to <code>end_date</code>.</p></dd>
+
+
+<dt id="arg-pathogen-copies">pathogen_copies<a class="anchor" aria-label="anchor" href="#arg-pathogen-copies"></a></dt>
+<dd><p>How many independent copies of the eight
+endemic pathogens to generate, <code>1</code> for the eight alone. Copy <code>j</code> of a
+pathogen is named <code>"&lt;pathogen&gt; #j"</code> and drawn with the same seasonal
+profile, but independently, and no outbreak is seeded in it. This is
+for measuring how the false-alarm burden grows as an instance watches
+more pathogens: the cases of the first copy, and the outbreaks, are
+identical whatever the number of copies.</p></dd>
 
 </dl></div>
     <div class="section level2">

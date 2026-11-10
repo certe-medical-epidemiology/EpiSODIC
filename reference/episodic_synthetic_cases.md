@@ -17,7 +17,8 @@ episodic_synthetic_cases(
   end_date = Sys.Date(),
   seed = 1,
   outbreaks = TRUE,
-  outbreak_offsets = NULL
+  outbreak_offsets = NULL,
+  pathogen_copies = 1L
 )
 ```
 
@@ -59,6 +60,16 @@ episodic_synthetic_cases(
   instead. Either a single number applied to all of them, or a named
   vector giving days per outbreak identifier (any not named stays at 0).
   `NULL`, the default, leaves every outbreak anchored to `end_date`.
+
+- pathogen_copies:
+
+  How many independent copies of the eight endemic pathogens to
+  generate, `1` for the eight alone. Copy `j` of a pathogen is named
+  `"<pathogen> #j"` and drawn with the same seasonal profile, but
+  independently, and no outbreak is seeded in it. This is for measuring
+  how the false-alarm burden grows as an instance watches more
+  pathogens: the cases of the first copy, and the outbreaks, are
+  identical whatever the number of copies.
 
 ## Value
 

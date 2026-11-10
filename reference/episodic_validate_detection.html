@@ -66,6 +66,9 @@ about, so sensitivity cannot be measured that way at all.</p>
 <span>  detectors <span class="op">=</span> <span class="fu">episodic_validation_detectors</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  config <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pathogen_config <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pathogen_copies <span class="op">=</span> <span class="fl">1L</span>,</span>
+<span>  run_interval_days <span class="op">=</span> <span class="fl">7L</span>,</span>
+<span>  reporting_delay_days <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -135,6 +138,32 @@ Merged row-by-row over the shipped defaults the same way
 <code>EPISODIC_PATHOGEN_CONFIG</code> is.</p></dd>
 
 
+<dt id="arg-pathogen-copies">pathogen_copies<a class="anchor" aria-label="anchor" href="#arg-pathogen-copies"></a></dt>
+<dd><p>Passed to <code><a href="episodic_synthetic_cases.html">episodic_synthetic_cases()</a></code>: how
+many independent copies of the endemic pathogens to watch. Each copy
+inherits its original's per-pathogen configuration and <code>same_place</code>
+rule, so it is watched exactly as the original is. With
+<code>outbreaks = FALSE</code> this measures how the false-alarm burden grows
+with the number of pathogens an instance watches.</p></dd>
+
+
+<dt id="arg-run-interval-days">run_interval_days<a class="anchor" aria-label="anchor" href="#arg-run-interval-days"></a></dt>
+<dd><p>Days between runs: 7 (the default) replays
+one run a week, 1 replays a nightly schedule, on which the last
+complete week is tested again by every run until the next one
+completes.</p></dd>
+
+
+<dt id="arg-reporting-delay-days">reporting_delay_days<a class="anchor" aria-label="anchor" href="#arg-reporting-delay-days"></a></dt>
+<dd><p>The mean number of days from sampling until
+a result is in the laboratory's extract. Each case's delay is drawn
+from a Poisson distribution with this mean, independently of the
+cases themselves, and a run is handed only the cases whose result is
+in by its date. 0 (the default) hands every run every case sampled on
+or before it. With a delay and a nightly <code>run_interval_days</code>, a week
+is retested as its late results arrive, which is what this measures.</p></dd>
+
+
 <dt id="arg-quiet">quiet<a class="anchor" aria-label="anchor" href="#arg-quiet"></a></dt>
 <dd><p>If <code>TRUE</code> (the default), the per-run progress
 <code><a href="episodic_run_cron.html">episodic_run_cron()</a></code> writes is suppressed; a replay is hundreds of
@@ -163,8 +192,10 @@ precision, whether it counts as a true positive, its priority
 score, and which detectors fired on it.</p></dd>
 
 <dt><code>runs</code></dt>
-<dd><p>One row per (seed, run): streams watched, clusters
-raised, and how many of those survived lattice suppression.</p></dd>
+<dd><p>One row per (seed, run): streams watched, the
+stream-weeks they stand for, the hypotheses Farrington tested and
+the false alarms that implied, clusters raised, and how many of
+those survived lattice suppression.</p></dd>
 
 <dt><code>overlap</code></dt>
 <dd><p>Every (run, cluster, outbreak) that shared a

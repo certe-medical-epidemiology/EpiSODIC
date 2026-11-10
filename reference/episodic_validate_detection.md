@@ -22,6 +22,9 @@ episodic_validate_detection(
   detectors = episodic_validation_detectors(),
   config = NULL,
   pathogen_config = NULL,
+  pathogen_copies = 1L,
+  run_interval_days = 7L,
+  reporting_delay_days = 0,
   quiet = TRUE
 )
 
@@ -85,6 +88,32 @@ print(x, ...)
   `inst/config/episodic_default_pathogen_config.csv`. Merged row-by-row
   over the shipped defaults the same way `EPISODIC_PATHOGEN_CONFIG` is.
 
+- pathogen_copies:
+
+  Passed to
+  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md):
+  how many independent copies of the endemic pathogens to watch. Each
+  copy inherits its original's per-pathogen configuration and
+  `same_place` rule, so it is watched exactly as the original is. With
+  `outbreaks = FALSE` this measures how the false-alarm burden grows
+  with the number of pathogens an instance watches.
+
+- run_interval_days:
+
+  Days between runs: 7 (the default) replays one run a week, 1 replays a
+  nightly schedule, on which the last complete week is tested again by
+  every run until the next one completes.
+
+- reporting_delay_days:
+
+  The mean number of days from sampling until a result is in the
+  laboratory's extract. Each case's delay is drawn from a Poisson
+  distribution with this mean, independently of the cases themselves,
+  and a run is handed only the cases whose result is in by its date. 0
+  (the default) hands every run every case sampled on or before it. With
+  a delay and a nightly `run_interval_days`, a week is retested as its
+  late results arrive, which is what this measures.
+
 - quiet:
 
   If `TRUE` (the default), the per-run progress
@@ -119,8 +148,10 @@ An `episodic_validation` object: a list of
 
 - `runs`:
 
-  One row per (seed, run): streams watched, clusters raised, and how
-  many of those survived lattice suppression.
+  One row per (seed, run): streams watched, the stream-weeks they stand
+  for, the hypotheses Farrington tested and the false alarms that
+  implied, clusters raised, and how many of those survived lattice
+  suppression.
 
 - `overlap`:
 
