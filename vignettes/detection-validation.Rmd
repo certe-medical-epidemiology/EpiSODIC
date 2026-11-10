@@ -112,6 +112,14 @@ without_mem <- episodic_validate_detection(
 
 `config$<detector>$enabled` is what that sets, and it is part of `config_hash`, so two runs over the same data with different detectors switched on can never come out looking identical.
 
+## What this does not measure
+
+Everything above is measured on synthetic data. The generator and the detectors were developed side by side, so the outbreak shapes it injects are shapes the detectors were designed to find, and its background is cleaner than any real laboratory feed: no changes in testing policy, no coding changes, and every result in the extract on the day it was sampled. A good result here shows that the machinery works as intended; it does not show how EpiSODIC performs in a real catchment.
+
+A retrospective evaluation against documented outbreaks in real laboratory data, measuring sensitivity, timeliness and false alarms the same way, has not yet been done.
+
+The board's own verdicts (the Performance screen) do not fill this gap. They measure PPV only, only over clusters someone assessed, and never sensitivity (`vignette("tuning-detection")`, "Against your own board's verdicts").
+
 ## Where the real numbers live
 
 The defaults above are deliberately small - one seed, a short window, a single year of history - so that this returns in seconds and can be run from an example. They are a demonstration of the machinery and not a study: at one year of history the statistical detectors have no baseline to fit against, and one seed is one realisation.

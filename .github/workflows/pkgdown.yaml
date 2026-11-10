@@ -47,10 +47,18 @@ jobs:
           extra-packages: any::pkgdown, local::.
           needs: website
 
+      # pkgdown renders every top-level .md file and has no option to
+      # exclude one, and CLAUDE.md is development instructions, not
+      # package documentation. The checkout is discarded after the job.
+      - name: Keep CLAUDE.md off the site
+        run: rm -f CLAUDE.md
+
+      # clean = TRUE empties docs/ first, and the deploy step's own
+      # `clean: true` removes from gh-pages whatever this build did not
+      # produce, so a renamed or removed page never lingers.
       - name: Build site
         run: |
-          pkgdown::clean_site()
-          pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)
+          pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE, clean = TRUE)
         shell: Rscript {0}
 
       - name: Deploy to GitHub pages
