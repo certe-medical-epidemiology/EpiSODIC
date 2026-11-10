@@ -97,8 +97,53 @@ test_that("a plugin that runs past its timeout is stopped and reported as such",
   expect_lt(as.numeric(difftime(Sys.time(), started, units = "secs")), 15)
 })
 
+test_that("a plugin's deadline holds even when a step leaves a process behind holding its output", {
+  skip_if(!nzchar(episodic_plugin_shell_program("bash")), "bash is not available")
+  skip_if(!nzchar(Sys.which("env")), "env is not available")
+  # `env -i` starts the process without the environment that marks it as
+  # part of the step's tree, so it outlives the step, as a process outside
+  # the tree does, with the step's output still open.
+  started <- Sys.time()
+  outcome <- plugin_run_test(
+    list(plugin_test_step("env -i sleep 20 &\nsleep 20", shell = "bash")),
+    timeout = 1L
+  )
+  expect_identical(outcome$status, "timeout")
+  expect_lt(as.numeric(difftime(Sys.time(), started, units = "secs")), 10)
+})
+
+test_that("what a failing step writes to stderr is reported, as UTF-8", {
+  outcome <- plugin_run_test(list(plugin_test_step("message('caf\u00e9 is closed'); quit(status = 2)")))
+  expect_identical(outcome$status, "failed")
+  expect_match(outcome$detail, "Exit status 2", fixed = TRUE)
+  expect_match(outcome$detail, "caf\u00e9 is closed", fixed = TRUE)
+})
+
+test_that("on Windows a bash step passes over the WSL launcher for Git's bash", {
+  root <- withr::local_tempdir()
+  dir.create(file.path(root, "Git", "cmd"), recursive = TRUE)
+  dir.create(file.path(root, "Git", "bin"))
+  file.create(file.path(root, "Git", "bin", "bash.exe"))
+  git <- file.path(root, "Git", "cmd", "git.exe")
+  which <- function(paths) {
+    function(x) c(bash = paths[["bash"]], git = paths[["git"]])[x]
+  }
+
+  wsl <- which(c(bash = "C:\\WINDOWS\\system32\\bash.exe", git = git))
+  expect_identical(
+    episodic_plugin_bash_program(wsl, windows = TRUE),
+    normalizePath(file.path(root, "Git", "bin", "bash.exe"), winslash = "/")
+  )
+  store <- which(c(bash = "C:\\Users\\x\\AppData\\Local\\Microsoft\\WindowsApps\\bash.exe", git = ""))
+  expect_identical(episodic_plugin_bash_program(store, windows = TRUE), "")
+  own <- which(c(bash = "C:/msys64/usr/bin/bash.exe", git = git))
+  expect_identical(episodic_plugin_bash_program(own, windows = TRUE), "C:/msys64/usr/bin/bash.exe")
+  # Elsewhere the bash on the path is the one.
+  expect_identical(episodic_plugin_bash_program(wsl, windows = FALSE), "C:\\WINDOWS\\system32\\bash.exe")
+})
+
 test_that("steps run in order in one working directory, in each shell", {
-  skip_if(!nzchar(Sys.which("bash")), "bash is not available")
+  skip_if(!nzchar(episodic_plugin_shell_program("bash")), "bash is not available")
   outcome <- plugin_run_test(list(
     plugin_test_step("writeLines('from r', 'shared.txt')"),
     plugin_test_step("echo \"message=$(cat shared.txt) then bash\" >> \"$EPISODIC_RESULT\"", shell = "bash")

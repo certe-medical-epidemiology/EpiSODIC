@@ -53,6 +53,8 @@
 ## Fixed
 
 - `episodic_validate_detection()` no longer deletes a pathogen configuration file passed to it as a path
+- On Windows a plugin's bash step runs in Git for Windows' bash, never in the launcher of the Windows Subsystem for Linux
+- A plugin step's output is written to a file, so a process the step leaves behind cannot hold it open past the plugin's timeout
 
 # EpiSODIC 0.24.0
 
