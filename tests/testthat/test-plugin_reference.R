@@ -98,7 +98,7 @@ test_that("the reference plugin sends the outbreak's summary, with the token, an
   withr::local_envvar(SHARE_ENDPOINT_URL = server$url, SHARE_ENDPOINT_TOKEN = "secret-token")
   case <- reference_plugin_run()
   outcome <- case$run()
-  expect_identical(outcome$status, "success")
+  expect_identical(outcome$status, "success", info = outcome$detail)
   expect_identical(outcome$message, paste(episodic_object_ref(case$cluster_id, "outbreak", lang = "en"), "was shared (HTTP 201)."))
   expect_identical(outcome$link, "https://regional.example/o/1")
   received <- readLines(server$received)
@@ -114,7 +114,7 @@ test_that("the reference plugin reports a refusal by the platform as the plugin'
   server <- reference_plugin_server(503)
   withr::local_envvar(SHARE_ENDPOINT_URL = server$url, SHARE_ENDPOINT_TOKEN = "secret-token")
   outcome <- reference_plugin_run()$run()
-  expect_identical(outcome$status, "error")
+  expect_identical(outcome$status, "error", info = outcome$detail)
   expect_identical(outcome$message, "The platform answered HTTP 503.")
 })
 

@@ -75,7 +75,7 @@ jobs:
         shell: Rscript {0}
         run: |
           options(testthat.progress.max_fails = Inf)
-          testthat::test_local(reporter = testthat::LocationReporter$new(), stop_on_failure = FALSE)
+          testthat::test_local(filter = "plugin_reference", reporter = testthat::ProgressReporter$new(show_praise = FALSE), stop_on_failure = FALSE)
 
       - uses: r-lib/actions/check-r-package@v2
         with:
