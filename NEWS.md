@@ -26,6 +26,12 @@
 - `EPISODIC_PLUGIN_DIR` sets the plugin folder, by default a `plugins` folder beside the configuration file
 - A reference plugin, `share-outbreak-http.yaml`, sends an outbreak's summary to an HTTP(S) endpoint
 - The new vignette "Plugins" covers the plugin format, the payload and result, installing, enabling, running and security
+- Each Farrington detection stores its p-value and the significance level it was judged against, and each trend week its p-value (schema version 17)
+- Each run records per detector the hypotheses it tested, the detections it reported and the false alarms its significance levels imply, in `episodic_detection_run_detector`
+- The run modal states per detector what it tested and what it reported
+- `episodic_validate_detection()` takes `pathogen_copies`, `run_interval_days` and `reporting_delay_days`, to measure the alarm burden of watching more pathogens, of nightly runs and of late results
+- `episodic_synthetic_cases()` takes `pathogen_copies`, independent copies of the endemic pathogens with no outbreak seeded in them
+- The validation summary gives false alarms per week watched, false alarms per stream-week by first detector, and Farrington's tests, nominal false alarms and detections per run
 
 ## Changed
 
@@ -41,6 +47,10 @@
 - The vignettes "Detection and reconciliation", "Measuring detection against known truth", "Tuning detection" and "Overview" document denominators, the limits of synthetic validation, and the selection bias in PPV from verdicts
 - The README no longer claims that set-up takes minutes or that the software is perfectly safe
 - The pkgdown site no longer publishes CLAUDE.md, and is always built from a clean directory
+
+## Fixed
+
+- `episodic_validate_detection()` no longer deletes a pathogen configuration file passed to it as a path
 
 # EpiSODIC 0.24.0
 

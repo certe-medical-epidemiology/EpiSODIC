@@ -270,7 +270,6 @@ episodic_farrington_trend <- function(cases_for_stream,
 #' `episodic_farrington_fit()`'s result reduced to what the detector and
 #' the trend cache read from it.
 #'
-#' @inheritParams episodic_farrington_fit
 #' The p-value is the upper-tail probability of the observed count under
 #' the fitted baseline, on the same power-transformed normal
 #' approximation the bound is drawn from, so a week alarms exactly when
@@ -280,6 +279,7 @@ episodic_farrington_trend <- function(cases_for_stream,
 #' `farringtonFlexible()` computes anyway: it was not the basis of any
 #' decision.
 #'
+#' @inheritParams episodic_farrington_fit
 #' @return `NULL` when the model cannot be fitted, otherwise a data frame
 #'   with one row per element of `range_idx`, in its order: `range_idx`,
 #'   `observed` (integer), `expected` and `upperbound` (numeric), `alarm`
