@@ -30,6 +30,9 @@ permissions: read-all
 jobs:
   R-CMD-check:
     runs-on: ${{ matrix.config.os }}
+    # A full check takes about 15 minutes; a job still running after an
+    # hour is stuck, and is stopped instead of holding a runner for six.
+    timeout-minutes: 60
 
     name: ${{ matrix.config.os }} (${{ matrix.config.r }})
 
@@ -62,6 +65,17 @@ jobs:
         with:
           extra-packages: any::rcmdcheck
           needs: check
+
+      # Names every test as it starts, so a test that never returns is
+      # the last one in this step's log.
+      - name: Run the tests one by one (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 25
+        continue-on-error: true
+        shell: Rscript {0}
+        run: |
+          options(testthat.progress.max_fails = Inf)
+          testthat::test_local(reporter = testthat::LocationReporter$new(), stop_on_failure = FALSE)
 
       - uses: r-lib/actions/check-r-package@v2
         with:
