@@ -66,17 +66,6 @@ jobs:
           extra-packages: any::rcmdcheck
           needs: check
 
-      # Names every test as it starts, so a test that never returns is
-      # the last one in this step's log.
-      - name: Run the tests one by one (Windows)
-        if: runner.os == 'Windows'
-        timeout-minutes: 25
-        continue-on-error: true
-        shell: Rscript {0}
-        run: |
-          options(testthat.progress.max_fails = Inf)
-          testthat::test_local(filter = "plugin_reference", reporter = testthat::ProgressReporter$new(show_praise = FALSE), stop_on_failure = FALSE)
-
       - uses: r-lib/actions/check-r-package@v2
         with:
           upload-snapshots: true
