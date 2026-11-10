@@ -1402,6 +1402,13 @@ and are left out of <code>config_hash</code>.</p>
 must be set to <code>true</code> explicitly</td>
 </tr>
 <tr class="odd">
+<td><code style="white-space: nowrap;">notifications:<br>  triggers:<br>    stale_data</code></td>
+<td>(unset)</td>
+<td>Send when no new case of the instance’s own has arrived for more
+than <code>stale_data.max_days_without_new_cases</code> days, on every
+run while it lasts; must be set to <code>true</code> explicitly</td>
+</tr>
+<tr class="even">
 <td><code style="white-space: nowrap;">notifications:<br>  channels:<br>    &lt;channel&gt;</code></td>
 <td>(unset)</td>
 <td>One block per channel (<code>ntfy</code>, <code>smtp</code>,
@@ -1476,6 +1483,35 @@ always go. <code>~</code> exports the required columns only</td>
 <code>~</code> exports postcodes as stored</td>
 </tr>
 </tbody>
+</table>
+</div>
+<div class="section level3">
+<h3 id="stale-data">Stale data<a class="anchor" aria-label="anchor" href="#stale-data"></a>
+</h3>
+<p>Whether the case feed is still delivering. A run that finds no new
+case of the instance’s own (imported cases not counted) for more than
+this many days, counted from the last run that took some in, warns in
+its log and, with <code>notifications.triggers.stale_data</code> on,
+notifies. It judges the feed, not the cases, so it is left out of
+<code>config_hash</code>.</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="8%">
+<col width="66%">
+</colgroup>
+<thead><tr class="header">
+<th>Key</th>
+<th>Default</th>
+<th>Effect</th>
+</tr></thead>
+<tbody><tr class="odd">
+<td><code style="white-space: nowrap;">stale_data:<br>  max_days_without_new_cases</code></td>
+<td>2</td>
+<td>Days a run may go without new cases before it warns. Raise it where
+days without a single positive result are normal; <code>~</code>
+switches the check off</td>
+</tr></tbody>
 </table>
 </div>
 <div class="section level3">

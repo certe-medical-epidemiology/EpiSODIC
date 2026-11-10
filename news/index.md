@@ -93,6 +93,12 @@
 - The validation summary gives false alarms per week watched, false
   alarms per stream-week by first detector, and Farrington’s tests,
   nominal false alarms and detections per run
+- Every run counts the days since new cases of the instance’s own last
+  arrived, and warns in its log past
+  `stale_data.max_days_without_new_cases` (default 2)
+- The `stale_data` notification trigger sends that warning through the
+  configured channels on every run while the feed stays stale, and the
+  Settings screen can switch it on
 
 ### Changed
 
@@ -127,6 +133,13 @@
 
 - [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
   no longer deletes a pathogen configuration file passed to it as a path
+- On Windows a plugin’s bash step runs in Git for Windows’ bash, never
+  in the launcher of the Windows Subsystem for Linux
+- A plugin step’s output is written to a file, so a process the step
+  leaves behind cannot hold it open past the plugin’s timeout
+- On Windows a plugin step receives the system’s own variables
+  (temporary directory, system drive, processor), without which a step
+  making a network request crashed
 
 ## EpiSODIC 0.24.0
 

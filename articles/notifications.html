@@ -392,7 +392,7 @@ dashboard.</p>
 <div class="section level2">
 <h2 id="triggers">Triggers<a class="anchor" aria-label="anchor" href="#triggers"></a>
 </h2>
-<p>Two triggers are available. Both are independently toggleable:</p>
+<p>Three triggers are available, each independently toggleable:</p>
 <table class="table">
 <colgroup>
 <col width="15%">
@@ -420,16 +420,46 @@ it would not open (see “Upgrading EpiSODIC” in
 <td>Must be explicitly set to <code>true</code>
 </td>
 </tr>
+<tr class="odd">
+<td><code>stale_data</code></td>
+<td>No new case of this instance’s own has arrived for more than
+<code>stale_data.max_days_without_new_cases</code> days (see below)</td>
+<td>Must be explicitly set to <code>true</code>
+</td>
+</tr>
 </tbody>
 </table>
 <div class="sourceCode" id="cb13"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a><span class="fu">notifications</span><span class="kw">:</span></span>
 <span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a><span class="at">  </span><span class="fu">triggers</span><span class="kw">:</span></span>
 <span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a><span class="at">    </span><span class="fu">new_clusters</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="at">    </span><span class="fu">run_failure</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
-<p>If both triggers fire on the same run (new clusters were detected,
-but something else in the run also failed), two separate notifications
-are sent.</p>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a><span class="at">    </span><span class="fu">run_failure</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a><span class="at">    </span><span class="fu">stale_data</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span></code></pre></div>
+<p>When more than one trigger fires on the same run, each sends a
+notification of its own.</p>
+<div class="section level3">
+<h3 id="stale-data">Stale data<a class="anchor" aria-label="anchor" href="#stale-data"></a>
+</h3>
+<p>A case feed that stops refreshing does not make a run fail. Every run
+succeeds, takes in nothing new and raises nothing, which looks exactly
+like a quiet week. So every run counts the days since the last run that
+took in a new case of this instance’s own, and a run that finds more
+than <code>stale_data.max_days_without_new_cases</code> (default 2) logs
+a warning and, with the <code>stale_data</code> trigger on, sends a
+notification through the same channels as every other message. It does
+so on every run while the feed stays stale.</p>
+<p>The count is taken on runs, not on sample dates: a result for a
+sample taken last week that arrives today is new data, and a feed
+handing over the same rows every day is not. Imported cases are not
+counted, since they come through another laboratory’s feed. An instance
+where days without a single positive result are normal raises the
+threshold; <code>~</code> switches the check off:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">stale_data</span><span class="kw">:</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="at">  </span><span class="fu">max_days_without_new_cases</span><span class="kw">:</span><span class="at"> </span><span class="dv">4</span></span></code></pre></div>
+<p>The check runs inside the run, so it cannot notice a run that never
+starts. A scheduler that stops starting runs is noticed only by its
+absence from the run log.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="dashboard-link">Dashboard link<a class="anchor" aria-label="anchor" href="#dashboard-link"></a>
@@ -437,10 +467,10 @@ are sent.</p>
 <p>If your EpiSODIC dashboard is reachable at a URL, set
 <code>dashboard_url</code> and every notification will include a direct
 link:</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">notifications</span><span class="kw">:</span></span>
-<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="at">  </span><span class="fu">dashboard_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://episodic.example.org"</span></span>
-<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co">  # ...channels...</span></span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">notifications</span><span class="kw">:</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="at">  </span><span class="fu">dashboard_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://episodic.example.org"</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="co">  # ...channels...</span></span></code></pre></div>
 <p>This produces a clickable link in email bodies, a button in the Teams
 Adaptive Card, and a hyperlink in Slack messages.</p>
 </div>
@@ -449,59 +479,60 @@ Adaptive Card, and a hyperlink in Slack messages.</p>
 </h2>
 <p>Below is a complete <code>notifications</code> block with every
 channel shown. Copy only what you need.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">notifications</span><span class="kw">:</span></span>
-<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="at">  </span><span class="fu">dashboard_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://episodic.example.org"</span></span>
-<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a><span class="at">  </span><span class="fu">triggers</span><span class="kw">:</span></span>
-<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a><span class="at">    </span><span class="fu">new_clusters</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a><span class="at">    </span><span class="fu">run_failure</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a><span class="at">  </span><span class="fu">channels</span><span class="kw">:</span></span>
-<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a><span class="at">    </span><span class="fu">ntfy</span><span class="kw">:</span></span>
-<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a><span class="at">      </span><span class="fu">server</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://ntfy.example.org"</span></span>
-<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a><span class="at">      </span><span class="fu">topic</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic-alerts"</span></span>
-<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a><span class="at">      </span><span class="fu">priority</span><span class="kw">:</span><span class="at"> </span><span class="dv">4</span></span>
-<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a><span class="at">      </span><span class="fu">auth</span><span class="kw">:</span></span>
-<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a><span class="at">        </span><span class="fu">username</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic"</span></span>
-<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a><span class="at">        </span><span class="fu">password</span><span class="kw">:</span><span class="at"> </span><span class="st">"s3cr3t"</span></span>
-<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a><span class="at">    </span><span class="fu">smtp</span><span class="kw">:</span></span>
-<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a><span class="at">      </span><span class="fu">host</span><span class="kw">:</span><span class="at"> </span><span class="st">"smtp.gmail.com"</span></span>
-<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a><span class="at">      </span><span class="fu">port</span><span class="kw">:</span><span class="at"> </span><span class="dv">587</span></span>
-<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a><span class="at">      </span><span class="fu">tls</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
-<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a><span class="at">      </span><span class="fu">username</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic.alerts@gmail.com"</span></span>
-<span id="cb15-22"><a href="#cb15-22" tabindex="-1"></a><span class="at">      </span><span class="fu">password</span><span class="kw">:</span><span class="at"> </span><span class="st">"xxxx xxxx xxxx xxxx"</span></span>
-<span id="cb15-23"><a href="#cb15-23" tabindex="-1"></a><span class="at">      </span><span class="fu">from</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic.alerts@gmail.com"</span></span>
-<span id="cb15-24"><a href="#cb15-24" tabindex="-1"></a><span class="at">      </span><span class="fu">to</span><span class="kw">:</span></span>
-<span id="cb15-25"><a href="#cb15-25" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"team-lead@example.org"</span></span>
-<span id="cb15-26"><a href="#cb15-26" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"oncall@example.org"</span></span>
-<span id="cb15-27"><a href="#cb15-27" tabindex="-1"></a><span class="at">    </span><span class="fu">sendmail</span><span class="kw">:</span></span>
-<span id="cb15-28"><a href="#cb15-28" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb15-29"><a href="#cb15-29" tabindex="-1"></a><span class="at">      </span><span class="fu">binary</span><span class="kw">:</span><span class="at"> </span><span class="st">"/usr/sbin/sendmail"</span></span>
-<span id="cb15-30"><a href="#cb15-30" tabindex="-1"></a><span class="at">      </span><span class="fu">from</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic@example.org"</span></span>
-<span id="cb15-31"><a href="#cb15-31" tabindex="-1"></a><span class="at">      </span><span class="fu">to</span><span class="kw">:</span></span>
-<span id="cb15-32"><a href="#cb15-32" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"epi-team@example.org"</span></span>
-<span id="cb15-33"><a href="#cb15-33" tabindex="-1"></a><span class="at">    </span><span class="fu">microsoft365</span><span class="kw">:</span></span>
-<span id="cb15-34"><a href="#cb15-34" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb15-35"><a href="#cb15-35" tabindex="-1"></a><span class="at">      </span><span class="fu">tenant_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span></span>
-<span id="cb15-36"><a href="#cb15-36" tabindex="-1"></a><span class="at">      </span><span class="fu">client_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span></span>
-<span id="cb15-37"><a href="#cb15-37" tabindex="-1"></a><span class="at">      </span><span class="fu">client_secret</span><span class="kw">:</span><span class="at"> </span><span class="st">"your-client-secret-value"</span></span>
-<span id="cb15-38"><a href="#cb15-38" tabindex="-1"></a><span class="at">      </span><span class="fu">from</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic@example.org"</span></span>
-<span id="cb15-39"><a href="#cb15-39" tabindex="-1"></a><span class="at">      </span><span class="fu">to</span><span class="kw">:</span></span>
-<span id="cb15-40"><a href="#cb15-40" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"team-lead@example.org"</span></span>
-<span id="cb15-41"><a href="#cb15-41" tabindex="-1"></a><span class="at">    </span><span class="fu">teams</span><span class="kw">:</span></span>
-<span id="cb15-42"><a href="#cb15-42" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb15-43"><a href="#cb15-43" tabindex="-1"></a><span class="at">      </span><span class="fu">webhook_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://default32d178cfed3488384266e0286e48b.2c.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/29/workflows/dc666faf7e22497f9854bce58e0e09d8/triggers/manual/paths/invoke?api-version=1&amp;sp=%2Ftriggers%2Fmanual%2Frun&amp;sv=1.0&amp;sig=..."</span></span>
-<span id="cb15-44"><a href="#cb15-44" tabindex="-1"></a><span class="at">    </span><span class="fu">slack</span><span class="kw">:</span></span>
-<span id="cb15-45"><a href="#cb15-45" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
-<span id="cb15-46"><a href="#cb15-46" tabindex="-1"></a><span class="at">      </span><span class="fu">webhook_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://hooks.slack.com/services/&lt;workspace-id&gt;/&lt;bot-id&gt;/&lt;token&gt;"</span></span></code></pre></div>
+<div class="sourceCode" id="cb16"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">notifications</span><span class="kw">:</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a><span class="at">  </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a><span class="at">  </span><span class="fu">dashboard_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://episodic.example.org"</span></span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="at">  </span><span class="fu">triggers</span><span class="kw">:</span></span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a><span class="at">    </span><span class="fu">new_clusters</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a><span class="at">    </span><span class="fu">run_failure</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a><span class="at">    </span><span class="fu">stale_data</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a><span class="at">  </span><span class="fu">channels</span><span class="kw">:</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a><span class="at">    </span><span class="fu">ntfy</span><span class="kw">:</span></span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a><span class="at">      </span><span class="fu">server</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://ntfy.example.org"</span></span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a><span class="at">      </span><span class="fu">topic</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic-alerts"</span></span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a><span class="at">      </span><span class="fu">priority</span><span class="kw">:</span><span class="at"> </span><span class="dv">4</span></span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a><span class="at">      </span><span class="fu">auth</span><span class="kw">:</span></span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a><span class="at">        </span><span class="fu">username</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic"</span></span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a><span class="at">        </span><span class="fu">password</span><span class="kw">:</span><span class="at"> </span><span class="st">"s3cr3t"</span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a><span class="at">    </span><span class="fu">smtp</span><span class="kw">:</span></span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="at">      </span><span class="fu">host</span><span class="kw">:</span><span class="at"> </span><span class="st">"smtp.gmail.com"</span></span>
+<span id="cb16-20"><a href="#cb16-20" tabindex="-1"></a><span class="at">      </span><span class="fu">port</span><span class="kw">:</span><span class="at"> </span><span class="dv">587</span></span>
+<span id="cb16-21"><a href="#cb16-21" tabindex="-1"></a><span class="at">      </span><span class="fu">tls</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
+<span id="cb16-22"><a href="#cb16-22" tabindex="-1"></a><span class="at">      </span><span class="fu">username</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic.alerts@gmail.com"</span></span>
+<span id="cb16-23"><a href="#cb16-23" tabindex="-1"></a><span class="at">      </span><span class="fu">password</span><span class="kw">:</span><span class="at"> </span><span class="st">"xxxx xxxx xxxx xxxx"</span></span>
+<span id="cb16-24"><a href="#cb16-24" tabindex="-1"></a><span class="at">      </span><span class="fu">from</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic.alerts@gmail.com"</span></span>
+<span id="cb16-25"><a href="#cb16-25" tabindex="-1"></a><span class="at">      </span><span class="fu">to</span><span class="kw">:</span></span>
+<span id="cb16-26"><a href="#cb16-26" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"team-lead@example.org"</span></span>
+<span id="cb16-27"><a href="#cb16-27" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"oncall@example.org"</span></span>
+<span id="cb16-28"><a href="#cb16-28" tabindex="-1"></a><span class="at">    </span><span class="fu">sendmail</span><span class="kw">:</span></span>
+<span id="cb16-29"><a href="#cb16-29" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb16-30"><a href="#cb16-30" tabindex="-1"></a><span class="at">      </span><span class="fu">binary</span><span class="kw">:</span><span class="at"> </span><span class="st">"/usr/sbin/sendmail"</span></span>
+<span id="cb16-31"><a href="#cb16-31" tabindex="-1"></a><span class="at">      </span><span class="fu">from</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic@example.org"</span></span>
+<span id="cb16-32"><a href="#cb16-32" tabindex="-1"></a><span class="at">      </span><span class="fu">to</span><span class="kw">:</span></span>
+<span id="cb16-33"><a href="#cb16-33" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"epi-team@example.org"</span></span>
+<span id="cb16-34"><a href="#cb16-34" tabindex="-1"></a><span class="at">    </span><span class="fu">microsoft365</span><span class="kw">:</span></span>
+<span id="cb16-35"><a href="#cb16-35" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb16-36"><a href="#cb16-36" tabindex="-1"></a><span class="at">      </span><span class="fu">tenant_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span></span>
+<span id="cb16-37"><a href="#cb16-37" tabindex="-1"></a><span class="at">      </span><span class="fu">client_id</span><span class="kw">:</span><span class="at"> </span><span class="st">"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"</span></span>
+<span id="cb16-38"><a href="#cb16-38" tabindex="-1"></a><span class="at">      </span><span class="fu">client_secret</span><span class="kw">:</span><span class="at"> </span><span class="st">"your-client-secret-value"</span></span>
+<span id="cb16-39"><a href="#cb16-39" tabindex="-1"></a><span class="at">      </span><span class="fu">from</span><span class="kw">:</span><span class="at"> </span><span class="st">"episodic@example.org"</span></span>
+<span id="cb16-40"><a href="#cb16-40" tabindex="-1"></a><span class="at">      </span><span class="fu">to</span><span class="kw">:</span></span>
+<span id="cb16-41"><a href="#cb16-41" tabindex="-1"></a><span class="at">        </span><span class="kw">-</span><span class="at"> </span><span class="st">"team-lead@example.org"</span></span>
+<span id="cb16-42"><a href="#cb16-42" tabindex="-1"></a><span class="at">    </span><span class="fu">teams</span><span class="kw">:</span></span>
+<span id="cb16-43"><a href="#cb16-43" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb16-44"><a href="#cb16-44" tabindex="-1"></a><span class="at">      </span><span class="fu">webhook_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://default32d178cfed3488384266e0286e48b.2c.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/29/workflows/dc666faf7e22497f9854bce58e0e09d8/triggers/manual/paths/invoke?api-version=1&amp;sp=%2Ftriggers%2Fmanual%2Frun&amp;sv=1.0&amp;sig=..."</span></span>
+<span id="cb16-45"><a href="#cb16-45" tabindex="-1"></a><span class="at">    </span><span class="fu">slack</span><span class="kw">:</span></span>
+<span id="cb16-46"><a href="#cb16-46" tabindex="-1"></a><span class="at">      </span><span class="fu">enabled</span><span class="kw">:</span><span class="at"> </span><span class="ch">false</span></span>
+<span id="cb16-47"><a href="#cb16-47" tabindex="-1"></a><span class="at">      </span><span class="fu">webhook_url</span><span class="kw">:</span><span class="at"> </span><span class="st">"https://hooks.slack.com/services/&lt;workspace-id&gt;/&lt;bot-id&gt;/&lt;token&gt;"</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="testing-your-setup">Testing your setup<a class="anchor" aria-label="anchor" href="#testing-your-setup"></a>
 </h2>
 <p>After configuring notifications, always run the test function
 interactively before relying on cron:</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_notify_test.html">episodic_notify_test</a></span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
 <p>This validates the configuration (checking for missing required
 fields and uninstalled packages), then sends a test message through
@@ -595,12 +626,12 @@ Markdown author wrote <code>output:</code> and drops those options
 without a word; renaming the file and rewriting <code>output:</code> as
 <code>format:</code> is all it takes.</p>
 <p>Two starting points ship with the package. Copy one and adapt it:</p>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"mail"</span>, <span class="st">"episodic_default_mail_new_clusters.qmd"</span>, package <span class="op">=</span> <span class="st">"EpiSODIC"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"mail"</span>, <span class="st">"episodic_default_mail_report.qmd"</span>, package <span class="op">=</span> <span class="st">"EpiSODIC"</span><span class="op">)</span></span></code></pre></div>
 <p>Then check it against example data before pointing the variable at
 it:</p>
-<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/episodic_mail_template_preview.html">episodic_mail_template_preview</a></span><span class="op">(</span><span class="st">"new_clusters"</span>, template_path <span class="op">=</span> <span class="st">"~/templates/new_clusters.qmd"</span><span class="op">)</span></span></code></pre></div>
 <p>A template reads its data with
 <code>readRDS(params$data_path)</code>. Both kinds receive:</p>

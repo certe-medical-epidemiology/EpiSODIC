@@ -228,54 +228,55 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 run_id <- episodic_run_cron(db_path = db_path, cases = cases)
-#> 2026-11-10 17:20:43.090 | episodic_run_cron() starting (host=runnervmwuk1x, account=runner)
-#> 2026-11-10 17:20:43.091 | Resolving configuration
-#> 2026-11-10 17:20:43.095 | Configuration resolved (hash 7fef366a6991)
-#> 2026-11-10 17:20:43.096 | Connecting to database
-#> 2026-11-10 17:20:43.096 | No existing database found - creating one
-#> 2026-11-10 17:20:43.123 | Database connected (SQLite 3.53.3)
-#> 2026-11-10 17:20:43.125 | Run 1 started
-#> 2026-11-10 17:20:43.125 | Resolving and checking case data
-#> 2026-11-10 17:20:43.140 | Case data checked: 421 rows, 0 problems, 0 advisory finding(s)
-#> 2026-11-10 17:20:43.141 | Beginning transaction
-#> 2026-11-10 17:20:43.141 | Loading pathogen configuration
-#> 2026-11-10 17:20:43.144 | Pathogen configuration loaded (39 pathogen(s))
-#> 2026-11-10 17:20:43.145 | Loading case data into the database
-#> 2026-11-10 17:20:43.244 | Case data loaded: supplied=421, deduplicated=403, inserted=403
-#> 2026-11-10 17:20:43.245 | Fetching all known cases and institutions
-#> 2026-11-10 17:20:43.247 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
-#> 2026-11-10 17:20:43.250 | Case history on file spans 2025-01-01 to 2025-03-31, ending 589 day(s) before this run's date (2026-11-10)
-#> 2026-11-10 17:20:43.251 | Enumerating lattice streams
-#> ! 2026-11-10 17:20:43.274 | no province could be resolved for any of the 105 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in rule to fall back on - deriving a province from a postcode is country-specific. Point it at your own pc/province_code CSV, or leave it unset and the province level stays empty.
-#> 2026-11-10 17:20:43.280 | Running same-place detector
-#> 2026-11-10 17:20:43.340 | Same-place detector found 5 detection(s)
-#> 2026-11-10 17:20:43.340 | Running rare-trigger detector
-#> 2026-11-10 17:20:43.346 | Rare-trigger detector found 1 detection(s)
-#> 2026-11-10 17:20:43.346 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
-#> 2026-11-10 17:20:43.348 | Reconciling 320 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> ! 2026-11-10 17:20:43.780 | MEM: declined stream Bordetella pertussis/pathogen_region/REGION, disabled by mem_mode
-#> ! 2026-11-10 17:20:43.786 | MEM: declined stream Campylobacter/pathogen_region/REGION, insufficient history for climatology
-#> ! 2026-11-10 17:20:43.791 | MEM: declined stream Clostridioides difficile/pathogen_region/REGION, disabled by mem_mode
-#> ! 2026-11-10 17:20:43.796 | MEM: declined stream Giardia lamblia/pathogen_region/REGION, insufficient history for climatology
-#> ! 2026-11-10 17:20:43.803 | MEM: declined stream Influenza A/pathogen_region/REGION, insufficient history for climatology
-#> ! 2026-11-10 17:20:43.809 | MEM: declined stream MRSA/pathogen_region/REGION, disabled by mem_mode
-#> ! 2026-11-10 17:20:43.814 | MEM: declined stream Neisseria meningitidis/pathogen_region/REGION, disabled by mem_mode
-#> ! 2026-11-10 17:20:43.819 | MEM: declined stream Norovirus/pathogen_region/REGION, insufficient history for climatology
-#> ! 2026-11-10 17:20:43.825 | MEM: declined stream RSV/pathogen_region/REGION, insufficient history for climatology
-#> ! 2026-11-10 17:20:43.830 | MEM: declined stream Salmonella/pathogen_region/REGION, insufficient history for climatology
-#> 2026-11-10 17:20:43.903 | Stream loop time by stage: cases 0.0s, mem 0.0s, eligibility 0.2s, farrington 0.0s, trend 0.0s, detections 0.0s, reconciliation 0.1s, total 0.4s (320 stream(s))
-#> 2026-11-10 17:20:43.904 | Stream reconciliation done: 6 detection(s), 6 new signal(s), 0 updated signal(s)
-#> 2026-11-10 17:20:43.905 | Backfill: 6 cluster(s) opened from the case history, 6 of them already closed by the system and in the Archive, 0 left open for assessment
-#> 2026-11-10 17:20:43.907 | Suppressing lattice: weighing 6 cluster(s) across 5 pathogen(s)
-#> 2026-11-10 17:20:43.908 | Suppressing lattice: 42 case link(s) read for 6 cluster(s), 0 assessed cluster(s) exempt
-#> 2026-11-10 17:20:43.913 | Suppressing lattice done: 0 cluster(s) suppressed (0 parent(s) behind a dominant child, 0 child(ren) behind a diffuse parent)
-#> 2026-11-10 17:20:43.915 | Nowcast: no stream carries an open cluster
-#> 2026-11-10 17:20:43.916 | Epidemic direction: no open epidemic
-#> 2026-11-10 17:20:43.917 | Epidemic outlook: no open epidemic
-#> 2026-11-10 17:20:43.918 | Outbreak-end forecast: 0 of 0 open outbreak(s) of a transmissible pathogen computed, 0 point source, 0 without the parameters or reporting history, 0 failed
-#> 2026-11-10 17:20:43.919 | Committing transaction
-#> 2026-11-10 17:20:43.920 | Finishing run 1 (status: success)
-#> 2026-11-10 17:20:43.923 | episodic_run_cron() finished in 0.8s (status: success)
+#> 2026-11-10 20:50:04.618 | episodic_run_cron() starting (host=runnervmwuk1x, account=runner)
+#> 2026-11-10 20:50:04.619 | Resolving configuration
+#> 2026-11-10 20:50:04.623 | Configuration resolved (hash 7fef366a6991)
+#> 2026-11-10 20:50:04.623 | Connecting to database
+#> 2026-11-10 20:50:04.623 | No existing database found - creating one
+#> 2026-11-10 20:50:04.650 | Database connected (SQLite 3.53.3)
+#> 2026-11-10 20:50:04.651 | Run 1 started
+#> 2026-11-10 20:50:04.651 | Resolving and checking case data
+#> 2026-11-10 20:50:04.663 | Case data checked: 421 rows, 0 problems, 0 advisory finding(s)
+#> 2026-11-10 20:50:04.664 | Beginning transaction
+#> 2026-11-10 20:50:04.664 | Loading pathogen configuration
+#> 2026-11-10 20:50:04.667 | Pathogen configuration loaded (39 pathogen(s))
+#> 2026-11-10 20:50:04.667 | Loading case data into the database
+#> 2026-11-10 20:50:04.756 | Case data loaded: supplied=421, deduplicated=403, inserted=403
+#> 2026-11-10 20:50:04.757 | Stale-data check: new cases last arrived in the run of 2026-11-10 (0 day(s) ago, 2 allowed)
+#> 2026-11-10 20:50:04.758 | Fetching all known cases and institutions
+#> 2026-11-10 20:50:04.760 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
+#> 2026-11-10 20:50:04.762 | Case history on file spans 2025-01-01 to 2025-03-31, ending 589 day(s) before this run's date (2026-11-10)
+#> 2026-11-10 20:50:04.762 | Enumerating lattice streams
+#> ! 2026-11-10 20:50:04.782 | no province could be resolved for any of the 105 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in rule to fall back on - deriving a province from a postcode is country-specific. Point it at your own pc/province_code CSV, or leave it unset and the province level stays empty.
+#> 2026-11-10 20:50:04.788 | Running same-place detector
+#> 2026-11-10 20:50:04.844 | Same-place detector found 5 detection(s)
+#> 2026-11-10 20:50:04.844 | Running rare-trigger detector
+#> 2026-11-10 20:50:04.849 | Rare-trigger detector found 1 detection(s)
+#> 2026-11-10 20:50:04.849 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
+#> 2026-11-10 20:50:04.850 | Reconciling 320 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> ! 2026-11-10 20:50:05.216 | MEM: declined stream Bordetella pertussis/pathogen_region/REGION, disabled by mem_mode
+#> ! 2026-11-10 20:50:05.221 | MEM: declined stream Campylobacter/pathogen_region/REGION, insufficient history for climatology
+#> ! 2026-11-10 20:50:05.226 | MEM: declined stream Clostridioides difficile/pathogen_region/REGION, disabled by mem_mode
+#> ! 2026-11-10 20:50:05.231 | MEM: declined stream Giardia lamblia/pathogen_region/REGION, insufficient history for climatology
+#> ! 2026-11-10 20:50:05.236 | MEM: declined stream Influenza A/pathogen_region/REGION, insufficient history for climatology
+#> ! 2026-11-10 20:50:05.242 | MEM: declined stream MRSA/pathogen_region/REGION, disabled by mem_mode
+#> ! 2026-11-10 20:50:05.246 | MEM: declined stream Neisseria meningitidis/pathogen_region/REGION, disabled by mem_mode
+#> ! 2026-11-10 20:50:05.251 | MEM: declined stream Norovirus/pathogen_region/REGION, insufficient history for climatology
+#> ! 2026-11-10 20:50:05.256 | MEM: declined stream RSV/pathogen_region/REGION, insufficient history for climatology
+#> ! 2026-11-10 20:50:05.260 | MEM: declined stream Salmonella/pathogen_region/REGION, insufficient history for climatology
+#> 2026-11-10 20:50:05.329 | Stream loop time by stage: cases 0.0s, mem 0.0s, eligibility 0.1s, farrington 0.0s, trend 0.0s, detections 0.0s, reconciliation 0.0s, total 0.3s (320 stream(s))
+#> 2026-11-10 20:50:05.330 | Stream reconciliation done: 6 detection(s), 6 new signal(s), 0 updated signal(s)
+#> 2026-11-10 20:50:05.331 | Backfill: 6 cluster(s) opened from the case history, 6 of them already closed by the system and in the Archive, 0 left open for assessment
+#> 2026-11-10 20:50:05.332 | Suppressing lattice: weighing 6 cluster(s) across 5 pathogen(s)
+#> 2026-11-10 20:50:05.333 | Suppressing lattice: 42 case link(s) read for 6 cluster(s), 0 assessed cluster(s) exempt
+#> 2026-11-10 20:50:05.338 | Suppressing lattice done: 0 cluster(s) suppressed (0 parent(s) behind a dominant child, 0 child(ren) behind a diffuse parent)
+#> 2026-11-10 20:50:05.340 | Nowcast: no stream carries an open cluster
+#> 2026-11-10 20:50:05.340 | Epidemic direction: no open epidemic
+#> 2026-11-10 20:50:05.341 | Epidemic outlook: no open epidemic
+#> 2026-11-10 20:50:05.342 | Outbreak-end forecast: 0 of 0 open outbreak(s) of a transmissible pathogen computed, 0 point source, 0 without the parameters or reporting history, 0 failed
+#> 2026-11-10 20:50:05.342 | Committing transaction
+#> 2026-11-10 20:50:05.344 | Finishing run 1 (status: success)
+#> 2026-11-10 20:50:05.346 | episodic_run_cron() finished in 0.7s (status: success)
 file.remove(db_path)
 #> [1] TRUE
 # }

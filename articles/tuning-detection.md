@@ -677,6 +677,16 @@ instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/impo
 
 [TABLE]
 
+### Stale data
+
+Whether the case feed is still delivering. A run that finds no new case
+of the instance’s own (imported cases not counted) for more than this
+many days, counted from the last run that took some in, warns in its log
+and, with `notifications.triggers.stale_data` on, notifies. It judges
+the feed, not the cases, so it is left out of `config_hash`.
+
+[TABLE]
+
 ### Plugins
 
 Which plugins may run, and what each was granted. Plugins act on what a

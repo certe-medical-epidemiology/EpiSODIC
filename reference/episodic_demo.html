@@ -231,87 +231,88 @@ own extract first, and <a href="episodic_case_data.html">episodic_case_data</a> 
 <span class="r-in"><span><span class="va">db_path</span> <span class="op">&lt;-</span> <span class="fu">episodic_demo</span><span class="op">(</span>launch <span class="op">=</span> <span class="cn">FALSE</span>, cases <span class="op">=</span> <span class="va">cases</span>, denominators <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running detection as of 2025-03-31, the last day your case data covers.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Running detection...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.197 | episodic_run_cron() starting (host=runnervmwuk1x, account=runner)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.198 | Resolving configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.204 | Configuration resolved (hash f374468968d9)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.204 | Connecting to database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.205 | No existing database found - creating one</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.239 | Database connected (SQLite 3.53.3)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.240 | Run 1 started</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.241 | Resolving and checking case data</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.409 | Case data checked: 421 rows, 0 problems, 1 advisory finding(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.076 | episodic_run_cron() starting (host=runnervmwuk1x, account=runner)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.076 | Resolving configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.081 | Configuration resolved (hash f374468968d9)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.081 | Connecting to database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.082 | No existing database found - creating one</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.116 | Database connected (SQLite 3.53.3)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.117 | Run 1 started</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.118 | Resolving and checking case data</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.242 | Case data checked: 421 rows, 0 problems, 1 advisory finding(s)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> episodic_check_cases() has 1 advisory finding about this case data, starting with: `pc` has no area in EPISODIC_GEO_DATA in 165 of 421 rows. Run episodic_check_cases() on it to see them all.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.410 | Beginning transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.411 | Loading pathogen configuration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.413 | Pathogen configuration overlaid from /tmp/RtmpviPy5Z/file1d66674ad268-pathogens.csv</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.415 | Pathogen configuration loaded (39 pathogen(s))</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.415 | Loading case data into the database</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.658 | Case data loaded: supplied=421, deduplicated=403, inserted=403</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.659 | Fetching all known cases and institutions</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.662 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.664 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.665 | Enumerating lattice streams</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.699 | Running same-place detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.756 | Same-place detector found 5 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.756 | Running rare-trigger detector</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.761 | Rare-trigger detector found 1 detection(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.761 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:39.763 | Reconciling 342 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.008 | MEM: declined stream Bordetella pertussis/pathogen_province/PROV_FRYSLAN, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.016 | MEM: declined stream Campylobacter/pathogen_province/PROV_DRENTHE, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.021 | MEM: declined stream Campylobacter/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.025 | MEM: declined stream Campylobacter/pathogen_province/PROV_GRONINGEN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.032 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_DRENTHE, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.036 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_FRYSLAN, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.040 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_GRONINGEN, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.048 | MEM: declined stream Giardia lamblia/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.052 | MEM: declined stream Giardia lamblia/pathogen_province/PROV_GRONINGEN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.060 | MEM: declined stream Influenza A/pathogen_province/PROV_DRENTHE, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.065 | MEM: declined stream Influenza A/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.070 | MEM: declined stream Influenza A/pathogen_province/PROV_GRONINGEN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.078 | MEM: declined stream MRSA/pathogen_province/PROV_DRENTHE, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.082 | MEM: declined stream MRSA/pathogen_province/PROV_GRONINGEN, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.089 | MEM: declined stream Neisseria meningitidis/pathogen_province/PROV_FRYSLAN, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.096 | MEM: declined stream Norovirus/pathogen_province/PROV_DRENTHE, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.101 | MEM: declined stream Norovirus/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.106 | MEM: declined stream Norovirus/pathogen_province/PROV_GRONINGEN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.113 | MEM: declined stream RSV/pathogen_province/PROV_DRENTHE, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.118 | MEM: declined stream RSV/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.122 | MEM: declined stream RSV/pathogen_province/PROV_GRONINGEN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.129 | MEM: declined stream Salmonella/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.134 | MEM: declined stream Bordetella pertussis/pathogen_region/NORTHERN_NETHERLANDS, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.138 | MEM: declined stream Campylobacter/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.143 | MEM: declined stream Clostridioides difficile/pathogen_region/NORTHERN_NETHERLANDS, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.147 | MEM: declined stream Giardia lamblia/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.153 | MEM: declined stream Influenza A/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.159 | MEM: declined stream MRSA/pathogen_region/NORTHERN_NETHERLANDS, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.163 | MEM: declined stream Neisseria meningitidis/pathogen_region/NORTHERN_NETHERLANDS, disabled by mem_mode</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.168 | MEM: declined stream Norovirus/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.173 | MEM: declined stream RSV/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 17:20:40.177 | MEM: declined stream Salmonella/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.206 | Stream loop time by stage: cases 0.1s, mem 0.1s, eligibility 0.0s, farrington 0.0s, trend 0.0s, detections 0.0s, reconciliation 0.0s, total 0.3s (342 stream(s))</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.207 | Stream reconciliation done: 6 detection(s), 6 new signal(s), 0 updated signal(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.208 | Backfill: 6 cluster(s) opened from the case history, 1 of them already closed by the system and in the Archive, 5 left open for assessment</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.210 | Suppressing lattice: weighing 6 cluster(s) across 5 pathogen(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.211 | Suppressing lattice: 42 case link(s) read for 6 cluster(s), 0 assessed cluster(s) exempt</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.216 | Suppressing lattice done: 0 cluster(s) suppressed (0 parent(s) behind a dominant child, 0 child(ren) behind a diffuse parent)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.237 | Nowcast: 0 of 5 stream(s) with an open cluster nowcast, 5 without enough reported yet to nowcast from, 0 failed</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.238 | Epidemic direction: no open epidemic</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.239 | Epidemic outlook: no open epidemic</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.255 | Outbreak-end forecast: 0 of 4 open outbreak(s) of a transmissible pathogen computed, 1 point source, 3 without the parameters or reporting history, 0 failed</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.256 | Committing transaction</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.257 | Finishing run 1 (status: success)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 17:20:40.260 | episodic_run_cron() finished in 1.1s (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.244 | Beginning transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.244 | Loading pathogen configuration</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.246 | Pathogen configuration overlaid from /tmp/Rtmp07SLba/file1d7afdc909-pathogens.csv</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.248 | Pathogen configuration loaded (39 pathogen(s))</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.248 | Loading case data into the database</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.440 | Case data loaded: supplied=421, deduplicated=403, inserted=403</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.442 | Stale-data check: new cases last arrived in the run of 2025-03-31 (0 day(s) ago, 2 allowed)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.442 | Fetching all known cases and institutions</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.444 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.446 | Case history on file spans 2025-01-01 to 2025-03-31, ending 0 day(s) before this run's date (2025-03-31)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.446 | Enumerating lattice streams</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.475 | Running same-place detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.530 | Same-place detector found 5 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.530 | Running rare-trigger detector</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.535 | Rare-trigger detector found 1 detection(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.535 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.536 | Reconciling 342 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.781 | MEM: declined stream Bordetella pertussis/pathogen_province/PROV_FRYSLAN, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.788 | MEM: declined stream Campylobacter/pathogen_province/PROV_DRENTHE, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.792 | MEM: declined stream Campylobacter/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.796 | MEM: declined stream Campylobacter/pathogen_province/PROV_GRONINGEN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.802 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_DRENTHE, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.806 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_FRYSLAN, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.809 | MEM: declined stream Clostridioides difficile/pathogen_province/PROV_GRONINGEN, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.816 | MEM: declined stream Giardia lamblia/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.820 | MEM: declined stream Giardia lamblia/pathogen_province/PROV_GRONINGEN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.826 | MEM: declined stream Influenza A/pathogen_province/PROV_DRENTHE, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.830 | MEM: declined stream Influenza A/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.835 | MEM: declined stream Influenza A/pathogen_province/PROV_GRONINGEN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.841 | MEM: declined stream MRSA/pathogen_province/PROV_DRENTHE, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.845 | MEM: declined stream MRSA/pathogen_province/PROV_GRONINGEN, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.850 | MEM: declined stream Neisseria meningitidis/pathogen_province/PROV_FRYSLAN, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.857 | MEM: declined stream Norovirus/pathogen_province/PROV_DRENTHE, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.861 | MEM: declined stream Norovirus/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.864 | MEM: declined stream Norovirus/pathogen_province/PROV_GRONINGEN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.871 | MEM: declined stream RSV/pathogen_province/PROV_DRENTHE, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.874 | MEM: declined stream RSV/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.878 | MEM: declined stream RSV/pathogen_province/PROV_GRONINGEN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.884 | MEM: declined stream Salmonella/pathogen_province/PROV_FRYSLAN, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.888 | MEM: declined stream Bordetella pertussis/pathogen_region/NORTHERN_NETHERLANDS, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.892 | MEM: declined stream Campylobacter/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.896 | MEM: declined stream Clostridioides difficile/pathogen_region/NORTHERN_NETHERLANDS, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.900 | MEM: declined stream Giardia lamblia/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.904 | MEM: declined stream Influenza A/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.909 | MEM: declined stream MRSA/pathogen_region/NORTHERN_NETHERLANDS, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.912 | MEM: declined stream Neisseria meningitidis/pathogen_region/NORTHERN_NETHERLANDS, disabled by mem_mode</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.916 | MEM: declined stream Norovirus/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.920 | MEM: declined stream RSV/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 2026-11-10 20:50:01.924 | MEM: declined stream Salmonella/pathogen_region/NORTHERN_NETHERLANDS, insufficient history for climatology</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.948 | Stream loop time by stage: cases 0.1s, mem 0.1s, eligibility 0.0s, farrington 0.0s, trend 0.0s, detections 0.0s, reconciliation 0.0s, total 0.2s (342 stream(s))</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.949 | Stream reconciliation done: 6 detection(s), 6 new signal(s), 0 updated signal(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.950 | Backfill: 6 cluster(s) opened from the case history, 1 of them already closed by the system and in the Archive, 5 left open for assessment</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.951 | Suppressing lattice: weighing 6 cluster(s) across 5 pathogen(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.952 | Suppressing lattice: 42 case link(s) read for 6 cluster(s), 0 assessed cluster(s) exempt</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.958 | Suppressing lattice done: 0 cluster(s) suppressed (0 parent(s) behind a dominant child, 0 child(ren) behind a diffuse parent)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.977 | Nowcast: 0 of 5 stream(s) with an open cluster nowcast, 5 without enough reported yet to nowcast from, 0 failed</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.978 | Epidemic direction: no open epidemic</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.978 | Epidemic outlook: no open epidemic</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.992 | Outbreak-end forecast: 0 of 4 open outbreak(s) of a transmissible pathogen computed, 1 point source, 3 without the parameters or reporting history, 0 failed</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.992 | Committing transaction</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.993 | Finishing run 1 (status: success)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> 2026-11-10 20:50:01.996 | episodic_run_cron() finished in 0.9s (status: success)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> OK</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ===========================================================================</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   EpiSODIC demo account (admin) - username: demo, password: demo</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   To re-open this demo later, with its geography:</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>     Sys.setenv(EPISODIC_DB = "/tmp/RtmpviPy5Z/file1d66674ad268.sqlite",</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_CONFIG = "/tmp/RtmpviPy5Z/file1d66674ad268-config.yaml",</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_PC_PROVINCE_MAP = "/tmp/RtmpviPy5Z/file1d66674ad268-pc-province.csv",</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_PATHOGEN_CONFIG = "/tmp/RtmpviPy5Z/file1d66674ad268-pathogens.csv")</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>     Sys.setenv(EPISODIC_DB = "/tmp/Rtmp07SLba/file1d7afdc909.sqlite",</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_CONFIG = "/tmp/Rtmp07SLba/file1d7afdc909-config.yaml",</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_PC_PROVINCE_MAP = "/tmp/Rtmp07SLba/file1d7afdc909-pc-province.csv",</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>                EPISODIC_PATHOGEN_CONFIG = "/tmp/Rtmp07SLba/file1d7afdc909-pathogens.csv")</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>     episodic_run_app()</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ===========================================================================</span>
