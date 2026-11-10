@@ -31,16 +31,28 @@
 #' proxies and certificate stores hospital networks commonly require, and
 #' nothing else: none of EpiSODIC's own variables (database, mail and
 #' Microsoft 365 credentials), and none of the server's other secrets.
+#'
+#' Windows needs more of its own variables than the program's name
+#' suggests: a process started without the temporary directory, the
+#' system drive or the processor description can start, run plain R, and
+#' then crash with an access violation once it loads the libraries behind
+#' a network request. Those variables describe the machine, never a
+#' secret, so they are passed on.
 #' @keywords internal
 #' @noRd
 episodic_plugin_env_allowlist <- c(
-  "PATH", "HOME", "USER", "LOGNAME", "LANG", "LANGUAGE", "TZ",
+  "PATH", "HOME", "USER", "LOGNAME", "LANG", "LANGUAGE", "TZ", "TMPDIR",
   "LC_ALL", "LC_CTYPE", "LC_COLLATE", "LC_MESSAGES", "LC_NUMERIC", "LC_TIME", "LC_MONETARY",
   "R_LIBS_USER", "R_LIBS_SITE",
   "http_proxy", "https_proxy", "no_proxy", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY",
   "SSL_CERT_FILE", "SSL_CERT_DIR", "CURL_CA_BUNDLE", "REQUESTS_CA_BUNDLE",
-  "SYSTEMROOT", "SystemRoot", "WINDIR", "COMSPEC", "PATHEXT", "USERPROFILE",
-  "APPDATA", "LOCALAPPDATA", "PROGRAMDATA", "ProgramFiles", "ProgramFiles(x86)"
+  "SYSTEMROOT", "SystemRoot", "SystemDrive", "WINDIR", "COMSPEC", "PATHEXT",
+  "TEMP", "TMP", "USERPROFILE", "USERNAME", "USERDOMAIN", "COMPUTERNAME",
+  "HOMEDRIVE", "HOMEPATH", "ALLUSERSPROFILE", "PUBLIC",
+  "APPDATA", "LOCALAPPDATA", "PROGRAMDATA", "ProgramFiles", "ProgramFiles(x86)", "ProgramW6432",
+  "CommonProgramFiles", "CommonProgramFiles(x86)", "CommonProgramW6432",
+  "OS", "NUMBER_OF_PROCESSORS", "PROCESSOR_ARCHITECTURE", "PROCESSOR_IDENTIFIER",
+  "PROCESSOR_LEVEL", "PROCESSOR_REVISION"
 )
 
 #' The values of the named environment variables, named, `NA` when unset
