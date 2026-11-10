@@ -253,7 +253,8 @@ episodic_config_nullable_keys <- c(
   "same_place.lookback_days",
   "rare_trigger.lookback_days",
   "forecast.nowcast.delay_window_days",
-  "export.fields"
+  "export.fields",
+  "stale_data.max_days_without_new_cases"
 )
 
 #' Refuse an instance configuration that cannot mean what it says
@@ -697,13 +698,17 @@ episodic_pathogen_config_merge <- function(defaults, overlay, source_label = "op
 #' on what a run has already computed, so which plugins are enabled cannot
 #' change a run's result.
 #'
+#' `stale_data` is here because it judges the case feed, not the cases:
+#' whether a run warns that no new data has arrived cannot change what it
+#' detects.
+#'
 #' `geography` is deliberately *not* here. `region_code` and the area
 #' rule both feed `episodic_stream_key()`, so a change to either changes
 #' every geographic stream's identity - which is exactly the kind of
 #' difference the hash exists to make visible.
 #' @keywords internal
 #' @noRd
-episodic_config_unhashed_sections <- c("notifications", "access", "report", "database", "export", "plugins")
+episodic_config_unhashed_sections <- c("notifications", "access", "report", "database", "export", "plugins", "stale_data")
 
 #' The scale a lattice level belongs to
 #'

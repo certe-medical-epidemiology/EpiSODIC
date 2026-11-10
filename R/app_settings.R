@@ -216,7 +216,8 @@ episodic_app_settings_build_notifications <- function(input, existing) {
     dashboard_url = if (nzchar(dashboard_url)) dashboard_url else NULL,
     triggers = list(
       new_clusters = isTRUE(input$stg_notif_trigger_new_clusters),
-      run_failure = isTRUE(input$stg_notif_trigger_run_failure)
+      run_failure = isTRUE(input$stg_notif_trigger_run_failure),
+      stale_data = isTRUE(input$stg_notif_trigger_stale_data)
     ),
     channels = channels
   )

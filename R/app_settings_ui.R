@@ -129,6 +129,16 @@ episodic_ui_settings_notif_panel <- function(notif,
           checked = if (isTRUE(notif$triggers$run_failure)) NA else NULL
         ),
         episodic_tr("settings.notif.trigger_run_failure", lang = lang)
+      ),
+      shiny::tags$label(
+        class = "episodic-form-checkbox-label",
+        shiny::tags$input(
+          type = "checkbox",
+          id = "stg_notif_trigger_stale_data",
+          class = "episodic-settings-input",
+          checked = if (isTRUE(notif$triggers$stale_data)) NA else NULL
+        ),
+        episodic_tr("settings.notif.trigger_stale_data", lang = lang)
       )
     ),
     shiny::tags$div(

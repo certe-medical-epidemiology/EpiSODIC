@@ -32,6 +32,8 @@
 - `episodic_validate_detection()` takes `pathogen_copies`, `run_interval_days` and `reporting_delay_days`, to measure the alarm burden of watching more pathogens, of nightly runs and of late results
 - `episodic_synthetic_cases()` takes `pathogen_copies`, independent copies of the endemic pathogens with no outbreak seeded in them
 - The validation summary gives false alarms per week watched, false alarms per stream-week by first detector, and Farrington's tests, nominal false alarms and detections per run
+- Every run counts the days since new cases of the instance's own last arrived, and warns in its log past `stale_data.max_days_without_new_cases` (default 2)
+- The `stale_data` notification trigger sends that warning through the configured channels on every run while the feed stays stale, and the Settings screen can switch it on
 
 ## Changed
 

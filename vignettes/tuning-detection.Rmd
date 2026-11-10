@@ -521,6 +521,7 @@ When MEM opens a seasonal epidemic, the fit that set its thresholds also gives t
 | <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;dashboard_url</code> | (unset) | Address of the dashboard, linked from each message |
 | <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;triggers:<br>&nbsp;&nbsp;&nbsp;&nbsp;new_clusters</code> | (unset) | Send when a run opens at least one new cluster; must be set to `true` explicitly |
 | <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;triggers:<br>&nbsp;&nbsp;&nbsp;&nbsp;run_failure</code> | (unset) | Send when a run fails, including one that stops before it begins; must be set to `true` explicitly |
+| <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;triggers:<br>&nbsp;&nbsp;&nbsp;&nbsp;stale_data</code> | (unset) | Send when no new case of the instance's own has arrived for more than `stale_data.max_days_without_new_cases` days, on every run while it lasts; must be set to `true` explicitly |
 | <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;channels:<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;channel&gt;</code> | (unset) | One block per channel (`ntfy`, `smtp`, `sendmail`, `microsoft365`, `teams`, `slack`), each with its own `enabled` and settings |
 
 Every channel's settings, and how to test them, are in [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html).
@@ -540,6 +541,14 @@ Which columns an export to a partner instance carries, and how coarse its postco
 | ---------------------- | ------- | --------------------------------------------------------- |
 | <code style="white-space: nowrap;">export:<br>&nbsp;&nbsp;fields</code> | [receipt_date, care_line, municipality, ward, specialism, pc, sex, age] | The optional case columns an export carries; the required ones always go. `~` exports the required columns only |
 | <code style="white-space: nowrap;">export:<br>&nbsp;&nbsp;pc_characters</code> | ~ | Keep only this many leading postcode characters in an export; `~` exports postcodes as stored |
+
+### Stale data
+
+Whether the case feed is still delivering. A run that finds no new case of the instance's own (imported cases not counted) for more than this many days, counted from the last run that took some in, warns in its log and, with `notifications.triggers.stale_data` on, notifies. It judges the feed, not the cases, so it is left out of `config_hash`.
+
+| Key                    | Default | Effect                                                    |
+| ---------------------- | ------- | --------------------------------------------------------- |
+| <code style="white-space: nowrap;">stale_data:<br>&nbsp;&nbsp;max_days_without_new_cases</code> | 2 | Days a run may go without new cases before it warns. Raise it where days without a single positive result are normal; `~` switches the check off |
 
 ### Plugins
 

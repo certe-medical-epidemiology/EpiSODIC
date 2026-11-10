@@ -185,6 +185,16 @@ plugins:
 # Notifications. See vignette("notifications") for setup.
 notifications: ~
 
+# Stale data: a case feed that stops refreshing looks like a quiet week.
+# A run that finds no new case of this instance's own (imported cases not
+# counted) has arrived for more than max_days_without_new_cases days says
+# so in its log, and notifies when notifications.triggers.stale_data is
+# true. Counted from the last run that took in new cases. Raise it where
+# days without a single positive result are normal; set to ~ to switch
+# the check off.
+stale_data:
+  max_days_without_new_cases: 2
+
 # Suppression.
 suppression:
   child_dominance_threshold: 0.70

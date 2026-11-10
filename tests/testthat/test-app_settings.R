@@ -61,6 +61,7 @@ test_that("episodic_app_settings_build_notifications() assembles a full notifica
     stg_notif_dashboard_url = "https://dash.example.org",
     stg_notif_trigger_new_clusters = TRUE,
     stg_notif_trigger_run_failure = FALSE,
+    stg_notif_trigger_stale_data = TRUE,
     stg_notif_ntfy_enabled = TRUE,
     stg_notif_ntfy_server = "https://ntfy.sh",
     stg_notif_ntfy_topic = "alerts",
@@ -83,6 +84,7 @@ test_that("episodic_app_settings_build_notifications() assembles a full notifica
   expect_equal(notif$dashboard_url, "https://dash.example.org")
   expect_true(notif$triggers$new_clusters)
   expect_false(notif$triggers$run_failure)
+  expect_true(notif$triggers$stale_data)
   expect_true(notif$channels$ntfy$enabled)
   expect_equal(notif$channels$ntfy$server, "https://ntfy.sh")
   expect_equal(notif$channels$ntfy$topic, "alerts")
