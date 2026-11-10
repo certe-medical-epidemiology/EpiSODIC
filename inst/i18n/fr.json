@@ -33,6 +33,8 @@
   "activity.run_modal_autoclosed_line": "{closed} clôturés automatiquement",
   "activity.run_modal_detection": "Ce que la détection a produit",
   "activity.run_modal_detection_line": "{streams} flux surveillés, {detections} détections, {new} nouveaux signaux, {updated} mis à jour",
+  "activity.run_modal_detector_tested": "{detector} : {tests} semaines-flux testées, {detections} détections. Si rien ne se passait nulle part, {expected} fausses alertes seraient attendues en moyenne.",
+  "activity.run_modal_detector_untested": "{detector} : {detections} détections. Pas un test statistique, donc pas de taux de fausses alertes.",
   "activity.run_modal_error": "Pourquoi cette exécution a échoué",
   "activity.run_modal_load": "Ce que cette exécution a chargé",
   "activity.run_modal_no_load": "Cette exécution n'a enregistré aucun décompte : elle s'est arrêtée avant de lire des données.",

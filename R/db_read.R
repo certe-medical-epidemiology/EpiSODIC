@@ -992,6 +992,26 @@ episodic_db_run_autoclosed_count <- function(con, run) {
   )$n[1]
 }
 
+#' What each detector did in one run
+#'
+#' @param con A [DBI::DBIConnection-class].
+#' @param run_id The run.
+#' @return A data frame with `detector`, `n_tests`, `n_detections`,
+#'   `expected_false_alarms`, one row per detector the run had switched
+#'   on, in `episodic_detectors` order. Zero rows for a run that finished
+#'   before these were recorded, or that never reached detection.
+#' @keywords internal
+#' @noRd
+episodic_db_run_detectors <- function(con, run_id) {
+  rows <- episodic_db_get_query(
+    con,
+    "SELECT detector, n_tests, n_detections, expected_false_alarms
+       FROM episodic_detection_run_detector WHERE run_id = ?",
+    params = list(run_id)
+  )
+  rows[order(match(rows$detector, episodic_detectors)), , drop = FALSE]
+}
+
 #' How many of these clusters the system has already closed
 #'
 #' Used by a backfill run to say what it did: a run that reports the

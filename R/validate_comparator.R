@@ -157,7 +157,7 @@ episodic_validate_comparator <- function(method = c("same_place", "shewhart"),
         min_precision = min_precision,
         outbreaks_injected = outbreaks,
         outbreak_offsets = outbreak_offsets,
-        n_stream_weeks = sum(run_rows$n_streams),
+        n_stream_weeks = sum(run_rows$stream_weeks),
         generated_at = Sys.time()
       )
     ),
@@ -251,11 +251,17 @@ episodic_validation_comparator_replicate <- function(method,
       run_date,
       standing
     )
+    n_groups <- episodic_validation_comparator_groups(extract, method)
     run_rows[[length(run_rows) + 1]] <- data.frame(
       run_date = run_date,
       run_id = NA_integer_,
-      n_streams = episodic_validation_comparator_groups(extract, method),
+      n_streams = n_groups,
+      stream_weeks = n_groups,
+      weeks = 1,
       n_detections = length(unique(alarms$alarm_key)),
+      n_farrington_tests = NA_integer_,
+      n_farrington_detections = NA_integer_,
+      farrington_expected_false_alarms = NA_real_,
       stringsAsFactors = FALSE
     )
   }

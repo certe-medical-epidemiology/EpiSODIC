@@ -33,6 +33,8 @@
   "activity.run_modal_autoclosed_line": "{closed} automatisch abgeschlossen",
   "activity.run_modal_detection": "Was die Detektion ergeben hat",
   "activity.run_modal_detection_line": "{streams} Streams überwacht, {detections} Detektionen, {new} neue Signale, {updated} aktualisiert",
+  "activity.run_modal_detector_tested": "{detector}: {tests} Stream-Wochen getestet, {detections} Detektionen. Wäre nirgends etwas los, wären im Mittel {expected} Fehlalarme zu erwarten.",
+  "activity.run_modal_detector_untested": "{detector}: {detections} Detektionen. Kein statistischer Test, daher ohne Fehlalarmrate.",
   "activity.run_modal_error": "Warum dieser Lauf fehlgeschlagen ist",
   "activity.run_modal_load": "Was dieser Lauf eingelesen hat",
   "activity.run_modal_no_load": "Dieser Lauf hat keine Zahlen erfasst: Er brach ab, bevor Daten gelesen wurden.",

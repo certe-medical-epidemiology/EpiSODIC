@@ -30,6 +30,9 @@
 #' @param n_cases Case count in the interval.
 #' @param expected,upperbound Statistical detector output; `NA` for
 #'   detectors without a baseline model (e.g. `same_place`).
+#' @param p_value,alpha The test behind a statistical detection: its
+#'   p-value and the significance level it was judged against. `NA` for a
+#'   detector that performs no test.
 #' @param params A list of detector-specific attributes, stored as JSON.
 #' @return A one-row data frame in the shape reconciliation expects.
 #' @keywords internal
@@ -41,6 +44,8 @@ episodic_detection_record <- function(stream_id,
                                       n_cases,
                                       expected = NA_real_,
                                       upperbound = NA_real_,
+                                      p_value = NA_real_,
+                                      alpha = NA_real_,
                                       params = list()) {
   if (length(n_cases) == 0) {
     return(data.frame(
@@ -51,6 +56,8 @@ episodic_detection_record <- function(stream_id,
       n_cases = integer(0),
       expected = numeric(0),
       upperbound = numeric(0),
+      p_value = numeric(0),
+      alpha = numeric(0),
       params = character(0),
       stringsAsFactors = FALSE
     ))
@@ -63,10 +70,17 @@ episodic_detection_record <- function(stream_id,
     n_cases = as.integer(n_cases),
     expected = as.numeric(expected),
     upperbound = as.numeric(upperbound),
+    p_value = as.numeric(p_value),
+    alpha = as.numeric(alpha),
     params = as.character(jsonlite::toJSON(params, auto_unbox = TRUE)),
     stringsAsFactors = FALSE
   )
 }
+
+#' The detectors a run can switch on, as configuration section names
+#' @keywords internal
+#' @noRd
+episodic_detectors <- c("farrington", "mem", "same_place", "rare_trigger")
 
 #' An empty detection result, in the shape every detector returns
 #'

@@ -33,6 +33,8 @@
   "activity.run_modal_autoclosed_line": "{closed} أُغلقت تلقائيًا",
   "activity.run_modal_detection": "ما أنتجه الكشف",
   "activity.run_modal_detection_line": "تمت مراقبة {streams} من التدفقات، و{detections} من الاكتشافات، و{new} إشارات جديدة، و{updated} محدَّثة",
+  "activity.run_modal_detector_tested": "{detector}: تم اختبار {tests} من أسابيع التدفقات، و{detections} من الاكتشافات. لو لم يكن هناك ما يحدث في أي مكان، لكان المتوقع في المتوسط {expected} من الإنذارات الكاذبة.",
+  "activity.run_modal_detector_untested": "{detector}: {detections} من الاكتشافات. ليس اختبارًا إحصائيًا، لذا لا معدل إنذارات كاذبة له.",
   "activity.run_modal_error": "سبب فشل هذه الدورة",
   "activity.run_modal_load": "ما حمّلته هذه الدورة",
   "activity.run_modal_no_load": "لم تسجّل هذه الدورة أي أعداد تحميل: توقفت قبل قراءة أي بيانات.",

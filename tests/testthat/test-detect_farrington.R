@@ -206,3 +206,73 @@ test_that("episodic_detect_farrington() reports a record per alarming week it te
   expect_false(any(is.na(caught_up$expected)))
   expect_false(any(is.na(caught_up$upperbound)))
 })
+
+test_that("a week alarms exactly when its p-value is below alpha, limit54 is met and it has cases", {
+  config <- episodic_test_config()
+  fc <- config$farrington
+  set.seed(11)
+  week_start <- seq(as.Date("2020-01-06"), by = "week", length.out = 220)
+  n_alarms <- 0L
+  for (replicate in 1:15) {
+    counts <- stats::rpois(220, exp(1 + 0.6 * sin(2 * pi * seq_len(220) / 52)))
+    tail_weeks <- 211:220
+    counts[tail_weeks] <- counts[tail_weeks] + stats::rpois(10, sample(0:8, 1))
+    rows <- episodic_farrington_fit_weeks(
+      list(week_start = week_start, counts = counts),
+      range_idx = 170:220,
+      fc = fc
+    )
+    judged <- !is.na(rows$alarm)
+    predicted <- !is.na(rows$p_value) & rows$observed > 0 & rows$p_value < fc$alpha
+    expect_identical(predicted[judged], rows$alarm[judged])
+    # limit54 not met: no expected value, no bound, no p-value, no alarm
+    expect_true(all(is.na(rows$p_value[is.na(rows$expected)])))
+    n_alarms <- n_alarms + sum(rows$alarm, na.rm = TRUE)
+  }
+  # the equivalence above was exercised on alarms, not only on quiet weeks
+  expect_gt(n_alarms, 0L)
+})
+
+test_that("a Farrington result says how many weeks it tested and at which level, alarmed or not", {
+  set.seed(2)
+  n_weeks <- 4 * 52 + 10
+  week_starts <- seq(as.Date("2020-01-06"), by = "week", length.out = n_weeks)
+  config <- episodic_test_config()
+  run_date <- week_starts[n_weeks] + 6
+
+  quiet <- episodic_detect_farrington(
+    farrington_cases_from_weekly_counts(week_starts, stats::rpois(n_weeks, 3)),
+    stream_id = 1L,
+    config = config,
+    run_date = run_date,
+    n_weeks = 3L
+  )
+  expect_equal(nrow(quiet), 0)
+  expect_equal(
+    episodic_farrington_tested(quiet),
+    c(n_tests = 3, alpha = config$farrington$alpha)
+  )
+
+  counts <- stats::rpois(n_weeks, 2)
+  counts[n_weeks] <- 25L
+  loud <- episodic_detect_farrington(
+    farrington_cases_from_weekly_counts(week_starts, counts),
+    stream_id = 1L,
+    config = config,
+    run_date = run_date
+  )
+  expect_equal(nrow(loud), 1)
+  expect_equal(episodic_farrington_tested(loud)[["n_tests"]], 1)
+  expect_true(loud$p_value < loud$alpha)
+  expect_equal(loud$alpha, config$farrington$alpha)
+
+  # Too little history tests nothing, which is not the same as testing
+  # and finding nothing.
+  short <- episodic_detect_farrington(
+    farrington_cases_from_weekly_counts(week_starts[1:60], stats::rpois(60, 3)),
+    stream_id = 1L,
+    config = config,
+    run_date = week_starts[60] + 6
+  )
+  expect_null(episodic_farrington_tested(short))
+})

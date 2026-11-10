@@ -17,6 +17,9 @@ episodic_validate_detection(
   detectors = episodic_validation_detectors(),
   config = NULL,
   pathogen_config = NULL,
+  pathogen_copies = 1L,
+  run_interval_days = 7L,
+  reporting_delay_days = 0,
   quiet = TRUE
 )
 
@@ -63,6 +66,26 @@ columns from \code{inst/config/episodic_default_pathogen_config.csv}.
 Merged row-by-row over the shipped defaults the same way
 \code{EPISODIC_PATHOGEN_CONFIG} is.}
 
+\item{pathogen_copies}{Passed to \code{\link[=episodic_synthetic_cases]{episodic_synthetic_cases()}}: how
+many independent copies of the endemic pathogens to watch. Each copy
+inherits its original's per-pathogen configuration and \code{same_place}
+rule, so it is watched exactly as the original is. With
+\code{outbreaks = FALSE} this measures how the false-alarm burden grows
+with the number of pathogens an instance watches.}
+
+\item{run_interval_days}{Days between runs: 7 (the default) replays
+one run a week, 1 replays a nightly schedule, on which the last
+complete week is tested again by every run until the next one
+completes.}
+
+\item{reporting_delay_days}{The mean number of days from sampling until
+a result is in the laboratory's extract. Each case's delay is drawn
+from a Poisson distribution with this mean, independently of the
+cases themselves, and a run is handed only the cases whose result is
+in by its date. 0 (the default) hands every run every case sampled on
+or before it. With a delay and a nightly \code{run_interval_days}, a week
+is retested as its late results arrive, which is what this measures.}
+
 \item{quiet}{If \code{TRUE} (the default), the per-run progress
 \code{\link[=episodic_run_cron]{episodic_run_cron()}} writes is suppressed; a replay is hundreds of
 lines of it. Warnings and errors are not suppressed.}
@@ -81,8 +104,10 @@ much of it was still to come at that moment.}
 \item{\code{clusters}}{One row per (seed, cluster raised): its case-set
 precision, whether it counts as a true positive, its priority
 score, and which detectors fired on it.}
-\item{\code{runs}}{One row per (seed, run): streams watched, clusters
-raised, and how many of those survived lattice suppression.}
+\item{\code{runs}}{One row per (seed, run): streams watched, the
+stream-weeks they stand for, the hypotheses Farrington tested and
+the false alarms that implied, clusters raised, and how many of
+those survived lattice suppression.}
 \item{\code{overlap}}{Every (run, cluster, outbreak) that shared a
 case, which is the raw material both tables above are derived
 from.}

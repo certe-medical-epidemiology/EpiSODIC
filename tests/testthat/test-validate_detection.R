@@ -257,3 +257,106 @@ test_that("the censored time-to-detection curve travels with the result", {
     sum(result$outbreaks$fully_prospective)
   )
 })
+
+test_that("a nightly replay counts its streams as days of a week, not as weeks", {
+  skip_on_cran()
+  weekly <- tiny(outbreaks = FALSE)
+  nightly <- tiny(outbreaks = FALSE, run_interval_days = 1L)
+
+  expect_equal(nrow(nightly$runs), 8)
+  expect_equal(nightly$runs$weeks, rep(1 / 7, 8))
+  expect_equal(nightly$runs$stream_weeks, nightly$runs$n_streams / 7)
+  expect_equal(nightly$meta$n_stream_weeks, sum(nightly$runs$n_streams) / 7)
+  expect_equal(weekly$runs$stream_weeks, weekly$runs$n_streams)
+
+  per_week <- nightly$summary[
+    nightly$summary$metric == "false_alarms" &
+      nightly$summary$group == "all clusters raised, per week watched",
+  ]
+  expect_equal(per_week$denominator, sum(nightly$runs$weeks))
+})
+
+test_that("Farrington's tests are carried from each run, and missing ones stay missing", {
+  skip_on_cran()
+  result <- episodic_validate_detection(
+    end_date = as.Date("2026-06-28"),
+    history_years = 4,
+    evaluation_weeks = 1,
+    outbreaks = FALSE
+  )
+  expect_true(all(result$runs$n_farrington_tests > 0))
+  expect_equal(
+    result$runs$farrington_expected_false_alarms,
+    result$runs$n_farrington_tests * episodic_config_resolve()$farrington$alpha
+  )
+  expect_true("farrington_nominal_false_alarms" %in% result$summary$metric)
+
+  off <- tiny(outbreaks = FALSE, detectors = c("same_place", "rare_trigger"))
+  expect_true(all(is.na(off$runs$n_farrington_tests)))
+  expect_false("farrington_nominal_false_alarms" %in% off$summary$metric)
+})
+
+test_that("pathogen copies are watched with their originals' settings", {
+  skip_on_cran()
+  result <- tiny(outbreaks = FALSE, pathogen_copies = 2L)
+  expect_equal(result$meta$pathogen_copies, 2L)
+  single <- tiny(outbreaks = FALSE)
+  expect_gt(min(result$runs$n_streams - single$runs$n_streams), 0)
+})
+
+test_that("the copies' same_place rules and pathogen rows come from their originals", {
+  resolved <- episodic_config_resolve()
+  settings <- episodic_validation_copy_settings(NULL, resolved, 3L)
+  expect_equal(
+    settings$same_place$overrides[["Norovirus #3"]],
+    resolved$same_place$overrides[["Norovirus"]]
+  )
+  expect_null(settings$same_place$overrides[["Influenza A #2"]])
+
+  pc <- episodic_validation_copy_pathogen_config(NULL, 2L)
+  original <- pc[pc$pathogen == "RSV", setdiff(names(pc), "pathogen")]
+  copy <- pc[pc$pathogen == "RSV #2", setdiff(names(pc), "pathogen")]
+  rownames(original) <- rownames(copy) <- NULL
+  expect_equal(copy, original)
+  expect_false(any(grepl("#3", pc$pathogen, fixed = TRUE)))
+
+  # A caller's own row reaches the copies too.
+  overlay <- data.frame(pathogen = "RSV", case_free_days = 99)
+  pc <- episodic_validation_copy_pathogen_config(overlay, 2L)
+  expect_equal(pc$case_free_days[pc$pathogen == "RSV #2"], 99)
+})
+
+test_that("reporting delays come from their own stream and leave the caller's alone", {
+  expect_equal(episodic_validation_reporting_delays(5, 0, seed = 1), integer(5))
+  set.seed(42)
+  before <- stats::runif(1)
+  set.seed(42)
+  delays <- episodic_validation_reporting_delays(1000, 3, seed = 1)
+  expect_equal(stats::runif(1), before)
+  expect_equal(delays, episodic_validation_reporting_delays(1000, 3, seed = 1))
+  expect_equal(mean(delays), 3, tolerance = 0.1)
+})
+
+test_that("a replay with a reporting delay hands each run only the results that are in", {
+  skip_on_cran()
+  prompt <- tiny(outbreaks = FALSE)
+  late <- tiny(outbreaks = FALSE, reporting_delay_days = 3)
+  expect_equal(late$meta$reporting_delay_days, 3)
+  expect_true(all(late$runs$n_streams <= prompt$runs$n_streams))
+})
+
+test_that("the replay refuses settings it cannot honour", {
+  expect_error(episodic_validate_detection(pathogen_copies = 0), "pathogen_copies")
+  expect_error(episodic_validate_detection(pathogen_copies = 1.5), "pathogen_copies")
+  expect_error(episodic_validate_detection(run_interval_days = 14), "run_interval_days")
+  expect_error(episodic_validate_detection(reporting_delay_days = -1), "reporting_delay_days")
+})
+
+test_that("a pathogen configuration passed as a path is left where it was", {
+  skip_on_cran()
+  path <- tempfile(fileext = ".csv")
+  on.exit(unlink(path))
+  utils::write.csv(data.frame(pathogen = "RSV", case_free_days = 30), path, row.names = FALSE)
+  tiny(outbreaks = FALSE, pathogen_config = path)
+  expect_true(file.exists(path))
+})

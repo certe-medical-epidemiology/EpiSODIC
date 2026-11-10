@@ -897,3 +897,75 @@ test_that("Farrington's week budget is a catch-up cap, lifted for a backfill", {
   expect_gt(owed, 10000L)
   expect_false(is.na(100L - owed + 1L))
 })
+
+test_that("a run records per detector what it tested and reported", {
+  path <- tempfile(fileext = ".sqlite")
+  on.exit(unlink(path))
+  run_date <- as.Date("2025-06-29")
+  cases <- episodic_synthetic_cases(
+    start_date = run_date - 4 * 365,
+    end_date = run_date,
+    seed = 5,
+    outbreaks = FALSE
+  )
+  suppressMessages(episodic_run_cron(
+    db_path = path,
+    cases = cases,
+    run_date = run_date,
+    backfill = FALSE
+  ))
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  run <- episodic_db_latest_run(con)
+  rows <- DBI::dbGetQuery(
+    con,
+    "SELECT * FROM episodic_detection_run_detector WHERE run_id = ?",
+    params = list(run$run_id)
+  )
+  expect_setequal(rows$detector, episodic_detectors)
+  expect_equal(sum(rows$n_detections), run$n_detections)
+
+  farrington <- rows[rows$detector == "farrington", ]
+  expect_gt(farrington$n_tests, 0)
+  alpha <- episodic_config_resolve()$farrington$alpha
+  expect_equal(farrington$expected_false_alarms, farrington$n_tests * alpha)
+
+  # The rule-based and seasonal detectors test nothing: no count of tests
+  # and no false-alarm rate, rather than zero of either.
+  others <- rows[rows$detector != "farrington", ]
+  expect_true(all(is.na(others$n_tests)))
+  expect_true(all(is.na(others$expected_false_alarms)))
+
+  detections <- DBI::dbGetQuery(
+    con,
+    "SELECT detector, p_value, alpha FROM episodic_detection WHERE run_id = ?",
+    params = list(run$run_id)
+  )
+  far <- detections[detections$detector == "farrington", ]
+  expect_true(all(far$p_value < far$alpha))
+  expect_true(all(is.na(detections$p_value[detections$detector != "farrington"])))
+  trend <- DBI::dbGetQuery(con, "SELECT p_value FROM episodic_stream_trend")
+  expect_true(any(!is.na(trend$p_value)))
+})
+
+test_that("a detector that is switched off leaves no row for the run", {
+  path <- tempfile(fileext = ".sqlite")
+  config_path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(c(path, config_path)))
+  writeLines("same_place:\n  enabled: false", config_path)
+  suppressMessages(episodic_run_cron(
+    db_path = path,
+    cases = episodic_synthetic_cases(
+      start_date = as.Date("2024-06-01"),
+      end_date = as.Date("2024-08-31"),
+      seed = 3
+    ),
+    episodic_config_path = config_path,
+    run_date = as.Date("2024-08-31")
+  ))
+  con <- episodic_db_connect(path)
+  on.exit(DBI::dbDisconnect(con), add = TRUE, after = FALSE)
+  rows <- DBI::dbGetQuery(con, "SELECT detector FROM episodic_detection_run_detector")
+  expect_false("same_place" %in% rows$detector)
+  expect_true("farrington" %in% rows$detector)
+})

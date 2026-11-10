@@ -78,6 +78,15 @@ study <- list(
   # the number of operating points, and their purpose is the shape of a
   # curve rather than a precise point on it.
   sweep_seeds = if (quick) 1 else 1:5,
+  # The alarm-burden scenarios: how false alarms grow with the number of
+  # pathogens watched, and with a nightly schedule retesting a week as
+  # its late results arrive. Both on histories with nothing seeded.
+  burden_seeds = if (quick) 1 else 1:5,
+  pathogen_copies = if (quick) c(1, 2) else c(1, 2, 4, 8),
+  # Mean days from sampling to a result in the extract. An assumption,
+  # not a measurement: two to three days is typical of culture, less of
+  # PCR, and nothing in the synthetic data says which a case was.
+  reporting_delay_days = 3,
   min_recall = 0.5,
   min_precision = 0.5
 )
@@ -276,6 +285,42 @@ scenarios$comparator_shewhart_control <- run_comparator(
   "comparator_shewhart_control",
   "shewhart",
   outbreaks = FALSE
+)
+
+# --------------------------------------------------------------------
+# The alarm burden
+#
+# Lattice suppression removes restatements of one signal; it does nothing
+# about independent false alarms, whose number grows with what is
+# watched. Each copy is another eight endemic pathogens with nothing
+# seeded in them, watched exactly as the originals are, so every alarm
+# raised is a false one and the growth is the burden itself.
+# --------------------------------------------------------------------
+for (copies in study$pathogen_copies) {
+  scenarios[[paste0("burden_pathogens_x", copies)]] <- run_scenario(
+    paste0("burden_pathogens_x", copies),
+    seeds = study$burden_seeds,
+    outbreaks = FALSE,
+    pathogen_copies = copies
+  )
+}
+
+# A nightly schedule tests the last complete week again on every run
+# until the next one completes, and with results still arriving each
+# retest sees a little more of it. Weekly and nightly over the same
+# delayed histories: the difference is what the retesting costs.
+scenarios$burden_delay_weekly <- run_scenario(
+  "burden_delay_weekly",
+  seeds = study$burden_seeds,
+  outbreaks = FALSE,
+  reporting_delay_days = study$reporting_delay_days
+)
+scenarios$burden_delay_nightly <- run_scenario(
+  "burden_delay_nightly",
+  seeds = study$burden_seeds,
+  outbreaks = FALSE,
+  reporting_delay_days = study$reporting_delay_days,
+  run_interval_days = 1L
 )
 
 # --------------------------------------------------------------------
@@ -487,6 +532,38 @@ drop_one <- do.call(rbind, lapply(episodic_validation_detectors(), function(drop
   )
 }))
 write_csv(drop_one, "drop_one.csv")
+
+# The alarm burden, one row per scenario: what was watched, what
+# Farrington's significance level promised, and the false alarms that
+# were actually raised, per week of calendar time and per stream-week.
+burden <- do.call(rbind, lapply(grep("^burden_", names(scenarios), value = TRUE), function(name) {
+  result <- scenarios[[name]]
+  data.frame(
+    scenario = name,
+    config_hash = result$meta$config_hash,
+    n_seeds = result$meta$n_seeds,
+    pathogens = 8 * result$meta$pathogen_copies,
+    run_interval_days = result$meta$run_interval_days,
+    reporting_delay_days = result$meta$reporting_delay_days,
+    streams_per_run = stats::median(result$runs$n_streams),
+    farrington_tests_per_run = headline(
+      result, "farrington_tests", "stream-weeks tested per run", "median"
+    ),
+    farrington_nominal_false_alarms_per_run = headline(
+      result, "farrington_nominal_false_alarms",
+      "sum of the significance levels tested at", "median"
+    ),
+    false_alarms = headline(result, "false_alarms", "all clusters raised, per week watched", "numerator"),
+    weeks_watched = headline(result, "false_alarms", "all clusters raised, per week watched", "denominator"),
+    false_alarms_per_week = headline(result, "false_alarms", "all clusters raised, per week watched"),
+    false_alarms_per_week_ci_low = headline(result, "false_alarms", "all clusters raised, per week watched", "ci_low"),
+    false_alarms_per_week_ci_high = headline(result, "false_alarms", "all clusters raised, per week watched", "ci_high"),
+    false_alarms_per_stream_week = headline(result, "false_alarms", "all clusters raised"),
+    stream_weeks = result$meta$n_stream_weeks,
+    stringsAsFactors = FALSE
+  )
+}))
+write_csv(burden, "alarm_burden.csv")
 
 # The operating-point curve itself, one row per point.
 curve <- do.call(rbind, lapply(names(sweep), function(name) {

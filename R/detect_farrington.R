@@ -55,8 +55,11 @@
 #' @param fit The function that fits the tested weeks,
 #'   `episodic_farrington_fit_weeks()` or one returning exactly what it
 #'   would (`episodic_farrington_fit_memo()`).
-#' @return A data frame of detection records (zero or one row: Farrington
-#'   evaluates the trailing `n_weeks` weeks).
+#' @return A data frame of detection records, one per alarmed week among
+#'   the trailing `n_weeks`. How many weeks were tested, and at which
+#'   level, is attached as an attribute (`episodic_farrington_tested()`
+#'   reads it): the weeks that did not alarm leave no record of their
+#'   own, and a run cannot state its false-alarm rate without them.
 #' @references
 #' Farrington CP, Andrews NJ, Beale AD, Catchpole MA (1996). "A Statistical
 #' Algorithm for the Early Detection of Outbreaks of Infectious Disease."
@@ -123,14 +126,15 @@ episodic_detect_farrington <- function(cases_for_stream,
   if (is.null(result)) {
     return(empty)
   }
+  tested <- c(n_tests = sum(!is.na(result$alarm)), alpha = fc$alpha)
 
   alarmed <- which(result$alarm)
   if (length(alarmed) == 0) {
-    return(empty)
+    return(episodic_farrington_tested_note(empty, tested))
   }
 
   week_start <- weekly$week_start[range_idx][alarmed]
-  episodic_detection_record(
+  records <- episodic_detection_record(
     stream_id = stream_id,
     detector = "farrington",
     first_day = as.character(week_start),
@@ -138,8 +142,37 @@ episodic_detect_farrington <- function(cases_for_stream,
     n_cases = result$observed[alarmed],
     expected = result$expected[alarmed],
     upperbound = result$upperbound[alarmed],
+    p_value = result$p_value[alarmed],
+    alpha = fc$alpha,
     params = list(b = fc$b, w = fc$w, alpha = fc$alpha)
   )
+  episodic_farrington_tested_note(records, tested)
+}
+
+#' Attach to a Farrington result how many weeks it tested, and at what level
+#'
+#' A week the fit could decide is a hypothesis tested, whether or not it
+#' alarmed, and whether or not it had enough recent cases (limit54) to be
+#' able to: counting only the weeks that could alarm would let the data
+#' being tested choose the size of the family it is tested in.
+#'
+#' @param x A detection result.
+#' @param tested `c(n_tests = , alpha = )`.
+#' @keywords internal
+#' @noRd
+episodic_farrington_tested_note <- function(x, tested) {
+  attr(x, "episodic_farrington_tested") <- tested
+  x
+}
+
+#' What `episodic_farrington_tested_note()` recorded, or `NULL`
+#'
+#' `NULL` for a result that tested nothing (detector off, no cases, too
+#' little history, a fit that failed).
+#' @keywords internal
+#' @noRd
+episodic_farrington_tested <- function(x) {
+  attr(x, "episodic_farrington_tested", exact = TRUE)
 }
 
 #' Weekly Farrington trend points, for the multi-year trend panel
@@ -170,7 +203,7 @@ episodic_detect_farrington <- function(cases_for_stream,
 #' @param population See `episodic_detect_farrington()`.
 #' @param fit See `episodic_detect_farrington()`.
 #' @return A data frame with `week_start`, `n_cases`, `expected`,
-#'   `upperbound` (zero rows if ineligible).
+#'   `upperbound`, `p_value` (zero rows if ineligible).
 #' @keywords internal
 #' @noRd
 episodic_farrington_trend <- function(cases_for_stream,
@@ -185,6 +218,7 @@ episodic_farrington_trend <- function(cases_for_stream,
     n_cases = integer(0),
     expected = numeric(0),
     upperbound = numeric(0),
+    p_value = numeric(0),
     stringsAsFactors = FALSE
   )
 
@@ -226,6 +260,7 @@ episodic_farrington_trend <- function(cases_for_stream,
     n_cases = result$observed,
     expected = result$expected,
     upperbound = result$upperbound,
+    p_value = result$p_value,
     stringsAsFactors = FALSE
   )
 }
@@ -235,11 +270,21 @@ episodic_farrington_trend <- function(cases_for_stream,
 #' `episodic_farrington_fit()`'s result reduced to what the detector and
 #' the trend cache read from it.
 #'
+#' The p-value is the upper-tail probability of the observed count under
+#' the fitted baseline, on the same power-transformed normal
+#' approximation the bound is drawn from, so a week alarms exactly when
+#' its p-value falls below `alpha` (and limit54 is met, and the count is
+#' not zero). Where limit54 is not met the week cannot alarm at any
+#' level, and its p-value is `NA` rather than the number
+#' `farringtonFlexible()` computes anyway: it was not the basis of any
+#' decision.
+#'
 #' @inheritParams episodic_farrington_fit
 #' @return `NULL` when the model cannot be fitted, otherwise a data frame
 #'   with one row per element of `range_idx`, in its order: `range_idx`,
 #'   `observed` (integer), `expected` and `upperbound` (numeric), `alarm`
-#'   (logical, `NA` where the fit could not decide).
+#'   (logical, `NA` where the fit could not decide), `p_value` (numeric,
+#'   `NA` where the week could not be judged).
 #' @keywords internal
 #' @noRd
 episodic_farrington_fit_weeks <- function(weekly,
@@ -255,12 +300,16 @@ episodic_farrington_fit_weeks <- function(weekly,
   if (is.null(result)) {
     return(NULL)
   }
+  expected <- as.numeric(result@control$expected[, 1])
+  p_value <- as.numeric(result@control$pvalue[, 1])
+  p_value[is.na(expected)] <- NA_real_
   data.frame(
     range_idx = as.integer(range_idx),
     observed = as.integer(result@observed[, 1]),
-    expected = as.numeric(result@control$expected[, 1]),
+    expected = expected,
     upperbound = as.numeric(result@upperbound[, 1]),
     alarm = as.logical(result@alarm[, 1]),
+    p_value = p_value,
     stringsAsFactors = FALSE
   )
 }
@@ -348,7 +397,12 @@ episodic_farrington_fit <- function(weekly, range_idx, fc, population = NULL) {
     pastWeeksNotIncluded = fc$pastWeeksNotIncluded,
     limit54 = unlist(fc$limit54),
     alpha = fc$alpha,
-    populationOffset = use_population
+    populationOffset = use_population,
+    # Both are farringtonFlexible()'s defaults, written out because the
+    # p-value rests on them: the bound and the p-value come from the same
+    # 2/3-power normal approximation only under the delta method.
+    thresholdMethod = "delta",
+    powertrans = "2/3"
   )
   tryCatch(
     suppressWarnings(surveillance::farringtonFlexible(

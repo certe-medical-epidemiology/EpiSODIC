@@ -1246,6 +1246,15 @@ episodic_run_cron_body <- function(con,
   # to this run.
   n_eligible_streams <- 0L
   n_muted_streams <- 0L
+  # What each detector did, for episodic_detection_run_detector.
+  # Detections are counted as inserted, so after muting; tests only for
+  # the detector that performs any.
+  n_detections_by <- stats::setNames(
+    integer(length(episodic_detectors)),
+    episodic_detectors
+  )
+  farrington_n_tests <- 0L
+  farrington_expected_false <- 0
   muted_stream_ids <- episodic_db_muted_stream_ids(con, run_date)
 
   episodic_trace("Running same-place detector")
@@ -1509,6 +1518,12 @@ episodic_run_cron_body <- function(con,
         n_weeks = farrington_weeks,
         fit = farrington_fit
       )
+      tested <- episodic_farrington_tested(farrington)
+      if (!is.null(tested)) {
+        farrington_n_tests <- farrington_n_tests + as.integer(tested[["n_tests"]])
+        farrington_expected_false <- farrington_expected_false +
+          tested[["n_tests"]] * tested[["alpha"]]
+      }
       shortfall <- episodic_farrington_shortfall(farrington)
       if (!is.null(shortfall)) {
         farrington_short <- rbind(
@@ -1555,7 +1570,8 @@ episodic_run_cron_body <- function(con,
           week_start = as.character(trend$week_start[k]),
           n_cases = trend$n_cases[k],
           expected = trend$expected[k],
-          upperbound = trend$upperbound[k]
+          upperbound = trend$upperbound[k],
+          p_value = trend$p_value[k]
         )
       }
       stage$stop("trend")
@@ -1583,10 +1599,16 @@ episodic_run_cron_body <- function(con,
           n_cases = d$n_cases,
           expected = d$expected,
           upperbound = d$upperbound,
-          params_json = as.character(d$params)
+          params_json = as.character(d$params),
+          p_value = d$p_value,
+          alpha = d$alpha
         )
       }
       stream_detections$detection_id <- detection_ids
+      for (detector in unique(stream_detections$detector)) {
+        n_detections_by[[detector]] <- n_detections_by[[detector]] +
+          sum(stream_detections$detector == detector)
+      }
       stage$stop("detections")
       n_detections_total <- n_detections_total + nrow(stream_detections)
       episodic_trace_debug(
@@ -1823,6 +1845,31 @@ episodic_run_cron_body <- function(con,
       # Fitted nowhere is the statistical detector contributing nothing
       # at all to the run; fitted on some of them is a count.
       severity = if (n_farrington_fitted == 0) "warn" else "plain"
+    )
+  }
+  for (detector in names(n_detections_by)) {
+    if (!episodic_detector_enabled(config, detector)) {
+      next
+    }
+    statistical <- identical(detector, "farrington")
+    episodic_db_run_detector_insert(
+      con,
+      run_id = run_id,
+      detector = detector,
+      n_tests = if (statistical) farrington_n_tests else NA_integer_,
+      n_detections = n_detections_by[[detector]],
+      expected_false_alarms = if (statistical) farrington_expected_false else NA_real_
+    )
+  }
+  if (farrington_n_tests > 0L) {
+    episodic_trace(
+      "Farrington tested ",
+      farrington_n_tests,
+      " stream-week(s) and raised ",
+      n_detections_by[["farrington"]],
+      " detection(s); were nothing happening anywhere, it would raise ",
+      format(round(farrington_expected_false, 2), nsmall = 2),
+      " on average"
     )
   }
   episodic_trace(

@@ -96,6 +96,13 @@
 #'   to all of them, or a named vector giving days per outbreak
 #'   identifier (any not named stays at 0). `NULL`, the default, leaves
 #'   every outbreak anchored to `end_date`.
+#' @param pathogen_copies How many independent copies of the eight
+#'   endemic pathogens to generate, `1` for the eight alone. Copy `j` of a
+#'   pathogen is named `"<pathogen> #j"` and drawn with the same seasonal
+#'   profile, but independently, and no outbreak is seeded in it. This is
+#'   for measuring how the false-alarm burden grows as an instance watches
+#'   more pathogens: the cases of the first copy, and the outbreaks, are
+#'   identical whatever the number of copies.
 #' @return A data frame satisfying [episodic_check_cases()], carrying the
 #'   ground truth of what was injected as an attribute - see
 #'   [episodic_synthetic_ground_truth()].
@@ -114,7 +121,13 @@ episodic_synthetic_cases <- function(start_date = end_date - 5 * 365,
                                      end_date = Sys.Date(),
                                      seed = 1,
                                      outbreaks = TRUE,
-                                     outbreak_offsets = NULL) {
+                                     outbreak_offsets = NULL,
+                                     pathogen_copies = 1L) {
+  if (!is.numeric(pathogen_copies) || length(pathogen_copies) != 1 ||
+    is.na(pathogen_copies) || pathogen_copies < 1 ||
+    pathogen_copies != round(pathogen_copies)) {
+    stop("`pathogen_copies` must be a single whole number of at least 1.", call. = FALSE)
+  }
   previous_seed <- episodic_seed_snapshot()
   on.exit(episodic_seed_restore(previous_seed), add = TRUE)
   set.seed(seed)
@@ -145,6 +158,18 @@ episodic_synthetic_cases <- function(start_date = end_date - 5 * 365,
   )
 
   cases <- rbind(baseline, injected)
+  # Drawn after everything else, so the first copy and the outbreaks are
+  # the same cases whatever the number of copies.
+  if (pathogen_copies > 1) {
+    copies <- episodic_synthetic_baseline_cases(
+      dates,
+      institutions,
+      pc_pool,
+      episodic_synthetic_pathogen_copies(pathogens, pathogen_copies)
+    )
+    copies$outbreak_id <- rep(NA_character_, nrow(copies))
+    cases <- rbind(cases, copies)
+  }
   cases$source_key <- sprintf("SYN-%08d", seq_len(nrow(cases)))
   cases$lab_number <- sprintf("LABSYN-%08d", seq_len(nrow(cases)))
 
@@ -446,6 +471,30 @@ episodic_synthetic_pathogen_profiles <- function() {
     phase_day = c(15, 30, 200, 210, 350, 180, 180, 200), # ~mid-Jan, end Jan, mid-Jul etc.
     stringsAsFactors = FALSE
   )
+}
+
+#' Copies 2 to `n` of the endemic pathogen profiles, renamed
+#'
+#' @param pathogens `episodic_synthetic_pathogen_profiles()`.
+#' @param n The number of copies, the original included.
+#' @return The profiles of copies 2 to `n`, with `pathogen` renamed by
+#'   `episodic_synthetic_copy_name()`.
+#' @keywords internal
+#' @noRd
+episodic_synthetic_pathogen_copies <- function(pathogens, n) {
+  copies <- lapply(seq(2L, n), function(j) {
+    copy <- pathogens
+    copy$pathogen <- episodic_synthetic_copy_name(pathogens$pathogen, j)
+    copy
+  })
+  do.call(rbind, copies)
+}
+
+#' The name of copy `j` of a pathogen
+#' @keywords internal
+#' @noRd
+episodic_synthetic_copy_name <- function(pathogen, j) {
+  paste0(pathogen, " #", j)
 }
 
 #' The expected daily count of one pathogen, before Poisson noise

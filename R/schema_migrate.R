@@ -358,7 +358,7 @@ episodic_db_apply_schema <- function(con, dialect) {
 #' never reused.
 #' @keywords internal
 #' @noRd
-episodic_schema_version <- 16L
+episodic_schema_version <- 17L
 
 #' Record that a schema version has been applied
 #' @keywords internal
@@ -1001,6 +1001,45 @@ episodic_db_migrations <- function() {
     "16" = function(con, dialect) {
       if (!DBI::dbExistsTable(con, "episodic_plugin_run_event")) {
         for (statement in episodic_db_schema_statements_for(dialect, "episodic_plugin_run_event")) {
+          episodic_db_execute(con, statement)
+        }
+      }
+      invisible(NULL)
+    },
+    # 17: the tests behind statistical detections. episodic_detection and
+    # episodic_stream_trend gain p_value (and the detection the alpha it
+    # was judged against), and episodic_detection_run_detector records
+    # per run how many hypotheses each detector tested and the false
+    # alarms that implies. Purely additive: nullable columns, NULL on
+    # every row already on file because no run before this version
+    # recorded them, and one table taken from the schema file, skipped
+    # when present for the same reason as 2.
+    "17" = function(con, dialect) {
+      columns <- list(
+        c("episodic_detection", "p_value"),
+        c("episodic_detection", "alpha"),
+        c("episodic_stream_trend", "p_value")
+      )
+      checks <- c(
+        p_value = "CHECK (p_value IS NULL OR (p_value >= 0 AND p_value <= 1))",
+        alpha = "CHECK (alpha IS NULL OR (alpha > 0 AND alpha <= 1))"
+      )
+      for (column in columns) {
+        if (!episodic_db_column_exists(con, dialect, column[1], column[2])) {
+          episodic_db_execute(
+            con,
+            paste(
+              "ALTER TABLE", column[1], "ADD COLUMN", column[2], "REAL",
+              checks[[column[2]]]
+            )
+          )
+        }
+      }
+      if (!DBI::dbExistsTable(con, "episodic_detection_run_detector")) {
+        for (statement in episodic_db_schema_statements_for(
+          dialect,
+          "episodic_detection_run_detector"
+        )) {
           episodic_db_execute(con, statement)
         }
       }
@@ -2203,6 +2242,9 @@ episodic_db_schema_statements <- function(dialect) {
       ),
       episodic_cluster_forecast_estimate = c(
         "  quantity            TEXT NOT NULL," = "  quantity            VARCHAR(40) NOT NULL,"
+      ),
+      episodic_detection_run_detector = c(
+        "  detector              TEXT NOT NULL CHECK (detector IN (" = "  detector              VARCHAR(20) NOT NULL CHECK (detector IN ("
       ),
       episodic_detector_cache = c(
         "  detector   TEXT NOT NULL CHECK (detector IN ('mem'))," = "  detector   VARCHAR(20) NOT NULL CHECK (detector IN ('mem')),"

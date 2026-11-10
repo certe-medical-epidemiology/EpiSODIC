@@ -250,7 +250,13 @@ CREATE TABLE episodic_detection (
   expected     REAL,
   upperbound   REAL,
   params       TEXT NOT NULL,
-  created_at   TEXT NOT NULL
+  created_at   TEXT NOT NULL,
+  -- The test behind a statistical detection: its p-value, and the
+  -- significance level it was judged against in this run. NULL for a
+  -- detector that performs no test (same_place, rare_trigger, mem), never
+  -- a p-value of 0 or 1 standing in for one.
+  p_value      REAL CHECK (p_value IS NULL OR (p_value >= 0 AND p_value <= 1)),
+  alpha        REAL CHECK (alpha IS NULL OR (alpha > 0 AND alpha <= 1))
 );
 
 CREATE INDEX idx_episodic_detection_run ON episodic_detection(run_id);
@@ -487,7 +493,31 @@ CREATE TABLE episodic_stream_trend (
   n_cases    INTEGER NOT NULL,
   expected   REAL,
   upperbound REAL,
+  -- The week's Farrington p-value; NULL where the week could not be
+  -- judged (too few recent cases for limit54).
+  p_value    REAL CHECK (p_value IS NULL OR (p_value >= 0 AND p_value <= 1)),
   PRIMARY KEY (stream_id, week_start)
+);
+
+-- ---------------------------------------------------------------------
+-- What each detector did in a run (cron). One row per run and detector
+-- that was switched on. n_tests counts the hypotheses a statistical
+-- detector tested (for Farrington, the stream-weeks it fitted), and
+-- expected_false_alarms is the sum of the significance levels they were
+-- tested at: the number of false alarms the run would raise on average
+-- if nothing were happening anywhere. Both are NULL for a detector that
+-- performs no test, because it has no false-alarm rate to state, not
+-- because it has a rate of zero. n_detections is what the detector
+-- reported after muted streams were left out.
+-- ---------------------------------------------------------------------
+CREATE TABLE episodic_detection_run_detector (
+  run_id                INTEGER NOT NULL REFERENCES episodic_detection_run(run_id),
+  detector              TEXT NOT NULL CHECK (detector IN (
+                          'farrington', 'mem', 'rare_trigger', 'same_place')),
+  n_tests               INTEGER CHECK (n_tests IS NULL OR n_tests >= 0),
+  n_detections          INTEGER NOT NULL CHECK (n_detections >= 0),
+  expected_false_alarms REAL CHECK (expected_false_alarms IS NULL OR expected_false_alarms >= 0),
+  PRIMARY KEY (run_id, detector)
 );
 
 -- ---------------------------------------------------------------------
