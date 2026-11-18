@@ -79,9 +79,11 @@ jobs:
           # like a schema problem.
           - name: MariaDB 11
             image: mariadb:11
+            port: 13306
             health: healthcheck.sh --connect --innodb_initialized
           - name: MySQL 8
             image: mysql:8
+            port: 13308
             health: mysqladmin ping -h 127.0.0.1 --silent
 
     services:
@@ -98,8 +100,18 @@ jobs:
           MYSQL_DATABASE: episodic_test
           MYSQL_USER: episodic
           MYSQL_PASSWORD: episodic
+        # The container's own port, published on a host port that is not
+        # 3306. The runner image ships MySQL, and
+        # r-lib/actions/setup-r-dependencies installs RMariaDB's system
+        # requirement libmysqlclient-dev, which pulls mysql-server with
+        # it: whenever the archive holds a newer mysql-server than the
+        # image, apt configures it, its postinst starts a server, and a
+        # server cannot bind a port this job's service container already
+        # holds. The dependency step then fails before a single test
+        # runs. Nothing here needs the default port, and these are the
+        # ports the local commands above use.
         ports:
-          - 3306:3306
+          - ${{ matrix.server.port }}:3306
         options: >-
           --health-cmd="${{ matrix.server.health }}"
           --health-interval=5s
@@ -114,7 +126,7 @@ jobs:
       # of this job and holds nothing but synthetic cases. The live tests
       # skip themselves when this is unset, which is what keeps the suite
       # green on a laptop with no MariaDB.
-      EPISODIC_TEST_MARIADB_DSN: mysql://episodic:episodic@127.0.0.1:3306/episodic_test
+      EPISODIC_TEST_MARIADB_DSN: mysql://episodic:episodic@127.0.0.1:${{ matrix.server.port }}/episodic_test
 
     steps:
       - uses: actions/checkout@v4
