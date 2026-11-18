@@ -3,15 +3,10 @@
 ## Authors
 
 - **Matthijs S. Berends**. Author, maintainer.
+  [](https://orcid.org/0000-0001-7620-1800)
 
 - **T. Maarten Homburg**. Author.
-
-- **University Medical Center Groningen**. Copyright holder, funder.
-  [![ROR](https://raw.githubusercontent.com/ror-community/ror-logos/main/ror-icon-rgb.svg)](https://ror.org/03cv38k47)
-
-- **Certe Medical Diagnostics & Advice Foundation**. Copyright holder,
-  funder.
-  [![ROR](https://raw.githubusercontent.com/ror-community/ror-logos/main/ror-icon-rgb.svg)](https://ror.org/04m8g8w48)
+  [](https://orcid.org/0000-0002-3295-4656)
 
 ## Citation
 

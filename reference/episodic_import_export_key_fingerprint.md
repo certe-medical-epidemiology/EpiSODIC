@@ -34,6 +34,6 @@ A 64-character hexadecimal string.
 dir <- tempfile()
 keys <- episodic_import_export_keygen(dir)
 episodic_import_export_key_fingerprint(keys$signing_public)
-#> [1] "d7782b8e55086b571d7c965c36f39e0faabc4038506c63b54fdd7f6305ae9185"
+#> [1] "4afc313e6eda9f6ef4b9f683d964cadda28287208d039c8e6287e6534c47fdad"
 unlink(dir, recursive = TRUE)
 ```
