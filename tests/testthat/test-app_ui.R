@@ -474,7 +474,7 @@ test_that("episodic_app_package_meta() reads only the first DESCRIPTION URL, not
   expect_false(is.null(meta))
   expect_equal(
     meta$url,
-    "https://certe-medical-epidemiology.github.io/EpiSODIC"
+    "https://msberends.github.io/EpiSODIC"
   )
   expect_false(grepl(",", meta$url, fixed = TRUE))
   expect_equal(meta$license, "GPL-2")

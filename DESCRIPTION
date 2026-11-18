@@ -69,6 +69,6 @@ Suggests:
     zip
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-URL: https://certe-medical-epidemiology.github.io/EpiSODIC, https://github.com/certe-medical-epidemiology/EpiSODIC
-BugReports: https://github.com/certe-medical-epidemiology/EpiSODIC/issues
-Config/roxygen2/version: 8.1.0
+URL: https://msberends.github.io/EpiSODIC, https://github.com/msberends/EpiSODIC
+BugReports: https://github.com/msberends/EpiSODIC/issues
+Config/roxygen2/version: 8.1.1

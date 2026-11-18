@@ -218,9 +218,9 @@ Nothing else is in plaintext. The sender, the range, the row counts and the sche
 
 ## See also
 
-- [**Getting your data in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) for the case data format an import returns, and the geographic reference data that decides where a partner's cases can be placed.
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) for scheduling `episodic_run_cron()`, which fetches the import sources and carries out the export schedules, and for admin accounts.
-- [**Environment variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) for `EPISODIC_IMPORT_KEY`, `EPISODIC_EXPORT_SIGNING_KEY` and every other `EPISODIC_*` variable.
-- [**Tuning detection for your catchment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.html) for the `export.fields` and `export.pc_characters` configuration keys.
+- [**Getting your data in**](https://msberends.github.io/EpiSODIC/articles/data-format.html) for the case data format an import returns, and the geographic reference data that decides where a partner's cases can be placed.
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html) for scheduling `episodic_run_cron()`, which fetches the import sources and carries out the export schedules, and for admin accounts.
+- [**Environment variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html) for `EPISODIC_IMPORT_KEY`, `EPISODIC_EXPORT_SIGNING_KEY` and every other `EPISODIC_*` variable.
+- [**Tuning detection for your catchment**](https://msberends.github.io/EpiSODIC/articles/tuning-detection.html) for the `export.fields` and `export.pc_characters` configuration keys.
 - `?episodic_cases_export` and `?episodic_cases_import` for the API-level documentation.
 - `?episodic_import_export_test_connection` for testing a schedule or source headless.

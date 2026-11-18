@@ -68,7 +68,7 @@ later.
 By default the report uses EpiSODIC's own report template. If your
 organisation needs its own layout or branding, set the
 \code{EPISODIC_QUARTO_REPORT} environment variable to your own \code{.qmd} file;
-the default \href{https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd}{\code{inst/report/episodic_default_report.qmd}}
+the default \href{https://github.com/msberends/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd}{\code{inst/report/episodic_default_report.qmd}}
 is a good starting point to copy and adapt.
 
 The report is styled from the instance palette (\code{\link[=episodic_palette]{episodic_palette()}}),

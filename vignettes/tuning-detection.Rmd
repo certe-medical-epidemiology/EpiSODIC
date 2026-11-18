@@ -11,13 +11,13 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ```
 
-This vignette is for someone with a running EpiSODIC instance whose detection behaviour does not quite match their catchment: too many false alarms, missing outbreaks, clusters closing too early, the wrong things at the top of the board. It maps each of those complaints to the parameters that control it, the trade-off each adjustment creates, and how to verify the change helped. It does not re-explain how the detectors work ([**Detection and reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)) or how the configuration overlay system works ([**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)).
+This vignette is for someone with a running EpiSODIC instance whose detection behaviour does not quite match their catchment: too many false alarms, missing outbreaks, clusters closing too early, the wrong things at the top of the board. It maps each of those complaints to the parameters that control it, the trade-off each adjustment creates, and how to verify the change helped. It does not re-explain how the detectors work ([**Detection and reconciliation**](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html)) or how the configuration overlay system works ([**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)).
 
 ## Before you change anything
 
 Every detection run records the exact configuration it used: a SHA-1 hash of the resolved settings (`config_hash`) and a full JSON snapshot (`config_snapshot`), both on the run's own row. A change you make today affects only future runs, never the meaning of a past one. You can tune with confidence, since nothing becomes retroactively wrong.
 
-Point the `EPISODIC_CONFIG` environment variable at a YAML file with only the keys you want to change; everything else keeps its shipped default. See [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) for the mechanics.
+Point the `EPISODIC_CONFIG` environment variable at a YAML file with only the keys you want to change; everything else keeps its shipped default. See [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html) for the mechanics.
 
 ```yaml
 # my_instance.yaml - only what differs from the defaults.
@@ -238,7 +238,7 @@ mem:
   trough_percentile: 0.20
 ```
 
-Declaring the season started or ended is always a human act, never automatic. MEM raises the signal; a person declares. See [**Detection and reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html).
+Declaring the season started or ended is always a human act, never automatic. MEM raises the signal; a person declares. See [**Detection and reconciliation**](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html).
 
 
 ## Per-pathogen parameters
@@ -316,7 +316,7 @@ baseline$summary[baseline$summary$metric %in% c("sensitivity", "ppv"), ]
 adjusted$summary[adjusted$summary$metric %in% c("sensitivity", "ppv"), ]
 ```
 
-This measures the machinery against known truth: does the change improve sensitivity, reduce false alarms, or affect time-to-detection? The defaults are deliberately small (one seed, four weeks) so it returns in seconds; for a proper comparison use more seeds and a longer window. See [**Measuring detection against known truth**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html) for the full framework.
+This measures the machinery against known truth: does the change improve sensitivity, reduce false alarms, or affect time-to-detection? The defaults are deliberately small (one seed, four weeks) so it returns in seconds; for a proper comparison use more seeds and a longer window. See [**Measuring detection against known truth**](https://msberends.github.io/EpiSODIC/articles/detection-validation.html) for the full framework.
 
 ### Against your own board's verdicts
 
@@ -524,7 +524,7 @@ When MEM opens a seasonal epidemic, the fit that set its thresholds also gives t
 | <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;triggers:<br>&nbsp;&nbsp;&nbsp;&nbsp;stale_data</code> | (unset) | Send when no new case of the instance's own has arrived for more than `stale_data.max_days_without_new_cases` days, on every run while it lasts; must be set to `true` explicitly |
 | <code style="white-space: nowrap;">notifications:<br>&nbsp;&nbsp;channels:<br>&nbsp;&nbsp;&nbsp;&nbsp;&lt;channel&gt;</code> | (unset) | One block per channel (`ntfy`, `smtp`, `sendmail`, `microsoft365`, `teams`, `slack`), each with its own `enabled` and settings |
 
-Every channel's settings, and how to test them, are in [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html).
+Every channel's settings, and how to test them, are in [**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html).
 
 ### Report
 
@@ -535,7 +535,7 @@ Every channel's settings, and how to test them, are in [**Notifications**](https
 
 ### Export
 
-Which columns an export to a partner instance carries, and how coarse its postcodes are. They change what leaves the instance, never what a run computes, and are left out of `config_hash`. See [**Importing and exporting data between instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html).
+Which columns an export to a partner instance carries, and how coarse its postcodes are. They change what leaves the instance, never what a run computes, and are left out of `config_hash`. See [**Importing and exporting data between instances**](https://msberends.github.io/EpiSODIC/articles/import-export.html).
 
 | Key                    | Default | Effect                                                    |
 | ---------------------- | ------- | --------------------------------------------------------- |
@@ -552,7 +552,7 @@ Whether the case feed is still delivering. A run that finds no new case of the i
 
 ### Plugins
 
-Which plugins may run, and what each was granted. Plugins act on what a run has computed and never take part in detection, so this section is left out of `config_hash`. The Plugins screen writes it; it can also be edited by hand. See [**Plugins**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html).
+Which plugins may run, and what each was granted. Plugins act on what a run has computed and never take part in detection, so this section is left out of `config_hash`. The Plugins screen writes it; it can also be edited by hand. See [**Plugins**](https://msberends.github.io/EpiSODIC/articles/plugins.html).
 
 | Key                    | Default | Effect                                                    |
 | ---------------------- | ------- | --------------------------------------------------------- |
@@ -568,7 +568,7 @@ Which plugins may run, and what each was granted. Plugins act on what a run has 
 
 | Key                    | Default | Effect                                                    |
 | ---------------------- | ------- | --------------------------------------------------------- |
-| <code style="white-space: nowrap;">database:<br>&nbsp;&nbsp;auto_migrate</code> | `TRUE` | Whether a scheduled run brings the database up to the installed package's schema itself; see [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)'s "Upgrading EpiSODIC" |
+| <code style="white-space: nowrap;">database:<br>&nbsp;&nbsp;auto_migrate</code> | `TRUE` | Whether a scheduled run brings the database up to the installed package's schema itself; see [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)'s "Upgrading EpiSODIC" |
 
 ### Per-pathogen CSV columns
 
@@ -588,7 +588,7 @@ Which plugins may run, and what each was granted. Plugins act on what a run has 
 
 ## See also
 
-- [**Detection and reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) - how the detectors, reconciliation, suppression, and MEM work
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) - the configuration overlay system and instance setup
-- [**Measuring detection against known truth**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html) - measuring detection against known truth
-- [**Environment variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) - all `EPISODIC_*` variables including `EPISODIC_PATHOGEN_CONFIG`
+- [**Detection and reconciliation**](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html) - how the detectors, reconciliation, suppression, and MEM work
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html) - the configuration overlay system and instance setup
+- [**Measuring detection against known truth**](https://msberends.github.io/EpiSODIC/articles/detection-validation.html) - measuring detection against known truth
+- [**Environment variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html) - all `EPISODIC_*` variables including `EPISODIC_PATHOGEN_CONFIG`
