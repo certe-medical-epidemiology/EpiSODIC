@@ -318,7 +318,14 @@ episodic_epidemic_outlook_forecast <- function(case_dates,
       next
     }
     mu <- ar * paths[, i - 1L] + endemic(i)
-    paths[, i] <- episodic_outlook_draw_at_least(mu, size, reported[i])
+    drawn <- episodic_outlook_draw_at_least(mu, size, reported[i])
+    # An explosive path puts an infinite mean on the week after it, and
+    # from there the model describes nothing. The outlook is refused
+    # rather than built on a column the draw could not fill.
+    if (is.null(drawn)) {
+      return(outcome("model"))
+    }
+    paths[, i] <- drawn
   }
   params$n_nowcast_weeks <- n_nowcast
   # The last complete week as the paths have it: what a forecast that
@@ -415,7 +422,11 @@ episodic_outlook_trend_paths <- function(window, ahead, floors) {
     # Variance `dispersion` times the mean: a negative binomial whose size
     # is the mean over the excess dispersion, Poisson without any.
     size <- ifelse(excess > 0, mu / excess, Inf)
-    out[, h] <- episodic_outlook_draw_at_least(mu, size, floors[h])
+    drawn <- episodic_outlook_draw_at_least(mu, size, floors[h])
+    if (is.null(drawn)) {
+      return(NULL)
+    }
+    out[, h] <- drawn
   }
   if (!all(is.finite(out))) {
     return(NULL)
@@ -517,19 +528,37 @@ episodic_outlook_max_ar_se <- 1
 #' reported than it expects, the draw is the floor itself: the reported
 #' count is what is known, and the model has nothing to add to it.
 #'
-#' @param mu,size Per-draw mean and size.
+#' A mean that is not finite or not positive, or a size the distribution
+#' does not take,
+#' is not a draw of anything: `stats::rnbinom()` answers it with `NA` and
+#' a warning, and that `NA` would be carried into a path, a baseline and
+#' the quantiles built from them as though it were a count. `NULL` says
+#' instead that there is nothing to return, and every caller must decide
+#' what to do without it.
+#'
+#' @param mu,size Per-draw mean and size. `size` may be `Inf`, the
+#'   Poisson limit, which both distributions take.
 #' @param floor The lowest count allowed, the same for every draw.
-#' @return A numeric vector of counts, one per draw.
+#' @return A numeric vector of counts, one per draw, or `NULL` where the
+#'   parameters do not describe a distribution to draw from.
 #' @keywords internal
 #' @noRd
 episodic_outlook_draw_at_least <- function(mu, size, floor) {
   n <- length(mu)
+  if (!all(is.finite(mu)) || !all(mu >= 0) || anyNA(size) || !all(size > 0)) {
+    return(NULL)
+  }
   if (floor <= 0) {
     return(stats::rnbinom(n, mu = mu, size = size))
   }
   tail <- stats::pnbinom(floor - 1, mu = mu, size = size, lower.tail = FALSE)
   v <- stats::runif(n) * tail
-  draws <- stats::qnbinom(v, mu = mu, size = size, lower.tail = FALSE)
+  # Asking for a quantile of a tail that holds no mass warns, and the
+  # line below is the answer to it. Suppressed at the call so that a
+  # warning out of this file is one nothing has accounted for.
+  draws <- suppressWarnings(
+    stats::qnbinom(v, mu = mu, size = size, lower.tail = FALSE)
+  )
   draws[!(tail > 0) | !is.finite(draws)] <- floor
   pmax(draws, floor)
 }
