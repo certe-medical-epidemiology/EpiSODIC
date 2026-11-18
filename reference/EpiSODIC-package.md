@@ -16,25 +16,26 @@ infrastructure.
 
 Useful links:
 
-- <https://certe-medical-epidemiology.github.io/EpiSODIC>
+- <https://msberends.github.io/EpiSODIC>
 
-- <https://github.com/certe-medical-epidemiology/EpiSODIC>
+- <https://github.com/msberends/EpiSODIC>
 
-- Report bugs at
-  <https://github.com/certe-medical-epidemiology/EpiSODIC/issues>
+- Report bugs at <https://github.com/msberends/EpiSODIC/issues>
 
 ## Author
 
-**Maintainer**: Matthijs S. Berends <m.berends@certe.nl>
+**Maintainer**: Matthijs S. Berends <m.berends@umcg.nl>
 
 Authors:
 
-- Matthijs S. Berends <m.berends@certe.nl>
+- Matthijs S. Berends <m.berends@umcg.nl>
+
+- T. Maarten Homburg
 
 Other contributors:
 
-- Certe Medical Diagnostics & Advice Foundation
-  ([ROR](https://ror.org/04m8g8w48)) \[copyright holder, funder\]
-
 - University Medical Center Groningen ([ROR](https://ror.org/03cv38k47))
   \[copyright holder, funder\]
+
+- Certe Medical Diagnostics & Advice Foundation
+  ([ROR](https://ror.org/04m8g8w48)) \[copyright holder, funder\]

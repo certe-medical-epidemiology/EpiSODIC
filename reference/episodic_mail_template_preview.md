@@ -56,10 +56,10 @@ and Slack messages and the run-failure email are unchanged. Two starting
 points ship with the package, in
 `system.file("mail", package = "EpiSODIC")`. Every template receives the
 instance palette
-([`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md))
+([`episodic_palette()`](https://msberends.github.io/EpiSODIC/reference/episodic_palette.md))
 and the inline styles built from it, so it can carry the dashboard's own
 colours and font. See
-[`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md)
+[`vignette("notifications")`](https://msberends.github.io/EpiSODIC/articles/notifications.md)
 for the data a template receives.
 
 A template that cannot be used when an email is due never stops the

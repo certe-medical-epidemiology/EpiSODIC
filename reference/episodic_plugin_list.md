@@ -2,7 +2,7 @@
 
 Lists every plugin in the plugin folder and every plugin the
 configuration enables, with its status and, when it cannot run, why. See
-[`vignette("plugins")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.md).
+[`vignette("plugins")`](https://msberends.github.io/EpiSODIC/articles/plugins.md).
 
 ## Usage
 
@@ -34,10 +34,10 @@ the configuration file (`EPISODIC_CONFIG`) when that is unset.
 
 ## See also
 
-[`episodic_plugin_install()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_install.md),
-[`episodic_plugin_enable()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.md),
-[`episodic_plugin_run()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_run.md),
-[`vignette("plugins")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.md)
+[`episodic_plugin_install()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_install.md),
+[`episodic_plugin_enable()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_enable.md),
+[`episodic_plugin_run()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_run.md),
+[`vignette("plugins")`](https://msberends.github.io/EpiSODIC/articles/plugins.md)
 
 ## Examples
 

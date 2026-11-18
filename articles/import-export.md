@@ -72,7 +72,7 @@ way to you.
 Generating keys again replaces them. Files encrypted to the old public
 key can then no longer be opened, and partners must pin the new signing
 key, which is why
-[`episodic_import_export_keygen()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
+[`episodic_import_export_keygen()`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
 refuses to overwrite unless told to.
 
 ## Exporting
@@ -156,13 +156,13 @@ partner <- episodic_cases_import(
 episodic_run_cron(cases = my_cases, imports = partner)
 ```
 
-[`episodic_cases_import()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_import.md)
+[`episodic_cases_import()`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_import.md)
 opens the file with the key in `EPISODIC_IMPORT_KEY` (or the
 `passphrase`), verifies it in full, and returns its cases as a validated
 data frame in the case data format. It does not write to the database.
 The case tables belong to the detection run, so imported cases enter the
 way all cases do, through
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md),
 with the same checks, deduplication and audit trail, and each import is
 recorded in `episodic_import_event` against the run that consumed it.
 
@@ -226,7 +226,7 @@ import sources and the audit trail of every export and import. Non-admin
 accounts see neither the card nor the screen.
 
 **Export schedules** are carried out by
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 after its detection transaction has committed, the way scheduled reports
 are. Each covers a rolling window, the last N days up to the run date,
 every M days; the window must be at least as long as the interval, and
@@ -401,24 +401,24 @@ misreading it.
 ## See also
 
 - [**Getting your data
-  in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
+  in**](https://msberends.github.io/EpiSODIC/articles/data-format.html)
   for the case data format an import returns, and the geographic
   reference data that decides where a partner’s cases can be placed.
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)
   for scheduling
-  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
+  [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md),
   which fetches the import sources and carries out the export schedules,
   and for admin accounts.
 - [**Environment
-  variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)
+  variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html)
   for `EPISODIC_IMPORT_KEY`, `EPISODIC_EXPORT_SIGNING_KEY` and every
   other `EPISODIC_*` variable.
 - [**Tuning detection for your
-  catchment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.html)
+  catchment**](https://msberends.github.io/EpiSODIC/articles/tuning-detection.html)
   for the `export.fields` and `export.pc_characters` configuration keys.
-- [`?episodic_cases_export`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.md)
+- [`?episodic_cases_export`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_export.md)
   and
-  [`?episodic_cases_import`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_import.md)
+  [`?episodic_cases_import`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_import.md)
   for the API-level documentation.
-- [`?episodic_import_export_test_connection`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_test_connection.md)
+- [`?episodic_import_export_test_connection`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_test_connection.md)
   for testing a schedule or source headless.

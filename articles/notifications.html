@@ -43,7 +43,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/certe-medical-epidemiology/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/msberends/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -59,7 +59,7 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Notifications</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/notifications.Rmd" class="external-link"><code>vignettes/notifications.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/msberends/EpiSODIC/blob/main/vignettes/notifications.Rmd" class="external-link"><code>vignettes/notifications.Rmd</code></a></small>
       <div class="d-none name"><code>notifications.Rmd</code></div>
     </div>
 
@@ -125,9 +125,9 @@ failure never rolls back a successful detection run.</p>
 <h2 id="where-to-configure">Where to configure<a class="anchor" aria-label="anchor" href="#where-to-configure"></a>
 </h2>
 <p>Notification settings go in your instance YAML configuration file,
-the same file that <code>EPISODIC_CONFIG</code> points at (see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
+the same file that <code>EPISODIC_CONFIG</code> points at (see <a href="https://msberends.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
 variables</strong></a>). Add a <code>notifications</code> key at the top
-level. The shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>
+level. The shipped <a href="https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>
 contains commented-out examples for every channel; copy the ones you
 need into your instance file and fill in the values.</p>
 <p>Notification configuration is deliberately <strong>excluded</strong>
@@ -671,7 +671,7 @@ one row per new cluster, ordered as every cluster table on screen is:
 <code>period</code>, <code>n_cases</code>, <code>final</code> (whether
 this send ends the schedule), <code>interval_days</code>,
 <code>attachment_name</code>, and <code>diff</code>: what changed since
-the previous report, in the shape described in <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
+the previous report, in the shape described in <a href="https://msberends.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
 reports</strong></a>, or <code>NULL</code> when there is nothing to
 compare against.</p>
 <p>An email is not a web page, and a template has to be written for an
@@ -726,16 +726,16 @@ Incoming Webhook, not a Slack API endpoint.</p>
 </h2>
 <ul>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
+<a href="https://msberends.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
 reports</strong></a> for emailing a recurring outbreak report to
 colleagues without a dashboard account, through these same
 channels.</li>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
+<a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
 for how to stand up an instance and configure
 <code>EPISODIC_CONFIG</code>.</li>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
+<a href="https://msberends.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
 variables</strong></a> for the full reference table of
 <code>EPISODIC_*</code> variables.</li>
 <li>

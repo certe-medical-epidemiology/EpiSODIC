@@ -90,11 +90,11 @@ By default the report uses EpiSODIC's own report template. If your
 organisation needs its own layout or branding, set the
 `EPISODIC_QUARTO_REPORT` environment variable to your own `.qmd` file;
 the default
-[`inst/report/episodic_default_report.qmd`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd)
+[`inst/report/episodic_default_report.qmd`](https://github.com/msberends/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd)
 is a good starting point to copy and adapt.
 
 The report is styled from the instance palette
-([`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md)),
+([`episodic_palette()`](https://msberends.github.io/EpiSODIC/reference/episodic_palette.md)),
 the same colours and font as the dashboard: its charts are drawn in it,
 and an `episodic.scss` theme built from it is written beside the
 template, which the shipped template names as its `theme`. A custom

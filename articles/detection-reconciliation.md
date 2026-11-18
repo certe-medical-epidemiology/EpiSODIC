@@ -42,7 +42,7 @@ on - which is what makes suppression (below) meaningful.
   cluster before a weekly aggregation has produced a point to test.
 - **`rare_trigger`** - a curated list of organisms (default is the
   shipped
-  [`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml))
+  [`inst/config/episodic_default_config.yaml`](https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml))
   where a single occurrence anywhere is itself the signal - certain
   notifiable or exceptionally rare pathogens do not need a second case
   to warrant a look.
@@ -70,7 +70,7 @@ it matters to know where:
   a denominator: weekly patient-days from
   `episodic_institution_activity`, as a population offset, when the
   operator supplies institution activity
-  ([`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)).
+  ([`vignette("data-format")`](https://msberends.github.io/EpiSODIC/articles/data-format.md)).
   It corrects for occupancy, not for testing intensity.
 - **`farrington` at every other level**, including wards (L1, for which
   no activity table exists), and **`mem`** fit raw weekly case counts.
@@ -81,7 +81,7 @@ it matters to know where:
 
 What does hold for every detector is that repeat testing of the same
 patient does not inflate a count. Before any detector sees the data,
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 deduplicates positives to one case per patient per pathogen per episode
 (`episode_days` in the pathogen configuration, through
 [`AMR::get_episode()`](https://amr-for-r.org/reference/get_episode.html)),

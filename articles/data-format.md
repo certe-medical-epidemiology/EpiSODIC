@@ -4,7 +4,7 @@ EpiSODIC never queries a laboratory information system, data warehouse,
 or any other data source itself. That is deliberately your own step, run
 before EpiSODIC: extract from wherever your data lives, transform into
 the shape below, then call
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 with the result as a plain data frame (a tibble works just as well).
 This keeps the engine reusable by any laboratory.
 
@@ -43,7 +43,7 @@ double-counted.
 One row per confirmed-positive laboratory result. This is the complete,
 allow-listed column set (`episodic_case_columns`); a data set with any
 column outside this list, or missing one from it, is rejected. Run
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 on your extract to check all of this - columns, allowed values, dates,
 and `source_key` uniqueness - before you schedule anything (see “Check
 your data first” below). The three fixed value sets are available as
@@ -140,7 +140,7 @@ cases are counted today.
 EpiSODIC collapses positives for the same patient and pathogen into one
 case per episode, using the episode length configured per pathogen in
 the shipped
-[`inst/config/episodic_default_pathogen_config.csv`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv) -
+[`inst/config/episodic_default_pathogen_config.csv`](https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv) -
 and it does this correctly across runs, not just within one extract:
 each run checks incoming positives against the most recent episode
 already on file for that patient/pathogen, so a recurring extract only
@@ -156,7 +156,7 @@ multi-year, per-test linelist just to run detection.
 ## Check your data first
 
 Before you schedule anything, run
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 on your extract. It needs no database, changes nothing, and reports
 everything it finds in one go - which column is wrong, how many rows are
 affected, which rows those are, what the offending values look like, and
@@ -207,7 +207,7 @@ the future.
 Setting `episodic_check_cases(cases, stop_on_problem = TRUE)` makes the
 checks return an error if there is at least one problem, for use in a
 script.
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 runs that before every run: data it cannot use stops the run with the
 same message, before anything is written, and that message is recorded
 against the run so it is also visible in the dashboard’s status strip
@@ -215,13 +215,13 @@ and activity screen. A failed run never passes in silence.
 
 The optional feeds below have the same non-throwing check, over their
 own requirements:
-[`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+[`episodic_check_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_denominators.md)
 for positivity metadata,
-[`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
+[`episodic_check_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
 for institution activity. Both read the same way as
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 does - no database, nothing changed, problems versus advice - and
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 validates both the same way it validates `cases`, before writing
 anything, whenever they are supplied as a plain data frame (a
 zero-argument function is instead resolved and validated once the run is
@@ -229,10 +229,10 @@ already under way, since it may depend on data - e.g. the institutions
 table - that only exists once the case feed has loaded).
 
 None of this applies to a cluster added with
-[`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+[`episodic_add_manual_cluster()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
 (see “Clusters from another system” below): it never goes near
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md),
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md),
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md),
 or your own case data at all.
 
 ## Positivity metadata (optional)
@@ -256,7 +256,7 @@ trivially). It is not meaningful for open-ended culture results, where
 there is no closed list of things a negative result could have been - if
 that is your situation, simply leave `denominators` at `NULL`, and
 positivity panels stay blank for your streams. See
-[`episodic_synthetic_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md)
+[`episodic_synthetic_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md)
 for a worked example.
 
 ## Institution activity (optional)
@@ -280,7 +280,7 @@ perfectly synchronised. Skipped rows are never silent, though: the load
 warns and names the unmatched keys, the count is recorded against the
 run, and the run finishes `partial` rather than `success` (see “What a
 run reports” below). See
-[`episodic_synthetic_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
+[`episodic_synthetic_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
 for a worked example. There is no ward-level (L1) equivalent in the
 schema, so L1 detection is never normalised, only L2.
 
@@ -312,10 +312,10 @@ requirements.
 
 There is deliberately **no default map**. EpiSODIC does bundle Dutch
 four-digit postcode geometry
-([`inst/extdata/geo_postcodes4_nl.rds`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/extdata/geo_postcodes4_nl.rds),
+([`inst/extdata/geo_postcodes4_nl.rds`](https://github.com/msberends/EpiSODIC/blob/main/inst/extdata/geo_postcodes4_nl.rds),
 geometry only, sourced from `certegis` under the same GPL-2 licence -
 see `data-raw/geo_postcodes4_nl.R` for provenance), and
-[`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+[`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
 points the variable at it, but nothing falls back to it. Postcode-like
 codes are four digits in a great many countries, so an instance
 elsewhere would have got a confident map of the Netherlands with its own
@@ -377,7 +377,7 @@ that panel are shown only to a signed-in user.
 ## What a run reports
 
 Every
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 call records what each feed actually delivered, so “did last night’s
 extract arrive in full?” is answerable without re-running anything.
 `episodic_detection_run` carries `n_cases_supplied`,
@@ -409,14 +409,14 @@ from the most recent of either.
 
 Everything above is about your own laboratory-confirmed positives,
 running through
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)’s
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)’s
 own detectors. Some outbreaks are found a different way entirely - a
 public health service’s own surveillance system, a research model, a
 colleague’s script in another language - and still belong on the same
 dashboard, assessed the same way, without pretending they came from your
 case data when they did not.
 
-[`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+[`episodic_add_manual_cluster()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
 adds exactly that kind of cluster directly, bypassing detection and
 reconciliation altogether. Pass it already-parsed R values (its own
 requirements, not `episodic_case_data`’s - there is no file format to
@@ -455,7 +455,7 @@ one:
   cluster still gets created, its epi curve/demography/geography panels
   just have nothing to draw.
 - It never closes on its own:
-  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)’s
+  [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)’s
   reconciliation and automatic closure both skip it, so it stays open
   until an epidemiologist records a verdict on it, the same as any other
   cluster.
@@ -463,27 +463,27 @@ one:
   (unless you override it), so the two sort comparably on the dashboard.
 
 See
-[`?episodic_add_manual_cluster`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+[`?episodic_add_manual_cluster`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
 for every argument.
 
 ## See also
 
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)
   for scheduling
-  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
+  [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md),
   the database backend, accounts, and custom report templates.
 - [**Environment
-  variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)
+  variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html)
   for `EPISODIC_GEO_DATA`, `EPISODIC_GEO_DATA_OVERLAY` and every other
   `EPISODIC_*` variable mentioned above.
 - [**Importing and exporting data between
-  instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html)
+  instances**](https://msberends.github.io/EpiSODIC/articles/import-export.html)
   for taking in the cases of a partner EpiSODIC instance alongside your
   own.
 - [**Frequently asked
-  questions**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html)
+  questions**](https://msberends.github.io/EpiSODIC/articles/faq.html)
   for combining more than one source system, resending data safely, and
   handling a rectified/corrected lab result.
-- [`?episodic_add_manual_cluster`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+- [`?episodic_add_manual_cluster`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
   for clusters detected by another system entirely - see “Clusters from
   another system” above.

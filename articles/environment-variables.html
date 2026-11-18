@@ -43,7 +43,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/certe-medical-epidemiology/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/msberends/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -59,7 +59,7 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Environment variables</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/environment-variables.Rmd" class="external-link"><code>vignettes/environment-variables.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/msberends/EpiSODIC/blob/main/vignettes/environment-variables.Rmd" class="external-link"><code>vignettes/environment-variables.Rmd</code></a></small>
       <div class="d-none name"><code>environment-variables.Rmd</code></div>
     </div>
 
@@ -121,14 +121,14 @@ argument), <code><a href="../reference/episodic_run_app.html">episodic_run_app()
 <code>same_place</code>/<code>rare_trigger</code>/Farrington settings,
 notification channels, and
 <code style="white-space: nowrap;">access:<br>  require_login</code>),
-overlaid key-by-key on the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>.
+overlaid key-by-key on the shipped <a href="https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml" class="external-link"><code>inst/config/episodic_default_config.yaml</code></a>.
 Set to a path that does not exist, or to a file that is not valid YAML,
 this stops with an error rather than falling back to the defaults; every
 key it sets is checked against the shipped defaults, so a misspelled key
 or a value of the wrong type is named rather than silently ignored. See
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.html"><strong>Tuning
+<a href="https://msberends.github.io/EpiSODIC/articles/tuning-detection.html"><strong>Tuning
 detection for your catchment</strong></a> for the complete reference
-table of tunable keys, and <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>’s
+table of tunable keys, and <a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>’s
 “Opening the app to anonymous visitors” for
 <code style="white-space: nowrap;">access:<br>  require_login</code>.</td>
 </tr>
@@ -139,12 +139,12 @@ table of tunable keys, and <a href="https://certe-medical-epidemiology.github.io
 argument)</td>
 <td>Path to an instance override of per-pathogen parameters (episode
 length, case-free days, severity weight, MEM mode, serial interval, and
-the rest), overlaid row-by-row on the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv" class="external-link"><code>inst/config/episodic_default_pathogen_config.csv</code></a>.
+the rest), overlaid row-by-row on the shipped <a href="https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv" class="external-link"><code>inst/config/episodic_default_pathogen_config.csv</code></a>.
 Write a CSV with a <code>pathogen</code> column and only the columns you
 want to change; non-empty values override the shipped default for that
 pathogen and column, empty cells keep it, and pathogens not in your file
 keep their shipped row entirely. New pathogens are added. Set to a path
-that does not exist, this stops with an error. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.html"><strong>Tuning
+that does not exist, this stops with an error. See <a href="https://msberends.github.io/EpiSODIC/articles/tuning-detection.html"><strong>Tuning
 detection for your catchment</strong></a> for the column reference.</td>
 </tr>
 <tr class="odd">
@@ -155,7 +155,7 @@ argument)</td>
 <td>Path to an instance override of the UI colour palette (including the
 five <code>severity_*</code> roles that colour verdicts and MEM
 intensity bands alike) and typography (<code>font</code>,
-<code>font_size_base</code>), overlaid key-by-key on the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml" class="external-link"><code>inst/config/episodic_default_style.yaml</code></a>.
+<code>font_size_base</code>), overlaid key-by-key on the shipped <a href="https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml" class="external-link"><code>inst/config/episodic_default_style.yaml</code></a>.
 The same palette styles the outbreak reports and the emails EpiSODIC
 sends. Each value is checked: a colour must be a quoted hex colour,
 <code>font</code> a CSS font-family stack and
@@ -180,7 +180,7 @@ any country, any area unit. There is no default: with this unset the
 dashboard shows its bar-chart fallback instead of a map, since a default
 map is a default <em>country</em>. EpiSODIC does bundle one worked
 example (Dutch postcodes) that <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> points this
-at. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+at. See <a href="https://msberends.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
 your data in</strong></a>’s “Geographic reference data” section.</td>
 </tr>
 <tr class="odd">
@@ -190,7 +190,7 @@ your data in</strong></a>’s “Geographic reference data” section.</td>
 argument)</td>
 <td>Path to an <code>.rds</code> file holding an optional region-outline
 overlay (an <code>sf</code> object with just a <code>geometry</code>
-column), drawn on top of the choropleth. No default. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+column), drawn on top of the choropleth. No default. See <a href="https://msberends.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
 your data in</strong></a>’s “Geographic reference data” section.</td>
 </tr>
 <tr class="even">
@@ -206,7 +206,7 @@ nothing to detect on - there is no built-in rule, because deriving a
 province from a postcode is country-specific; set but unusable (no such
 file, unreadable, no rows, wrong columns, or a repeated <code>pc</code>)
 stops the run and says which of those it is, rather than falling back.
-See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+See <a href="https://msberends.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
 your data in</strong></a>’s “Geographic reference data” section.</td>
 </tr>
 <tr class="odd">
@@ -215,7 +215,7 @@ your data in</strong></a>’s “Geographic reference data” section.</td>
 <code><a href="../reference/episodic_report_render.html">episodic_report_render()</a></code> (<code>qmd_path</code>
 argument)</td>
 <td>Path to an operator’s own Quarto report template, overriding the
-shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd" class="external-link"><code>inst/report/episodic_default_report.qmd</code></a>.
+shipped <a href="https://github.com/msberends/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd" class="external-link"><code>inst/report/episodic_default_report.qmd</code></a>.
 Set to a path that does not exist, this stops with an error rather than
 silently sending reports out under EpiSODIC’s own layout instead of
 yours. See “Custom report templates” above.</td>
@@ -234,7 +234,7 @@ Teams and Slack keep their own messages. A template that cannot be used
 (no such file, not a <code>.qmd</code>, Quarto not installed, or a
 render that fails) never costs an alert: the email goes out with the
 built-in body, and the run log, the Info screen and
-<code><a href="../reference/episodic_notify_test.html">episodic_notify_test()</a></code> say why. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>’s
+<code><a href="../reference/episodic_notify_test.html">episodic_notify_test()</a></code> say why. See <a href="https://msberends.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>’s
 “Your own email layout”.</td>
 </tr>
 <tr class="odd">
@@ -244,7 +244,7 @@ built-in body, and the run log, the Info screen and
 <code><a href="../reference/episodic_mail_template_preview.html">episodic_mail_template_preview()</a></code>
 </td>
 <td>The same, for the body of the email a scheduled outbreak report is
-attached to. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
+attached to. See <a href="https://msberends.github.io/EpiSODIC/articles/scheduled-reports.html"><strong>Scheduled
 reports</strong></a>.</td>
 </tr>
 <tr class="even">
@@ -256,7 +256,7 @@ the default an import source names on the Import and export screen</td>
 partners encrypted to it: the text of the key, or the path of the
 <code>.key</code> file <code><a href="../reference/episodic_import_export_keygen.html">episodic_import_export_keygen()</a></code>
 wrote. Unset, an import of a file encrypted to a public key stops and
-says so. Never put the key in <code>EPISODIC_CONFIG</code>. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html"><strong>Importing
+says so. Never put the key in <code>EPISODIC_CONFIG</code>. See <a href="https://msberends.github.io/EpiSODIC/articles/import-export.html"><strong>Importing
 and exporting data between instances</strong></a>.</td>
 </tr>
 <tr class="odd">
@@ -268,7 +268,7 @@ an export schedule names</td>
 <td>This instance’s secret signing key, which every exported file is
 signed with: its text, or the path of its <code>.key</code> file. Unset,
 an export stops and records why, and the dashboard offers no download.
-See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html"><strong>Importing
+See <a href="https://msberends.github.io/EpiSODIC/articles/import-export.html"><strong>Importing
 and exporting data between instances</strong></a>.</td>
 </tr>
 <tr class="even">
@@ -283,7 +283,7 @@ folder beside the configuration file (<code>EPISODIC_CONFIG</code>);
 with neither set there is no plugin folder, and the Plugins screen says
 so rather than writing anywhere else. Set it to keep plugins apart from
 the configuration, for example on a read-only volume the operator
-manages. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html"><strong>Plugins</strong></a>.</td>
+manages. See <a href="https://msberends.github.io/EpiSODIC/articles/plugins.html"><strong>Plugins</strong></a>.</td>
 </tr>
 </tbody>
 </table>
@@ -298,10 +298,10 @@ scheduled run starts in.</p>
 <p>None of these need to be set to run the demo -
 <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> uses a temporary SQLite file and the
 shipped defaults, and writes its own geography and an illustrative
-pathogen overlay beside it. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
+pathogen overlay beside it. See <a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
 for <code>EPISODIC_DB</code> and
 <code>EPISODIC_CONFIG</code>/<code>EPISODIC_STYLE</code> in context
-(database backend, custom report templates), and <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
+(database backend, custom report templates), and <a href="https://msberends.github.io/EpiSODIC/articles/data-format.html"><strong>Getting
 your data in</strong></a>’s “Geographic reference data” section for the
 detail behind <code>EPISODIC_GEO_DATA</code> and
 <code>EPISODIC_GEO_DATA_OVERLAY</code>.</p>

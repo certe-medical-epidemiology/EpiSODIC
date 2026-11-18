@@ -16,16 +16,16 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/msberends/EpiSODIC/blob/main/DESCRIPTION)
 
 Berends MS, Homburg TM (2026). *EpiSODIC: Epidemiological Signal
 Observation, Detection, Identification, and Classification*. R package
-version 0.25.0, <https://certe-medical-epidemiology.github.io/EpiSODIC>.
+version 0.25.0, <https://msberends.github.io/EpiSODIC>.
 
     @Manual{,
       title = {EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification},
       author = {Matthijs S. Berends and T. Maarten Homburg},
       year = {2026},
       note = {R package version 0.25.0},
-      url = {https://certe-medical-epidemiology.github.io/EpiSODIC},
+      url = {https://msberends.github.io/EpiSODIC},
     }

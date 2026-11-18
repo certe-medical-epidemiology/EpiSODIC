@@ -2,7 +2,7 @@
 
 Runs an interactive Azure AD login and caches the refresh token for
 subsequent unattended use by
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md).
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md).
 You only need to run this once per server, unless the token expires.
 Requires the `Microsoft365R` and `AzureGraph` packages.
 

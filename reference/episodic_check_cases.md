@@ -1,7 +1,7 @@
 # Check Your Case Data Before You Hand It to EpiSODIC
 
 Runs every check the
-[episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+[episodic_case_data](https://msberends.github.io/EpiSODIC/reference/episodic_case_data.md)
 requirements imply over your extract and reports *everything* it finds
 in one go - what is wrong, how many rows are affected, which rows those
 are, what the offending values look like, and what to do about each one.
@@ -20,7 +20,7 @@ episodic_check_cases(cases, stop_on_problem = FALSE)
 - cases:
 
   Your case data: a data frame or `tibble` in the shape
-  [episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+  [episodic_case_data](https://msberends.github.io/EpiSODIC/reference/episodic_case_data.md)
   describes, or a zero-argument function returning one. Anything else is
   itself reported as a problem rather than throwing - the point of this
   function is that it always answers.
@@ -44,11 +44,11 @@ attribute and shown when printing.
 Use `episodic_check_cases()` plainly when you want to *look*, or
 `episodic_check_cases(..., stop_on_problem = TRUE)` when you want a
 script to stop. The latter is what
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 itself calls before a run.
 
 None of this applies to a cluster added with
-[`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md):
+[`episodic_add_manual_cluster()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md):
 it is never connected to your own case data, so it never goes through
 these requirements (or any other check here) at all.
 
@@ -78,7 +78,7 @@ finding, so you can work with it programmatically (see the examples).
 
 ## See also
 
-[episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+[episodic_case_data](https://msberends.github.io/EpiSODIC/reference/episodic_case_data.md)
 for what each column means and which values it accepts.
 
 ## Examples

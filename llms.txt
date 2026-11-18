@@ -1,6 +1,6 @@
 # EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification
 
-[![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/msberends/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/msberends/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
 > \[!WARNING\] **Under very intensive development.** EpiSODIC has not
 > been released and is not yet ready for use. Its functions, database
@@ -75,7 +75,7 @@ hardcoded.
 
 An instance needs R, a database (SQLite, MariaDB or MySQL) and a regular
 case extract from your laboratory information system;
-[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
+[`vignette("deployment")`](https://msberends.github.io/EpiSODIC/articles/deployment.md)
 describes the steps. Case data is stored only on infrastructure you
 control, and leaves it only through channels you configure yourself,
 such as notifications and exports to other instances. The dashboard and
@@ -100,7 +100,7 @@ clusters](reference/figures/archive_screen.png)
 ``` r
 
 # install.packages("remotes")
-remotes::install_github("certe-medical-epidemiology/EpiSODIC")
+remotes::install_github("msberends/EpiSODIC")
 ```
 
 ## See it work, right now
@@ -124,7 +124,7 @@ populated database path back, e.g. for scripting.
   known, injected outbreaks: sensitivity, timeliness and false alarms
   per stream-week, with a negative control and naive comparators
   ([Measuring detection against known
-  truth](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html)).
+  truth](https://msberends.github.io/EpiSODIC/articles/detection-validation.html)).
   It has not yet been evaluated retrospectively against documented
   outbreaks in real laboratory data.
 - **Testing intensity** is not corrected for. Farrington takes a
@@ -134,7 +134,7 @@ populated database path back, e.g. for scripting.
   before detection, and test counts, if supplied, are shown on the
   dossier as an aid to judgement but never enter detection ([Detection
   and
-  reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)).
+  reconciliation](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html)).
 - **Multiplicity** is not controlled. Each stream is tested at its own
   significance level; suppression removes restatements of one signal
   across geographic levels, not independent false alarms. The expected
@@ -153,17 +153,17 @@ page:
 
 | Read this… | …for |
 |----|----|
-| [Overview](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html) | What EpiSODIC does: the Clusters and Pathogen screens’ two altitudes, and the Performance, Archive, Streams, Activity and Info screens around them. |
-| [Getting your data in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) | The case data requirements - every column, what’s optional, [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)/[`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)/[`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md) to check your extract before anything runs, and [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md) for clusters detected by another system entirely. |
-| [Deployment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) | Standing up a real instance: scheduling, accounts, the database backend, custom report templates. |
-| [Environment variables](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) | The full `EPISODIC_*` reference table. |
-| [Detection and reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) | How a laboratory result becomes a dossier: the four detectors, denominators, reconciliation, and suppression. |
-| [Measuring detection against known truth](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html) | How detection is validated against synthetic outbreaks, and what that does not measure. |
-| [FAQ](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html) | Answers to the questions that come up most often when getting started. |
+| [Overview](https://msberends.github.io/EpiSODIC/articles/overview.html) | What EpiSODIC does: the Clusters and Pathogen screens’ two altitudes, and the Performance, Archive, Streams, Activity and Info screens around them. |
+| [Getting your data in](https://msberends.github.io/EpiSODIC/articles/data-format.html) | The case data requirements - every column, what’s optional, [`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)/[`episodic_check_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_denominators.md)/[`episodic_check_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_institution_activity.md) to check your extract before anything runs, and [`episodic_add_manual_cluster()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md) for clusters detected by another system entirely. |
+| [Deployment](https://msberends.github.io/EpiSODIC/articles/deployment.html) | Standing up a real instance: scheduling, accounts, the database backend, custom report templates. |
+| [Environment variables](https://msberends.github.io/EpiSODIC/articles/environment-variables.html) | The full `EPISODIC_*` reference table. |
+| [Detection and reconciliation](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html) | How a laboratory result becomes a dossier: the four detectors, denominators, reconciliation, and suppression. |
+| [Measuring detection against known truth](https://msberends.github.io/EpiSODIC/articles/detection-validation.html) | How detection is validated against synthetic outbreaks, and what that does not measure. |
+| [FAQ](https://msberends.github.io/EpiSODIC/articles/faq.html) | Answers to the questions that come up most often when getting started. |
 
 Building the package locally (or browsing offline) works the same way:
 `vignette(package = "EpiSODIC")` lists all of them, and
-[`vignette("data-format", package = "EpiSODIC")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+[`vignette("data-format", package = "EpiSODIC")`](https://msberends.github.io/EpiSODIC/articles/data-format.md)
 (etc.) opens one.
 
 ## Licence
@@ -177,7 +177,7 @@ GPL-2.
 The fastest way to see what EpiSODIC does, with no data or configuration
 of your own required.
 
-- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+- [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
   : Try EpiSODIC With Synthetic Outbreak Data
 
 ## Run EpiSODIC
@@ -185,9 +185,9 @@ of your own required.
 The two calls that run a real instance: detect on a schedule, and open
 the dashboard for your board to review the results.
 
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+- [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   : Run One Surveillance Detection Cycle
-- [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
+- [`episodic_run_app()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_app.md)
   : Open the EpiSODIC Dashboard
 
 ## Connect your own data
@@ -196,23 +196,23 @@ How to plug in your laboratory results and, optionally, testing volume
 and hospital activity data - and how to check your extract against the
 requirements before you run anything.
 
-- [`episodic_case_data`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+- [`episodic_case_data`](https://msberends.github.io/EpiSODIC/reference/episodic_case_data.md)
   : Connect your own laboratory data
-- [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+- [`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
   : Check Your Case Data Before You Hand It to EpiSODIC
-- [`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+- [`episodic_check_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_denominators.md)
   : Check Your Positivity Data Before You Hand It to EpiSODIC
-- [`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
+- [`episodic_check_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
   : Check Your Hospital Activity Data Before You Hand It to EpiSODIC
-- [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+- [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
   : Generate Synthetic Outbreak Data
-- [`episodic_synthetic_cases_calibration()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.md)
+- [`episodic_synthetic_cases_calibration()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.md)
   : Generate Synthetic Data at Tunable Cluster Volume
-- [`episodic_synthetic_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md)
+- [`episodic_synthetic_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md)
   : Add a Testing-Volume (Positivity) Feed
-- [`episodic_synthetic_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
+- [`episodic_synthetic_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
   : Add a Hospital Activity Feed (Patient-Days)
-- [`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
+- [`episodic_synthetic_ground_truth()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
   : Read Back What Was Injected Into Synthetic Data
 
 ## Measure how well detection works
@@ -222,12 +222,12 @@ what they found against the outbreaks that were put there - sensitivity,
 timeliness and alarm burden against known truth, rather than against
 your board’s own verdicts.
 
-- [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
-  [`print(`*`<episodic_validation>`*`)`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+- [`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+  [`print(`*`<episodic_validation>`*`)`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
   : Measure Detection Against Known Truth
-- [`episodic_validate_comparator()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_comparator.md)
+- [`episodic_validate_comparator()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_comparator.md)
   : Measure a Trivial Rule Against the Same Known Truth
-- [`episodic_validate_rethreshold()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md)
+- [`episodic_validate_rethreshold()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md)
   : Re-Match a Validation Result at Different Thresholds
 
 ## Import and export data with partner instances
@@ -236,17 +236,17 @@ Export this instance’s cases to a partner instance, and import theirs,
 as encrypted and signed files - headless, or scheduled from the
 dashboard’s Import and export screen.
 
-- [`episodic_instance_id()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_instance_id.md)
+- [`episodic_instance_id()`](https://msberends.github.io/EpiSODIC/reference/episodic_instance_id.md)
   : This Instance's Identifier
-- [`episodic_import_export_keygen()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
+- [`episodic_import_export_keygen()`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
   : Generate the Keys for Importing and Exporting Data with Partners
-- [`episodic_import_export_key_fingerprint()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_key_fingerprint.md)
+- [`episodic_import_export_key_fingerprint()`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_key_fingerprint.md)
   : Fingerprint of an Import/Export Public Key
-- [`episodic_cases_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.md)
+- [`episodic_cases_export()`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_export.md)
   : Export a Date Range of Cases to an Encrypted Export File
-- [`episodic_cases_import()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_import.md)
+- [`episodic_cases_import()`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_import.md)
   : Import an Encrypted Export File as Case Data
-- [`episodic_import_export_test_connection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_test_connection.md)
+- [`episodic_import_export_test_connection()`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_test_connection.md)
   : Test an Import Source or Export Schedule
 
 ## Extend EpiSODIC with plugins
@@ -255,16 +255,16 @@ Install, enable and run plugins: YAML files whose steps run on a dossier
 button or after a detection run - headless, or from the dashboard’s
 Plugins screen.
 
-- [`episodic_plugin_list()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_list.md)
+- [`episodic_plugin_list()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_list.md)
   : List the Installed Plugins
-- [`episodic_plugin_install()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_install.md)
+- [`episodic_plugin_install()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_install.md)
   : Install a Plugin
-- [`episodic_plugin_enable()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.md)
-  [`episodic_plugin_disable()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.md)
+- [`episodic_plugin_enable()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_enable.md)
+  [`episodic_plugin_disable()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_enable.md)
   : Enable or Disable a Plugin
-- [`episodic_plugin_uninstall()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_uninstall.md)
+- [`episodic_plugin_uninstall()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_uninstall.md)
   : Uninstall a Plugin
-- [`episodic_plugin_run()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_run.md)
+- [`episodic_plugin_run()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_run.md)
   : Run a Plugin
 
 ## Add clusters from another system
@@ -272,48 +272,48 @@ Plugins screen.
 Add clusters detected by another algorithm or system - never connected
 to your own case data.
 
-- [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+- [`episodic_add_manual_cluster()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
   : Add One or More Manual (External) Clusters
 
 ## Set up a database
 
 Create and connect to the database EpiSODIC stores its data in.
 
-- [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md)
+- [`episodic_db_create()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_create.md)
   : Set Up a New EpiSODIC Database
 
-- [`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md)
+- [`episodic_db_connect()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_connect.md)
   : Connect to an Existing EpiSODIC Database
 
-- [`episodic_db_open()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_open.md)
+- [`episodic_db_open()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_open.md)
   :
 
   Connect Using the `EPISODIC_DB` Environment Variable
 
-- [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
+- [`episodic_db_migrate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_migrate.md)
   : Bring an Existing Database up to the Current Schema
 
-- [`episodic_db_truncate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.md)
+- [`episodic_db_truncate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_truncate.md)
   : Empty Every EpiSODIC Table, Keeping the Schema Itself
 
-- [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
-  [`episodic_db_dsn_mysql()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
+- [`episodic_db_dsn_mariadb()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
+  [`episodic_db_dsn_mysql()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
   : Connect EpiSODIC to a MariaDB or MySQL Server
 
 ## Accounts and sign-in
 
-- [`episodic_auth`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_auth.md)
+- [`episodic_auth`](https://msberends.github.io/EpiSODIC/reference/episodic_auth.md)
   : How sign-in works
-- [`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
+- [`episodic_add_user()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_user.md)
   : Create an Account for a New Epidemiologist or Viewer
 
 ## Report results
 
 How to send an outbreak report to clinical colleagues.
 
-- [`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
+- [`episodic_report_render()`](https://msberends.github.io/EpiSODIC/reference/episodic_report_render.md)
   : Render an Outbreak Report for Clinical Colleagues
-- [`episodic_scheduled_reports`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_scheduled_reports.md)
+- [`episodic_scheduled_reports`](https://msberends.github.io/EpiSODIC/reference/episodic_scheduled_reports.md)
   : How scheduled reports work
 
 ## Notifications
@@ -322,13 +322,13 @@ Send alerts to your team when new clusters are detected or a detection
 run fails. Supports ntfy, SMTP, sendmail, Microsoft 365, Teams, and
 Slack.
 
-- [`episodic_notifications`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notifications.md)
+- [`episodic_notifications`](https://msberends.github.io/EpiSODIC/reference/episodic_notifications.md)
   : How notifications work
-- [`episodic_notify_test()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.md)
+- [`episodic_notify_test()`](https://msberends.github.io/EpiSODIC/reference/episodic_notify_test.md)
   : Send a Test Notification Through All Configured Channels
-- [`episodic_mail_template_preview()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_mail_template_preview.md)
+- [`episodic_mail_template_preview()`](https://msberends.github.io/EpiSODIC/reference/episodic_mail_template_preview.md)
   : Preview an Email Template
-- [`episodic_setup_microsoft365()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md)
+- [`episodic_setup_microsoft365()`](https://msberends.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md)
   : Set Up Microsoft 365 Authentication for Notifications
 
 ## Customise the look and feel
@@ -336,24 +336,24 @@ Slack.
 House colours, maps, translations, and dashboard chart building blocks -
 useful if you are adapting EpiSODIC or writing your own report template.
 
-- [`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md)
+- [`episodic_palette()`](https://msberends.github.io/EpiSODIC/reference/episodic_palette.md)
   : The Dashboard's Colour Palette and Typography
-- [`episodic_geo_overlay_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo.md)
-  [`episodic_geo_source_resolve()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_geo.md)
+- [`episodic_geo_overlay_resolve()`](https://msberends.github.io/EpiSODIC/reference/episodic_geo.md)
+  [`episodic_geo_source_resolve()`](https://msberends.github.io/EpiSODIC/reference/episodic_geo.md)
   : Show Clusters on a Map
-- [`episodic_ui_epi_curve_chart()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_charts.md)
-  [`episodic_ui_trend_chart()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_charts.md)
-  [`episodic_ui_rt_chart()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_charts.md)
+- [`episodic_ui_epi_curve_chart()`](https://msberends.github.io/EpiSODIC/reference/episodic_charts.md)
+  [`episodic_ui_trend_chart()`](https://msberends.github.io/EpiSODIC/reference/episodic_charts.md)
+  [`episodic_ui_rt_chart()`](https://msberends.github.io/EpiSODIC/reference/episodic_charts.md)
   : Draw the Dashboard Charts (Epidemic Curve, Trend, and Rt)
-- [`episodic_ui_italicise_taxon()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ui_italicise_taxon.md)
-  [`episodic_ui_code_join()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ui_italicise_taxon.md)
+- [`episodic_ui_italicise_taxon()`](https://msberends.github.io/EpiSODIC/reference/episodic_ui_italicise_taxon.md)
+  [`episodic_ui_code_join()`](https://msberends.github.io/EpiSODIC/reference/episodic_ui_italicise_taxon.md)
   : Format Text for Outbreak Reports and the Dashboard
 
 ## Configure export
 
 Make sure to export the settings.
 
-- [`episodic_config_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_export.md)
+- [`episodic_config_export()`](https://msberends.github.io/EpiSODIC/reference/episodic_config_export.md)
   : Export the Resolved Configuration as a Zip File
 
 # Articles
@@ -363,33 +363,33 @@ Make sure to export the settings.
 What EpiSODIC does, and the fastest path from nothing to a working
 instance.
 
-- [Overview](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.md):
+- [Overview](https://msberends.github.io/EpiSODIC/articles/overview.md):
 - [Getting your data
-  in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md):
-- [Deployment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md):
+  in](https://msberends.github.io/EpiSODIC/articles/data-format.md):
+- [Deployment](https://msberends.github.io/EpiSODIC/articles/deployment.md):
 
 ### Configure
 
 Tune detection behaviour and set up notifications.
 
 - [Tuning detection for your
-  catchment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.md):
-- [Notifications](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md):
+  catchment](https://msberends.github.io/EpiSODIC/articles/tuning-detection.md):
+- [Notifications](https://msberends.github.io/EpiSODIC/articles/notifications.md):
 - [Scheduled
-  reports](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md):
+  reports](https://msberends.github.io/EpiSODIC/articles/scheduled-reports.md):
 - [Importing and exporting data between
-  instances](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md):
-- [Plugins](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.md):
+  instances](https://msberends.github.io/EpiSODIC/articles/import-export.md):
+- [Plugins](https://msberends.github.io/EpiSODIC/articles/plugins.md):
 
 ### Reference
 
 Look these up as needed rather than reading start to finish.
 
 - [Environment
-  variables](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.md):
+  variables](https://msberends.github.io/EpiSODIC/articles/environment-variables.md):
 - [Detection and
-  reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.md):
+  reconciliation](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.md):
 - [Measuring detection against known
-  truth](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.md):
+  truth](https://msberends.github.io/EpiSODIC/articles/detection-validation.md):
 - [Frequently asked
-  questions](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md):
+  questions](https://msberends.github.io/EpiSODIC/articles/faq.md):

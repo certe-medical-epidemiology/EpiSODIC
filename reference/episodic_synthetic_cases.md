@@ -4,10 +4,10 @@ Produces several years of laboratory surveillance data for a fictional
 northern-Netherlands region - eight hospitals, twenty long-term care
 institutions and the region's municipalities - and injects six outbreaks
 for the detectors to find. This is what powers
-[`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+[`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
 and the package's test suite, and it doubles as a worked example of the
 shape your own data should have (see
-[episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)).
+[episodic_case_data](https://msberends.github.io/EpiSODIC/reference/episodic_case_data.md)).
 
 ## Usage
 
@@ -74,9 +74,9 @@ episodic_synthetic_cases(
 ## Value
 
 A data frame satisfying
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md),
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md),
 carrying the ground truth of what was injected as an attribute - see
-[`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md).
+[`episodic_synthetic_ground_truth()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md).
 
 ## What it puts in
 
@@ -118,7 +118,7 @@ the range you asked for.
 The result carries its own ground truth: which outbreaks were injected,
 where and when each of them ran, and exactly which cases belong to
 which. Read it with
-[`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md).
+[`episodic_synthetic_ground_truth()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md).
 Injected cases also carry a `PT-OUTBREAK-*` patient key, but that is a
 convenience for a human reading a line list and not an interface:
 anything measuring detection against what was injected takes the ground
@@ -126,11 +126,11 @@ truth, never a pattern match on a key.
 
 ## See also
 
-[`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
+[`episodic_synthetic_ground_truth()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
 for what was injected,
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 to see what the requirements make of it, and
-[`episodic_synthetic_cases_calibration()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.md)
+[`episodic_synthetic_cases_calibration()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases_calibration.md)
 for many more clusters than a demo wants, to tune a configuration
 against.
 

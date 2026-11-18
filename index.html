@@ -19,7 +19,7 @@
 <script src="extra.js"></script><meta property="og:title" content="Epidemiological Signal Observation, Detection, Identification, and Classification">
 <meta name="description" content="An automated surveillance system for infectious disease epidemiologists that detects aberrations in laboratory-confirmed infections, records epidemiologists formal assessment with a full audit trail, and produces outbreak reports for clinical colleagues and infection prevention nurses. Applies evidence-based statistical methods such as Improved Farrington (2013) &lt;doi:10.1002/sim.5595&gt; and EpiEstim' (Cori et al. 2013) &lt;doi:10.1093/aje/kwt133&gt;. Ships with a synthetic demo data set requiring no external data or infrastructure.">
 <meta property="og:description" content="An automated surveillance system for infectious disease epidemiologists that detects aberrations in laboratory-confirmed infections, records epidemiologists formal assessment with a full audit trail, and produces outbreak reports for clinical colleagues and infection prevention nurses. Applies evidence-based statistical methods such as Improved Farrington (2013) &lt;doi:10.1002/sim.5595&gt; and EpiEstim' (Cori et al. 2013) &lt;doi:10.1093/aje/kwt133&gt;. Ships with a synthetic demo data set requiring no external data or infrastructure.">
-<meta property="og:image" content="https://certe-medical-epidemiology.github.io/EpiSODIC/logo.svg">
+<meta property="og:image" content="https://msberends.github.io/EpiSODIC/logo.svg">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -46,7 +46,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/certe-medical-epidemiology/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/msberends/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -59,7 +59,7 @@
 <img src="logo.svg" class="logo" alt=""><h1 id="episodic-epidemiological-signal-observation-detection-identification-and-classification">EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification<a class="anchor" aria-label="anchor" href="#episodic-epidemiological-signal-observation-detection-identification-and-classification"></a>
 </h1>
 </div>
-<p><a href="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></p>
+<p><a href="https://github.com/msberends/EpiSODIC/actions/workflows/R-CMD-check.yaml" class="external-link"><img src="https://github.com/msberends/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a></p>
 <blockquote>
 <p>[!WARNING] <strong>Under very intensive development.</strong> EpiSODIC has not been released and is not yet ready for use. Its functions, database schema, configuration and output can change substantially from one version to the next. While already fully functional, please use it only for testing until a first release is announced.</p>
 </blockquote>
@@ -116,7 +116,7 @@ they also render on the CRAN page), regenerated against episodic_demo().
 </h2>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("remotes")</span></span>
-<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"certe-medical-epidemiology/EpiSODIC"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu">remotes</span><span class="fu">::</span><span class="fu">install_github</span><span class="op">(</span><span class="st">"msberends/EpiSODIC"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="see-it-work-right-now">See it work, right now<a class="anchor" aria-label="anchor" href="#see-it-work-right-now"></a>
@@ -131,9 +131,9 @@ they also render on the CRAN page), regenerated against episodic_demo().
 </h2>
 <ul>
 <li>
-<strong>Detection performance</strong> has been measured on synthetic data with known, injected outbreaks: sensitivity, timeliness and false alarms per stream-week, with a negative control and naive comparators (<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html">Measuring detection against known truth</a>). It has not yet been evaluated retrospectively against documented outbreaks in real laboratory data.</li>
+<strong>Detection performance</strong> has been measured on synthetic data with known, injected outbreaks: sensitivity, timeliness and false alarms per stream-week, with a negative control and naive comparators (<a href="https://msberends.github.io/EpiSODIC/articles/detection-validation.html">Measuring detection against known truth</a>). It has not yet been evaluated retrospectively against documented outbreaks in real laboratory data.</li>
 <li>
-<strong>Testing intensity</strong> is not corrected for. Farrington takes a patient-day offset at institution level where activity data is supplied; every other detection counts cases, so a rise in testing can raise a signal. Repeat samples within one episode are deduplicated before detection, and test counts, if supplied, are shown on the dossier as an aid to judgement but never enter detection (<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html">Detection and reconciliation</a>).</li>
+<strong>Testing intensity</strong> is not corrected for. Farrington takes a patient-day offset at institution level where activity data is supplied; every other detection counts cases, so a rise in testing can raise a signal. Repeat samples within one episode are deduplicated before detection, and test counts, if supplied, are shown on the dossier as an aid to judgement but never enter detection (<a href="https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html">Detection and reconciliation</a>).</li>
 <li>
 <strong>Multiplicity</strong> is not controlled. Each stream is tested at its own significance level; suppression removes restatements of one signal across geographic levels, not independent false alarms. The expected number of alarms grows with the number of pathogens and places watched.</li>
 <li>
@@ -155,31 +155,31 @@ they also render on the CRAN page), regenerated against episodic_demo().
 </tr></thead>
 <tbody>
 <tr>
-<td><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html">Overview</a></td>
+<td><a href="https://msberends.github.io/EpiSODIC/articles/overview.html">Overview</a></td>
 <td>What EpiSODIC does: the Clusters and Pathogen screens’ two altitudes, and the Performance, Archive, Streams, Activity and Info screens around them.</td>
 </tr>
 <tr>
-<td><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html">Getting your data in</a></td>
+<td><a href="https://msberends.github.io/EpiSODIC/articles/data-format.html">Getting your data in</a></td>
 <td>The case data requirements - every column, what’s optional, <code><a href="reference/episodic_check_cases.html">episodic_check_cases()</a></code>/<code><a href="reference/episodic_check_denominators.html">episodic_check_denominators()</a></code>/<code><a href="reference/episodic_check_institution_activity.html">episodic_check_institution_activity()</a></code> to check your extract before anything runs, and <code><a href="reference/episodic_add_manual_cluster.html">episodic_add_manual_cluster()</a></code> for clusters detected by another system entirely.</td>
 </tr>
 <tr>
-<td><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html">Deployment</a></td>
+<td><a href="https://msberends.github.io/EpiSODIC/articles/deployment.html">Deployment</a></td>
 <td>Standing up a real instance: scheduling, accounts, the database backend, custom report templates.</td>
 </tr>
 <tr>
-<td><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html">Environment variables</a></td>
+<td><a href="https://msberends.github.io/EpiSODIC/articles/environment-variables.html">Environment variables</a></td>
 <td>The full <code>EPISODIC_*</code> reference table.</td>
 </tr>
 <tr>
-<td><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html">Detection and reconciliation</a></td>
+<td><a href="https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html">Detection and reconciliation</a></td>
 <td>How a laboratory result becomes a dossier: the four detectors, denominators, reconciliation, and suppression.</td>
 </tr>
 <tr>
-<td><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html">Measuring detection against known truth</a></td>
+<td><a href="https://msberends.github.io/EpiSODIC/articles/detection-validation.html">Measuring detection against known truth</a></td>
 <td>How detection is validated against synthetic outbreaks, and what that does not measure.</td>
 </tr>
 <tr>
-<td><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html">FAQ</a></td>
+<td><a href="https://msberends.github.io/EpiSODIC/articles/faq.html">FAQ</a></td>
 <td>Answers to the questions that come up most often when getting started.</td>
 </tr>
 </tbody>
@@ -195,8 +195,8 @@ they also render on the CRAN page), regenerated against episodic_demo().
   </main><aside class="col-md-3"><div class="links">
 <h2 data-toc-skip>Links</h2>
 <ul class="list-unstyled">
-<li><a href="https://github.com/certe-medical-epidemiology/EpiSODIC/" class="external-link">Browse source code</a></li>
-<li><a href="https://github.com/certe-medical-epidemiology/EpiSODIC/issues" class="external-link">Report a bug</a></li>
+<li><a href="https://github.com/msberends/EpiSODIC/" class="external-link">Browse source code</a></li>
+<li><a href="https://github.com/msberends/EpiSODIC/issues" class="external-link">Report a bug</a></li>
 </ul>
 </div>
 

@@ -4,7 +4,7 @@ EpiSODIC does not connect to any laboratory or hospital system itself.
 Instead, you extract and transform your own positive-result data
 beforehand - with whatever tooling you already use - and hand the result
 to
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 as a plain data frame (a `tibble` is equally fine) in the shape
 described here. This keeps EpiSODIC decoupled from any specific
 laboratory information system: whatever your source system is, your own
@@ -21,11 +21,11 @@ Only confirmed-positive results belong here - there is no outcome
 column, so do not include negative results. If you also want a
 denominator (tests performed, for a positivity rate), supply that
 separately as pre-aggregated counts; see
-[`episodic_synthetic_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md).
+[`episodic_synthetic_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md).
 
 The only case data shipped with the package is what the synthetic
 generator
-([`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md))
+([`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md))
 returns for the bundled demo - a useful template for the shape your own
 data should have.
 
@@ -128,7 +128,7 @@ mistakes, and all named for what they are by the check below.
   across runs - `"Influenza A"` and `"influenza a"` are two different
   pathogens as far as detection is concerned. Names matching in the
   default config
-  ([`inst/config/episodic_default_pathogen_config.csv`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv))
+  ([`inst/config/episodic_default_pathogen_config.csv`](https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv))
   pick up that pathogen's episode length, incubation window and serial
   interval; anything else falls back to the schema defaults (30-day
   episode, 14 case-free days, no Rt, no MEM). The same positive may
@@ -211,7 +211,7 @@ mistakes, and all named for what they are by the check below.
 ## Check your data before you run anything
 
 Do not find out from an empty dashboard. Run
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 on your extract - it needs no database, changes nothing, and reports
 every problem it finds at once, with the rows and values involved and
 what to do about each:
@@ -225,7 +225,7 @@ ward-level detection), a `patient_key` that never repeats (no
 deduplication), postcodes the map cannot place, sample dates in the
 future. `episodic_check_cases(..., stop_on_problem = TRUE)` runs the
 same checks but throws an error, for use in a script.
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 runs that before every run, and refuses to start on data it cannot use,
 naming what to fix.
 

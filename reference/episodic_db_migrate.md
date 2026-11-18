@@ -22,7 +22,7 @@ episodic_db_migrate(
 - db_path:
 
   Path to an existing SQLite database, or a MariaDB/MySQL DSN (see
-  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
+  [`episodic_db_dsn_mariadb()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
   Defaults to the `EPISODIC_DB` environment variable.
 
 - backup:
@@ -37,7 +37,7 @@ Invisibly, the schema version the database is at afterwards.
 ## Details
 
 You rarely need to call this yourself:
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 does it at the start of every run that finds the database behind the
 installed package, unless `database.auto_migrate` is set to `false` in
 your configuration. Call it directly where schema changes go through

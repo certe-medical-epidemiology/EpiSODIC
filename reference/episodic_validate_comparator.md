@@ -5,7 +5,7 @@ mean very little on their own. They mean a great deal next to what a
 rule anyone could write in an afternoon gets on the same data. This runs
 such a rule over exactly the same generated history, week by week, and
 reports it through the same matching and the same metrics as
-[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md),
+[`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md),
 so the two sit in one table.
 
 ## Usage
@@ -64,7 +64,7 @@ episodic_validate_comparator(
 - outbreaks, outbreak_offsets:
 
   Passed to
-  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
+  [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
   `outbreaks = FALSE` generates history with nothing seeded in it, which
   is the negative control: every alarm raised on it is a false one.
 
@@ -80,14 +80,14 @@ episodic_validate_comparator(
 - quiet:
 
   If `TRUE` (the default), the per-run progress
-  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   writes is suppressed; a replay is hundreds of lines of it. Warnings
   and errors are not suppressed.
 
 ## Value
 
 An `episodic_validation` object, in the same shape
-[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+[`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
 returns, with `meta$method` naming the rule and `meta$config_hash`
 absent - a rule this simple has no configuration to hash.
 
@@ -118,7 +118,7 @@ so read `denominator` before comparing two rates.
 
 ## See also
 
-[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+[`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
 
 ## Examples
 

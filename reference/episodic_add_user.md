@@ -27,7 +27,7 @@ episodic_add_user(
 
   Path to the EpiSODIC database: an existing SQLite file, or a
   MariaDB/MySQL DSN (see
-  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
+  [`episodic_db_dsn_mariadb()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
   Defaults to the `EPISODIC_DB` environment variable.
 
 - username, full_name, email:
@@ -62,7 +62,7 @@ episodic_add_user(
   account: the password you type here has been in your shell history and
   quite possibly in a message to the person it belongs to. `FALSE` is
   for a throwaway account in a throwaway database, which is what
-  [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
   creates.
 
 ## Value

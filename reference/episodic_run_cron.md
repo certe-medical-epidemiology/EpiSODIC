@@ -32,7 +32,7 @@ episodic_run_cron(
 - cases:
 
   Your laboratory data: a data frame or `tibble` in the shape
-  [episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+  [episodic_case_data](https://msberends.github.io/EpiSODIC/reference/episodic_case_data.md)
   describes, or a zero-argument function that returns one. Defaults to
   the bundled synthetic generator, useful for demos and testing but not
   real surveillance.
@@ -42,14 +42,14 @@ episodic_run_cron(
   Optional: your testing-volume data, in the same form as `cases` -
   normally a data set, a function if it has to be produced at run time
   (see
-  [`episodic_synthetic_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md)
+  [`episodic_synthetic_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md)
   for the expected shape). Leave as `NULL` (the default) if you have
   none to supply - positivity panels simply stay blank.
 
 - institution_activity:
 
   Optional: your hospital patient-days data (see
-  [`episodic_synthetic_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
+  [`episodic_synthetic_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
   for the expected shape), normally as a data set, or as a function
   taking the current institutions table. Its `institution_key` is the
   same identifier your case data uses - EpiSODIC hashes both on load, so
@@ -60,14 +60,14 @@ episodic_run_cron(
 - imports:
 
   Optional: cases from a partner instance, as
-  [`episodic_cases_import()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_import.md)
+  [`episodic_cases_import()`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_import.md)
   returns them, or a list of those. They are combined with `cases`
   before anything is written and loaded in the same transaction, their
   keys already carrying the sender's instance identifier as a prefix;
   each is recorded against this run in `episodic_import_event`. Import
   sources registered on the dashboard's Instance screen are fetched by
   every run on top of these. See
-  [`vignette("import-export")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md).
+  [`vignette("import-export")`](https://msberends.github.io/EpiSODIC/articles/import-export.md).
 
 - episodic_config_path:
 
@@ -80,14 +80,14 @@ episodic_run_cron(
   to the `EPISODIC_PATHOGEN_CONFIG` environment variable; if unset, only
   the shipped defaults are used. Set to a path that does not exist, this
   stops with an error. See
-  [`vignette("tuning-detection")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.md)
+  [`vignette("tuning-detection")`](https://msberends.github.io/EpiSODIC/articles/tuning-detection.md)
   for the column reference.
 
 - db_path:
 
   Path to the EpiSODIC database: a SQLite file (created automatically if
   it does not exist yet) or a MariaDB/MySQL DSN (see
-  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
+  [`episodic_db_dsn_mariadb()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
 
 - host, account:
 
@@ -104,7 +104,7 @@ episodic_run_cron(
   inside the extract's own window, not one run dated today holding the
   whole archive - a run dated today reports what is current, and the
   archive is not.
-  [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+  [`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
   replays exactly that way.
 
 - backfill:
@@ -118,7 +118,7 @@ episodic_run_cron(
   rather than as an empty dashboard. Every run after it is bounded
   again, so nothing is ever reported twice. Pass `FALSE` to bound the
   first run too, which is what a prospective replay wants:
-  [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+  [`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
   measures detection delay, and a first replay run that reported its
   whole baseline at once would measure the import instead. `TRUE` forces
   it on, for a database whose history was imported by something other
@@ -150,7 +150,7 @@ with `status = "failed"` and the same message in `error_text`.
 EpiSODIC never connects to your laboratory system directly. You extract
 and transform your own data beforehand, and hand it over as a plain data
 frame or `tibble`: `cases` for the laboratory results themselves (see
-[episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+[episodic_case_data](https://msberends.github.io/EpiSODIC/reference/episodic_case_data.md)
 for the required columns and their allowed values), and optionally
 `denominators` and `institution_activity` for testing volume and
 hospital activity. A data set is the normal case; if producing the data
@@ -162,24 +162,24 @@ result can always be traced back to the configuration that produced it.
 
 A database whose schema is behind the installed package is brought up to
 date before the run starts, the way
-[`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
+[`episodic_db_migrate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_migrate.md)
 would, so upgrading an instance is upgrading the package. Set
 `database.auto_migrate` to `false` in your configuration where schema
 changes go through a DBA instead; the run then refuses such a database
 and records why. See
-[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md),
+[`vignette("deployment")`](https://msberends.github.io/EpiSODIC/articles/deployment.md),
 "Upgrading EpiSODIC".
 
 So is what each feed delivered. Before the run writes anything, your
 case data goes through
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md).
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md).
 Structural problems - a missing column, a value outside the allowed set,
 a date that does not read as a date - stop the run with an error naming
 every offending column, its values and the rows they are in, and are
 recorded on the run as well, so the reason is visible both where the run
 was started and in the dashboard's activity screen. Advisory findings
 are mentioned once and the run proceeds. Run
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 on your extract yourself to see all of it without starting a run at all.
 A run that fails later, for any other reason, records the reason and
 warns rather than returning quietly. Rows that are merely unmatched are
@@ -194,7 +194,7 @@ warning, its count recorded, and the run finishes `"partial"` instead of
 ## Check your data before you run anything
 
 Do not find out from an empty dashboard. Run
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 on your extract - it needs no database, changes nothing, and reports
 every problem it finds at once, with the rows and values involved and
 what to do about each:
@@ -213,10 +213,10 @@ on data it cannot use, naming what to fix.
 
 ## See also
 
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 to see what EpiSODIC makes of your extract before you schedule anything,
 and
-[episodic_case_data](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+[episodic_case_data](https://msberends.github.io/EpiSODIC/reference/episodic_case_data.md)
 for the requirements it checks against.
 
 ## Examples
@@ -228,55 +228,55 @@ cases <- episodic_synthetic_cases(
   start_date = as.Date("2025-01-01"), end_date = as.Date("2025-03-31")
 )
 run_id <- episodic_run_cron(db_path = db_path, cases = cases)
-#> 2026-11-18 09:57:06.877 | episodic_run_cron() starting (host=runnervmccnms, account=runner)
-#> 2026-11-18 09:57:06.877 | Resolving configuration
-#> 2026-11-18 09:57:06.881 | Configuration resolved (hash 7fef366a6991)
-#> 2026-11-18 09:57:06.882 | Connecting to database
-#> 2026-11-18 09:57:06.882 | No existing database found - creating one
-#> 2026-11-18 09:57:06.908 | Database connected (SQLite 3.53.3)
-#> 2026-11-18 09:57:06.909 | Run 1 started
-#> 2026-11-18 09:57:06.909 | Resolving and checking case data
-#> 2026-11-18 09:57:06.920 | Case data checked: 421 rows, 0 problems, 0 advisory finding(s)
-#> 2026-11-18 09:57:06.921 | Beginning transaction
-#> 2026-11-18 09:57:06.921 | Loading pathogen configuration
-#> 2026-11-18 09:57:06.924 | Pathogen configuration loaded (39 pathogen(s))
-#> 2026-11-18 09:57:06.924 | Loading case data into the database
-#> 2026-11-18 09:57:07.011 | Case data loaded: supplied=421, deduplicated=403, inserted=403
-#> 2026-11-18 09:57:07.012 | Stale-data check: new cases last arrived in the run of 2026-11-18 (0 day(s) ago, 2 allowed)
-#> 2026-11-18 09:57:07.012 | Fetching all known cases and institutions
-#> 2026-11-18 09:57:07.014 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
-#> 2026-11-18 09:57:07.016 | Case history on file spans 2025-01-01 to 2025-03-31, ending 597 day(s) before this run's date (2026-11-18)
-#> 2026-11-18 09:57:07.016 | Enumerating lattice streams
-#> ! 2026-11-18 09:57:07.035 | no province could be resolved for any of the 105 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in rule to fall back on - deriving a province from a postcode is country-specific. Point it at your own pc/province_code CSV, or leave it unset and the province level stays empty.
-#> 2026-11-18 09:57:07.041 | Running same-place detector
-#> 2026-11-18 09:57:07.096 | Same-place detector found 5 detection(s)
-#> 2026-11-18 09:57:07.096 | Running rare-trigger detector
-#> 2026-11-18 09:57:07.100 | Rare-trigger detector found 1 detection(s)
-#> 2026-11-18 09:57:07.100 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
-#> 2026-11-18 09:57:07.102 | Reconciling 320 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
-#> ! 2026-11-18 09:57:07.467 | MEM: declined stream Bordetella pertussis/pathogen_region/REGION, disabled by mem_mode
-#> ! 2026-11-18 09:57:07.472 | MEM: declined stream Campylobacter/pathogen_region/REGION, insufficient history for climatology
-#> ! 2026-11-18 09:57:07.477 | MEM: declined stream Clostridioides difficile/pathogen_region/REGION, disabled by mem_mode
-#> ! 2026-11-18 09:57:07.481 | MEM: declined stream Giardia lamblia/pathogen_region/REGION, insufficient history for climatology
-#> ! 2026-11-18 09:57:07.486 | MEM: declined stream Influenza A/pathogen_region/REGION, insufficient history for climatology
-#> ! 2026-11-18 09:57:07.491 | MEM: declined stream MRSA/pathogen_region/REGION, disabled by mem_mode
-#> ! 2026-11-18 09:57:07.495 | MEM: declined stream Neisseria meningitidis/pathogen_region/REGION, disabled by mem_mode
-#> ! 2026-11-18 09:57:07.500 | MEM: declined stream Norovirus/pathogen_region/REGION, insufficient history for climatology
-#> ! 2026-11-18 09:57:07.504 | MEM: declined stream RSV/pathogen_region/REGION, insufficient history for climatology
-#> ! 2026-11-18 09:57:07.509 | MEM: declined stream Salmonella/pathogen_region/REGION, insufficient history for climatology
-#> 2026-11-18 09:57:07.535 | Stream loop time by stage: cases 0.0s, mem 0.0s, eligibility 0.2s, farrington 0.0s, trend 0.0s, detections 0.0s, reconciliation 0.0s, total 0.3s (320 stream(s))
-#> 2026-11-18 09:57:07.537 | Stream reconciliation done: 6 detection(s), 6 new signal(s), 0 updated signal(s)
-#> 2026-11-18 09:57:07.537 | Backfill: 6 cluster(s) opened from the case history, 6 of them already closed by the system and in the Archive, 0 left open for assessment
-#> 2026-11-18 09:57:07.538 | Suppressing lattice: weighing 6 cluster(s) across 5 pathogen(s)
-#> 2026-11-18 09:57:07.540 | Suppressing lattice: 42 case link(s) read for 6 cluster(s), 0 assessed cluster(s) exempt
-#> 2026-11-18 09:57:07.545 | Suppressing lattice done: 0 cluster(s) suppressed (0 parent(s) behind a dominant child, 0 child(ren) behind a diffuse parent)
-#> 2026-11-18 09:57:07.546 | Nowcast: no stream carries an open cluster
-#> 2026-11-18 09:57:07.547 | Epidemic direction: no open epidemic
-#> 2026-11-18 09:57:07.548 | Epidemic outlook: no open epidemic
-#> 2026-11-18 09:57:07.548 | Outbreak-end forecast: 0 of 0 open outbreak(s) of a transmissible pathogen computed, 0 point source, 0 without the parameters or reporting history, 0 failed
-#> 2026-11-18 09:57:07.549 | Committing transaction
-#> 2026-11-18 09:57:07.550 | Finishing run 1 (status: success)
-#> 2026-11-18 09:57:07.553 | episodic_run_cron() finished in 0.7s (status: success)
+#> 2026-11-18 10:08:40.163 | episodic_run_cron() starting (host=runnervmccnms, account=runner)
+#> 2026-11-18 10:08:40.163 | Resolving configuration
+#> 2026-11-18 10:08:40.168 | Configuration resolved (hash 7fef366a6991)
+#> 2026-11-18 10:08:40.169 | Connecting to database
+#> 2026-11-18 10:08:40.169 | No existing database found - creating one
+#> 2026-11-18 10:08:40.203 | Database connected (SQLite 3.53.3)
+#> 2026-11-18 10:08:40.204 | Run 1 started
+#> 2026-11-18 10:08:40.205 | Resolving and checking case data
+#> 2026-11-18 10:08:40.218 | Case data checked: 421 rows, 0 problems, 0 advisory finding(s)
+#> 2026-11-18 10:08:40.219 | Beginning transaction
+#> 2026-11-18 10:08:40.219 | Loading pathogen configuration
+#> 2026-11-18 10:08:40.222 | Pathogen configuration loaded (39 pathogen(s))
+#> 2026-11-18 10:08:40.223 | Loading case data into the database
+#> 2026-11-18 10:08:40.343 | Case data loaded: supplied=421, deduplicated=403, inserted=403
+#> 2026-11-18 10:08:40.344 | Stale-data check: new cases last arrived in the run of 2026-11-18 (0 day(s) ago, 2 allowed)
+#> 2026-11-18 10:08:40.344 | Fetching all known cases and institutions
+#> 2026-11-18 10:08:40.348 | First run on this database: reporting the whole case history rather than only what falls inside the detectors' lookback windows. Clusters whose last case is more than 60 day(s) before this run's date close in this same run and go straight to the Archive; the rest open for assessment. Every run after this one is bounded again, so nothing here is reported twice.
+#> 2026-11-18 10:08:40.350 | Case history on file spans 2025-01-01 to 2025-03-31, ending 597 day(s) before this run's date (2026-11-18)
+#> 2026-11-18 10:08:40.350 | Enumerating lattice streams
+#> ! 2026-11-18 10:08:40.375 | no province could be resolved for any of the 105 postcode values in this run - province-level (L4) detection has nothing to run on. EPISODIC_PC_PROVINCE_MAP is unset, and there is no built-in rule to fall back on - deriving a province from a postcode is country-specific. Point it at your own pc/province_code CSV, or leave it unset and the province level stays empty.
+#> 2026-11-18 10:08:40.382 | Running same-place detector
+#> 2026-11-18 10:08:40.457 | Same-place detector found 5 detection(s)
+#> 2026-11-18 10:08:40.457 | Running rare-trigger detector
+#> 2026-11-18 10:08:40.462 | Rare-trigger detector found 1 detection(s)
+#> 2026-11-18 10:08:40.463 | Farrington tests every week its streams can carry this run, rather than the 8-week catch-up cap: there is no earlier run to catch up to
+#> 2026-11-18 10:08:40.464 | Reconciling 320 stream(s) (Farrington/MEM detection, triangle update, cluster reconciliation)
+#> ! 2026-11-18 10:08:40.945 | MEM: declined stream Bordetella pertussis/pathogen_region/REGION, disabled by mem_mode
+#> ! 2026-11-18 10:08:40.951 | MEM: declined stream Campylobacter/pathogen_region/REGION, insufficient history for climatology
+#> ! 2026-11-18 10:08:40.956 | MEM: declined stream Clostridioides difficile/pathogen_region/REGION, disabled by mem_mode
+#> ! 2026-11-18 10:08:40.961 | MEM: declined stream Giardia lamblia/pathogen_region/REGION, insufficient history for climatology
+#> ! 2026-11-18 10:08:40.968 | MEM: declined stream Influenza A/pathogen_region/REGION, insufficient history for climatology
+#> ! 2026-11-18 10:08:40.974 | MEM: declined stream MRSA/pathogen_region/REGION, disabled by mem_mode
+#> ! 2026-11-18 10:08:40.979 | MEM: declined stream Neisseria meningitidis/pathogen_region/REGION, disabled by mem_mode
+#> ! 2026-11-18 10:08:40.985 | MEM: declined stream Norovirus/pathogen_region/REGION, insufficient history for climatology
+#> ! 2026-11-18 10:08:40.991 | MEM: declined stream RSV/pathogen_region/REGION, insufficient history for climatology
+#> ! 2026-11-18 10:08:40.996 | MEM: declined stream Salmonella/pathogen_region/REGION, insufficient history for climatology
+#> 2026-11-18 10:08:41.031 | Stream loop time by stage: cases 0.0s, mem 0.0s, eligibility 0.2s, farrington 0.0s, trend 0.0s, detections 0.0s, reconciliation 0.0s, total 0.3s (320 stream(s))
+#> 2026-11-18 10:08:41.032 | Stream reconciliation done: 6 detection(s), 6 new signal(s), 0 updated signal(s)
+#> 2026-11-18 10:08:41.033 | Backfill: 6 cluster(s) opened from the case history, 6 of them already closed by the system and in the Archive, 0 left open for assessment
+#> 2026-11-18 10:08:41.035 | Suppressing lattice: weighing 6 cluster(s) across 5 pathogen(s)
+#> 2026-11-18 10:08:41.036 | Suppressing lattice: 42 case link(s) read for 6 cluster(s), 0 assessed cluster(s) exempt
+#> 2026-11-18 10:08:41.043 | Suppressing lattice done: 0 cluster(s) suppressed (0 parent(s) behind a dominant child, 0 child(ren) behind a diffuse parent)
+#> 2026-11-18 10:08:41.044 | Nowcast: no stream carries an open cluster
+#> 2026-11-18 10:08:41.045 | Epidemic direction: no open epidemic
+#> 2026-11-18 10:08:41.046 | Epidemic outlook: no open epidemic
+#> 2026-11-18 10:08:41.047 | Outbreak-end forecast: 0 of 0 open outbreak(s) of a transmissible pathogen computed, 0 point source, 0 without the parameters or reporting history, 0 failed
+#> 2026-11-18 10:08:41.048 | Committing transaction
+#> 2026-11-18 10:08:41.050 | Finishing run 1 (status: success)
+#> 2026-11-18 10:08:41.052 | episodic_run_cron() finished in 0.9s (status: success)
 file.remove(db_path)
 #> [1] TRUE
 # }

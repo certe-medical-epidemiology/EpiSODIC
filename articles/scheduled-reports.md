@@ -1,13 +1,13 @@
 # Scheduled reports
 
-[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)
+[**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html)
 is for your epidemiologists: it alerts them the moment a cluster needs
 assessing. Scheduled reports are for everyone else who needs to follow a
 cluster without ever opening the dashboard - a ward manager, a
 department head, a referring physician, or any colleague with no
 EpiSODIC account, or only a `viewer` one. An epidemiologist puts a
 cluster on a recurring schedule from its dossier; from then on,
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 emails the outbreak report to a list of addresses, every N days, for as
 long as the cluster stays active.
 
@@ -22,7 +22,7 @@ reports” section:
   new line.
 - **Send via** - which already-configured, email-capable notification
   channel to deliver through: `smtp`, `sendmail` or `microsoft365` (see
-  [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)).
+  [**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html)).
   Only channels with `enabled: true` in your instance configuration
   appear here; if none do, the section tells you to configure one first.
 - **Include the case line list** - off by default. These recipients are
@@ -57,7 +57,7 @@ Each cron run checks every cluster’s current schedule:
 
 The report is delivered as a self-contained HTML file attached to the
 email - the same file
-[`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
+[`episodic_report_render()`](https://msberends.github.io/EpiSODIC/reference/episodic_report_render.md)
 produces on demand, opened directly in a browser, needing neither a
 dashboard login nor a network connection back to your instance. Every
 send, sent or failed, is logged; the Reports panel shows the most recent
@@ -92,7 +92,7 @@ template of your own: point `EPISODIC_MAIL_TEMPLATE_REPORT` at a Quarto
 `system.file("mail", "episodic_default_mail_report.qmd", package = "EpiSODIC")`,
 keeps EpiSODIC’s own message and places it inside a letterhead and
 signature of yours. See
-[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)’s
+[**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html)’s
 “Your own email layout” for the data a template receives and what an
 email template has to respect. A template that cannot be used never
 holds a report back: the email goes out with the built-in body, and the
@@ -101,9 +101,9 @@ run log says why.
 ## Custom report templates and patient-level detail
 
 Scheduled reports render through the same
-[`inst/report/episodic_default_report.qmd`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd)
+[`inst/report/episodic_default_report.qmd`](https://github.com/msberends/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd)
 template (or your own, via `EPISODIC_QUARTO_REPORT` - see
-[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)’s
+[**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)’s
 “Custom report templates” section) as an on-demand render. The “include
 the case line list” checkbox controls only whether `d$linelist` is
 populated for that particular schedule; everything else in
@@ -115,7 +115,7 @@ the shipped template shows even with the line list included - a
 different set of columns, say, or per-case highlighting of what is new
 since the previous version - write your own `.qmd` reading from the same
 `report_data.rds` shape documented in
-[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html),
+[**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html),
 and point `EPISODIC_QUARTO_REPORT` at it. The line list itself
 (`d$linelist`) already carries everything `episodic_case` records short
 of the raw source key: patient key, lab number, sample date, sex, age,
@@ -125,12 +125,12 @@ it, or to compute its own per-case “new since last time” flag from
 
 ## See also
 
-- [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)
+- [**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html)
   for configuring the email-capable channels (`smtp`, `sendmail`,
   `microsoft365`) a schedule sends through.
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)
   for custom Quarto report templates.
-- [`?episodic_scheduled_reports`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_scheduled_reports.md)
+- [`?episodic_scheduled_reports`](https://msberends.github.io/EpiSODIC/reference/episodic_scheduled_reports.md)
   for the API-level documentation.
-- [`?episodic_report_render`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
+- [`?episodic_report_render`](https://msberends.github.io/EpiSODIC/reference/episodic_report_render.md)
   for what a single render produces.

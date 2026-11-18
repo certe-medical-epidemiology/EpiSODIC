@@ -4,12 +4,12 @@ This page collects the questions that come up most often when getting
 started with EpiSODIC. Skim the questions first, then click the one you
 need to open its answer - nothing on this page needs to be read start to
 finish. If your question is not here, [**Getting your data
-in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html),
-[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html),
+in**](https://msberends.github.io/EpiSODIC/articles/data-format.html),
+[**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html),
 [**Environment
-variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)
+variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html)
 and [**Detection and
-reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)
+reconciliation**](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html)
 go deeper on most of these topics; and if it still is not answered
 anywhere, that is worth telling us, since it means this page is missing
 something it should cover.
@@ -19,7 +19,7 @@ something it should cover.
 **How do I prepare my data?**
 
 Do not worry about getting this perfect by hand - that is exactly what
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 is for. Hand it your extract, however rough:
 
 ``` r
@@ -38,15 +38,15 @@ run proceeds regardless, but it is worth a look - one pathogen spelled
 two ways, no `ward` on any hospital row). Run it, fix what it flags as a
 problem, run it again - most people get to a clean report in two or
 three passes. [**Getting your data
-in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
+in**](https://msberends.github.io/EpiSODIC/articles/data-format.html)
 has the full column requirements this is checking against, including the
 exact allowed values for `care_line`, `institution_type`, and `sex`.
 
 If you are also supplying the optional positivity or hospital-activity
 feeds,
-[`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+[`episodic_check_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_denominators.md)
 and
-[`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
+[`episodic_check_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
 are the same idea, over those:
 
 ``` r
@@ -81,7 +81,7 @@ Two related things worth knowing:
   no-op. There is no bookkeeping you need to do to avoid duplicates - if
   in doubt, a wider window (or even a full resend) never causes harm, it
   is just more rows for
-  [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)/the
+  [`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)/the
   load step to look at.
 - **Do not send negative results.** This feed is deliberately
   positives-only, regardless of how wide a window you choose.
@@ -143,7 +143,7 @@ gracefully rather than blocking anything:
   on it, since it is an interpretive aid, never a detection input.
 
 In short: send what you reliably have.
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 will flag missing optional columns as *advice*, not a *problem*, so you
 will always know what you are missing without anything blocking your
 run.
@@ -155,7 +155,7 @@ loaded, or failed?**
 
 You do not have to go near a log file for this - it is recorded on every
 run and surfaced in the dashboard itself. Every
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 call writes a `status` of `success`, `partial`, or `failed`, along with
 exactly what each feed delivered (`n_cases_supplied`,
 `n_cases_inserted`, and the equivalent for denominators/institution
@@ -193,7 +193,7 @@ still count towards positive predictive value if a person assesses one,
 because that is a judgement about the detectors like any other.
 
 To override the decision, pass `backfill` to
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 explicitly. `FALSE` bounds even the first run, which is what a
 prospective replay needs.
 
@@ -219,11 +219,11 @@ The run’s own log says which bound you met.
 If your extract does not run up to today, a run dated today sees a
 catchment that stopped weeks ago. It says so outright when the newest
 case on file is older than every rule-based lookback. Give
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 a `run_date` inside the extract’s own window, and run it one date at a
 time if the dates a cluster was opened on need to mean anything - which
 is how
-[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+[`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
 replays a generated history week by week.
 
 **Can I try EpiSODIC out before pointing it at anything real?**
@@ -284,7 +284,7 @@ change; it is merged key-by-key over the shipped defaults. Per-pathogen
 parameters (severity, episode length, MEM mode) are overlaid via
 `EPISODIC_PATHOGEN_CONFIG` the same way. See [**Tuning detection for
 your
-catchment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.html)
+catchment**](https://msberends.github.io/EpiSODIC/articles/tuning-detection.html)
 for which parameters to adjust for common operational problems, their
 trade-offs, and the complete reference table.
 
@@ -293,14 +293,14 @@ them into one feed?**
 
 Yes - EpiSODIC only ever sees the single data frame (or tibble) your own
 transform step hands to
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md),
 so combining several source systems is exactly that: your transform
 step’s job, done before EpiSODIC is ever called. Bring each source into
 the shared column requirements,
 [`rbind()`](https://rdrr.io/r/base/cbind.html) (or
 [`dplyr::bind_rows()`](https://dplyr.tidyverse.org/reference/bind_rows.html))
 them together, and check the combined result with
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 as normal. The one thing to get right across sources is `source_key`: it
 needs to be unique *per row of the combined data set*, so if two systems
 could otherwise produce the same key (e.g. both use a simple
@@ -311,7 +311,7 @@ two genuinely different results into one. `lab_number` itself needs no
 such treatment - unlike `source_key` it is never required to be unique,
 so your lab’s own accession number can go into it verbatim regardless of
 how many systems you combine. See [**Getting your data
-in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)’s
+in**](https://msberends.github.io/EpiSODIC/articles/data-format.html)’s
 “`source_key`: one identifier per *result*, not per specimen” section
 for the same idea applied within one source system, where a bare
 accession number repeats for other reasons (e.g. one culture yielding
@@ -374,18 +374,18 @@ Either is genuinely fine - EpiSODIC does not assume one or the other,
 and plenty of setups do each:
 
 - **On your own machine**:
-  [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
+  [`episodic_run_app()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_app.md)
   opens the dashboard locally, and you (or a scheduled task on that same
   machine) run
-  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   on whatever cadence suits you. This is the simplest way to get
   started, and exactly what
-  [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
   does under the hood.
 - **Hosted somewhere shared**: a server running
-  [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
+  [`episodic_run_app()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_app.md)
   behind your organisation’s usual access setup, with
-  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   scheduled separately (cron, a Windows scheduled task, a CI pipeline -
   there is nothing EpiSODIC-specific about the scheduling mechanism
   itself). This is the natural choice once more than one person needs to
@@ -399,7 +399,7 @@ shared MariaDB/MySQL server via `EPISODIC_DB`), so you are not locked
 into your first choice - moving from “trying it out on my laptop” to “a
 shared instance the whole board uses” is a deployment change, not a data
 or code change. See
-[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
+[**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)
 for the full walk-through.
 
 **Can more than one board member review the same cluster, and what
@@ -432,7 +432,7 @@ geography, and dates. That is enough to assess a cluster and to look a
 case up in your own source system if needed, but - given a properly
 pseudonymised `patient_key` - not enough to identify who is in it from
 the dashboard alone. See [**Getting your data
-in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
+in**](https://msberends.github.io/EpiSODIC/articles/data-format.html)
 for the exact column requirements, including what “pseudonymised” needs
 to mean for this guarantee to hold.
 
@@ -474,6 +474,6 @@ Two independent things are configurable, and both are optional:
   lattice ends up built on somebody else’s provinces.
 
 See [**Getting your data
-in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)’s
+in**](https://msberends.github.io/EpiSODIC/articles/data-format.html)’s
 “Geographic reference data” section for the exact requirements these
 files need to satisfy.

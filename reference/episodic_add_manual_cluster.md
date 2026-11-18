@@ -10,7 +10,7 @@ filtering, sorting and geography panels, exactly like a detected
 cluster), but its case-level detail, if you supply any, is stored
 separately in `episodic_cluster_manual_case` and never touches
 `episodic_case`. It is therefore also never picked up by
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)'s
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)'s
 reconciliation or automatic closure - a manual cluster only closes when
 an epidemiologist records that verdict.
 
@@ -47,7 +47,7 @@ episodic_add_manual_cluster(
 - db_path:
 
   Path to an existing SQLite database, or a `mysql://` DSN (see
-  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
+  [`episodic_db_dsn_mariadb()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
   Defaults to the `EPISODIC_DB` environment variable.
 
 - user_id:
@@ -70,7 +70,7 @@ episodic_add_manual_cluster(
   `"pathogen_institution"`, `"pathogen_area"`, `"pathogen_province"`,
   `"pathogen_region"` (see the "The lattice: streams, not one big feed"
   section of [**Detection and
-  reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)).
+  reconciliation**](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html)).
 
 - first_day, last_day:
 

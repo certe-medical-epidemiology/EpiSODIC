@@ -333,18 +333,18 @@ everyone who uses it.
 ## See also
 
 - [**Importing and exporting data between
-  instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html)
+  instances**](https://msberends.github.io/EpiSODIC/articles/import-export.html)
   for sharing case data with another EpiSODIC instance, which needs no
   plugin.
-- [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)
+- [**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html)
   for alerts on new clusters through the built-in channels.
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)
   for the configuration file and administrator accounts.
 - [**Environment
-  variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)
+  variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html)
   for `EPISODIC_PLUGIN_DIR` and every other `EPISODIC_*` variable.
-- [`?episodic_plugin_install`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_install.md),
-  [`?episodic_plugin_enable`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.md)
+- [`?episodic_plugin_install`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_install.md),
+  [`?episodic_plugin_enable`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_enable.md)
   and
-  [`?episodic_plugin_run`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_run.md)
+  [`?episodic_plugin_run`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_run.md)
   for the details of each function.

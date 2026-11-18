@@ -15,18 +15,18 @@ passphrase, a user name and password or a bearer token for an HTTP(S)
 destination, and one for a URL that is itself a secret, such as a
 pre-signed upload URL. The database stores those names, never the
 values. Each is read by
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 when it carries out the export or fetches the source, so set them in the
 environment the scheduled run starts in.
 
 None of these need to be set to run the demo -
-[`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+[`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
 uses a temporary SQLite file and the shipped defaults, and writes its
 own geography and an illustrative pathogen overlay beside it. See
-[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
+[**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)
 for `EPISODIC_DB` and `EPISODIC_CONFIG`/`EPISODIC_STYLE` in context
 (database backend, custom report templates), and [**Getting your data
-in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)’s
+in**](https://msberends.github.io/EpiSODIC/articles/data-format.html)’s
 “Geographic reference data” section for the detail behind
 `EPISODIC_GEO_DATA` and `EPISODIC_GEO_DATA_OVERLAY`.
 

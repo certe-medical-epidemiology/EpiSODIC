@@ -43,7 +43,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/certe-medical-epidemiology/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/msberends/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -59,13 +59,13 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Scheduled reports</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/scheduled-reports.Rmd" class="external-link"><code>vignettes/scheduled-reports.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/msberends/EpiSODIC/blob/main/vignettes/scheduled-reports.Rmd" class="external-link"><code>vignettes/scheduled-reports.Rmd</code></a></small>
       <div class="d-none name"><code>scheduled-reports.Rmd</code></div>
     </div>
 
     
     
-<p><a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>
+<p><a href="https://msberends.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>
 is for your epidemiologists: it alerts them the moment a cluster needs
 assessing. Scheduled reports are for everyone else who needs to follow a
 cluster without ever opening the dashboard - a ward manager, a
@@ -89,7 +89,7 @@ by a comma or a new line.</li>
 <li>
 <strong>Send via</strong> - which already-configured, email-capable
 notification channel to deliver through: <code>smtp</code>,
-<code>sendmail</code> or <code>microsoft365</code> (see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>).
+<code>sendmail</code> or <code>microsoft365</code> (see <a href="https://msberends.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>).
 Only channels with <code>enabled: true</code> in your instance
 configuration appear here; if none do, the section tells you to
 configure one first.</li>
@@ -167,7 +167,7 @@ by a template of your own: point
 (<code>.qmd</code>) file. The shipped starting point,
 <code>system.file("mail", "episodic_default_mail_report.qmd", package = "EpiSODIC")</code>,
 keeps EpiSODIC’s own message and places it inside a letterhead and
-signature of yours. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>’s
+signature of yours. See <a href="https://msberends.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>’s
 “Your own email layout” for the data a template receives and what an
 email template has to respect. A template that cannot be used never
 holds a report back: the email goes out with the built-in body, and the
@@ -176,8 +176,8 @@ run log says why.</p>
 <div class="section level2">
 <h2 id="custom-report-templates-and-patient-level-detail">Custom report templates and patient-level detail<a class="anchor" aria-label="anchor" href="#custom-report-templates-and-patient-level-detail"></a>
 </h2>
-<p>Scheduled reports render through the same <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd" class="external-link"><code>inst/report/episodic_default_report.qmd</code></a>
-template (or your own, via <code>EPISODIC_QUARTO_REPORT</code> - see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>’s
+<p>Scheduled reports render through the same <a href="https://github.com/msberends/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd" class="external-link"><code>inst/report/episodic_default_report.qmd</code></a>
+template (or your own, via <code>EPISODIC_QUARTO_REPORT</code> - see <a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>’s
 “Custom report templates” section) as an on-demand render. The “include
 the case line list” checkbox controls only whether
 <code>d$linelist</code> is populated for that particular schedule;
@@ -187,7 +187,7 @@ snapshot metrics and version-to-version diff included.</p>
 than the shipped template shows even with the line list included - a
 different set of columns, say, or per-case highlighting of what is new
 since the previous version - write your own <code>.qmd</code> reading
-from the same <code>report_data.rds</code> shape documented in <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>,
+from the same <code>report_data.rds</code> shape documented in <a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>,
 and point <code>EPISODIC_QUARTO_REPORT</code> at it. The line list
 itself (<code>d$linelist</code>) already carries everything
 <code>episodic_case</code> records short of the raw source key: patient
@@ -201,12 +201,12 @@ sample dates in <code>d$linelist</code>.</p>
 </h2>
 <ul>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>
+<a href="https://msberends.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>
 for configuring the email-capable channels (<code>smtp</code>,
 <code>sendmail</code>, <code>microsoft365</code>) a schedule sends
 through.</li>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
+<a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
 for custom Quarto report templates.</li>
 <li>
 <code><a href="../reference/episodic_scheduled_reports.html">?episodic_scheduled_reports</a></code> for the API-level

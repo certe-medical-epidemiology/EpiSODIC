@@ -23,7 +23,7 @@ episodic_synthetic_denominators(
 
   The period to generate weekly rows for. Defaults to the five years up
   to today, matching
-  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
+  [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
 
 - seed:
 
@@ -39,7 +39,7 @@ A data frame with `pathogen`, `sample_date` (week start), `care_line`,
 This function is a synthetic example showing the expected shape: weekly
 counts of a multiplex GI PCR panel that also reports Norovirus. Use it
 as a template for your own data, which you pass to
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 as `denominators` - a data frame or `tibble` with the same five columns:
 `pathogen`, `sample_date` (week start), `care_line`, `area_code` (may be
 `NA`), and `n_tests`.

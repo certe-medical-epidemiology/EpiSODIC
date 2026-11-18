@@ -56,7 +56,7 @@ console or the dashboard proves that environment, not the cron's.
 
 ## See also
 
-[`vignette("import-export")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md)
+[`vignette("import-export")`](https://msberends.github.io/EpiSODIC/articles/import-export.md)
 
 ## Examples
 

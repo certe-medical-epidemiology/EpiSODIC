@@ -2,7 +2,7 @@
 
 This vignette is for standing up a real instance. If you only want to
 see the system working, run
-[`EpiSODIC::episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+[`EpiSODIC::episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
 instead - no data, no credentials, no configuration required.
 
 ## The two things you provide
@@ -29,7 +29,7 @@ written for. If producing the data only makes sense at run time (a live
 database query, for instance), a zero-argument function returning one is
 accepted just as well - see `episodic_resolve_data()`. [**Getting your
 data
-in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
+in**](https://msberends.github.io/EpiSODIC/articles/data-format.html)
 documents the exact columns each of the four data sources (cases,
 positivity metadata, institution activity, geographic reference data)
 expects; only cases are mandatory.
@@ -62,11 +62,11 @@ no `ward` on any hospital row, a `patient_key` that never repeats).
 Setting `episodic_check_cases(cases, stop_on_problem = TRUE)` makes the
 checks return an error if there is at least one problem, for use in a
 script.
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 runs that before every run.
 
 Schedule
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 however your environment normally schedules R jobs (cron, a Windows
 scheduled task, a CI pipeline) - there is nothing EpiSODIC-specific
 about the scheduling itself. It validates the case data itself before
@@ -83,7 +83,7 @@ learns why without going near a log file.
 Detection thresholds, baseline lengths, `same_place` rules and MEM
 seasons are *operational data*, not software, and are never committed to
 this repository.
-[`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml)
+[`inst/config/episodic_default_config.yaml`](https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml)
 ships the documented defaults; point `EPISODIC_CONFIG` at a YAML file
 with only the keys you want to override, and it is merged key-by-key on
 top of the shipped defaults. Every run records the resolved
@@ -104,7 +104,7 @@ signing in, and needs an account only for the line list and for writing.
 Accounts are never created by users themselves; either an `is_admin`
 account provisions them from the in-app Settings screen, or whoever
 administers the database runs
-[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
+[`episodic_add_user()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_user.md)
 at the console. Signing in unlocks everything the account’s role allows,
 patient-level detail (the line list) included, for both roles below.
 
@@ -185,11 +185,11 @@ episodic_add_user(
 )
 ```
 
-[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
+[`episodic_add_user()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_user.md)
 takes `db_path` (defaulting to `EPISODIC_DB`, see [**Environment
-variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)),
+variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html)),
 not an open connection - it opens and closes its own via
-[`episodic_db_open()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_open.md),
+[`episodic_db_open()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_open.md),
 so adding an account is one call at the console. The account is created
 with `must_change = TRUE`, so its first real sign-in forces the holder
 to set their own password before continuing. Pass `is_admin = TRUE` to
@@ -238,7 +238,7 @@ against two backends:
   not.
 - **MariaDB/MySQL**: a `mysql://user:password@host:port/dbname` DSN,
   built with
-  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
+  [`episodic_db_dsn_mariadb()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)
   rather than assembled by hand. Requires the `RMariaDB` package. This
   is the option for a deployment that already runs a database server and
   would rather point EpiSODIC at it than manage a SQLite file on disk.
@@ -255,7 +255,7 @@ Connecting to MariaDB/MySQL requires the `RMariaDB` package
 (`install.packages("RMariaDB")`); it is a `Suggests` dependency, not
 installed automatically, so SQLite-only deployments never need it. The
 schema
-([`inst/sql/schema.sql`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/sql/schema.sql))
+([`inst/sql/schema.sql`](https://github.com/msberends/EpiSODIC/blob/main/inst/sql/schema.sql))
 is written once, in SQLite syntax, and adapted at load time for what
 differs under MariaDB/MySQL - there is no separate schema file to keep
 in sync.
@@ -284,7 +284,7 @@ EpiSODIC does not need a database of its own. Its tables can sit in a
 schema alongside another application’s, which is a common way to be
 given a database by an infrastructure team, and every operation that
 enumerates tables - creating the schema, `overwrite = TRUE`, and
-[`episodic_db_truncate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.md) -
+[`episodic_db_truncate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_truncate.md) -
 is scoped to EpiSODIC’s own tables and cannot touch a co-tenant’s.
 
 ### If you already have a MariaDB or MySQL database
@@ -314,7 +314,7 @@ every run.
 The database records which version of EpiSODIC’s schema it was built
 with. When an upgraded package meets a database whose schema is behind
 it, the next
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 brings the database forward itself, before it does anything else, and
 says so in its log:
 
@@ -346,7 +346,7 @@ closely.
   replaced. A MariaDB or MySQL database is not copied, because a
   server’s backups belong to whoever runs the server; the log says so.
 - **One process migrates at a time.** A scheduled run and a manual
-  [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md),
+  [`episodic_db_migrate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_migrate.md),
   or two servers sharing one MariaDB schema, can meet the same
   out-of-date database at once. One of them migrates, the other waits,
   finds the work done, and carries on.
@@ -417,9 +417,9 @@ Sys.setenv(EPISODIC_DB = "/path/to/episodic.sqlite")
 episodic_run_app()
 ```
 
-[`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)’s
+[`episodic_run_app()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_app.md)’s
 `db_path` argument defaults to `EPISODIC_DB` exactly like
-[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)’s
+[`episodic_add_user()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_user.md)’s
 does, so a systemd unit or Docker container can configure everything
 through environment variables alone, with no R code to edit between
 instances.
@@ -436,9 +436,9 @@ while the R process behind it is still running.
 
 ## Custom report templates
 
-[`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
+[`episodic_report_render()`](https://msberends.github.io/EpiSODIC/reference/episodic_report_render.md)
 renders the shipped
-[`inst/report/episodic_default_report.qmd`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd)
+[`inst/report/episodic_default_report.qmd`](https://github.com/msberends/EpiSODIC/blob/main/inst/report/episodic_default_report.qmd)
 (embedded as self-contained HTML via Quarto) unless
 `EPISODIC_QUARTO_REPORT` points at an operator’s own `.qmd` file, in
 which case that is used instead - for an organisation that wants its own
@@ -451,7 +451,7 @@ shape, including how it calls `episodic_tr(..., lang = d$lang)` to
 render in any of the dashboard’s supported languages. `diff` is `NULL`
 for a cluster’s first-ever render and otherwise holds what changed since
 the previous version - see [**Scheduled
-reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html)’s
+reports**](https://msberends.github.io/EpiSODIC/articles/scheduled-reports.html)’s
 “What changed since last time” section for what it contains.
 
 The report is styled from the instance palette, the same colours and
@@ -468,7 +468,7 @@ in the `font` stack.
 Emails have templates of their own,
 `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` and
 `EPISODIC_MAIL_TEMPLATE_REPORT`; see
-[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)’s
+[**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html)’s
 “Your own email layout”.
 
 ## Scheduled reports
@@ -477,9 +477,9 @@ A cluster can be put on a recurring email schedule from its dossier -
 every N days, to a list of colleagues without an EpiSODIC account. This
 reuses the report template and the email-capable notification channels
 (`smtp`, `sendmail`, `microsoft365`) described in
-[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html);
+[**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html);
 see [**Scheduled
-reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html)
+reports**](https://msberends.github.io/EpiSODIC/articles/scheduled-reports.html)
 for the full setup guide, including the cadence and automatic-closure
 rules and how to extend a custom template with more patient-level detail
 than the shipped one shows.
@@ -501,7 +501,7 @@ rather than failing when it is absent:
 deduplication (`episodic_cases_deduplicate()`) calls
 [`AMR::get_episode()`](https://amr-for-r.org/reference/get_episode.html)
 directly, and pathogen-name italicisation
-([`episodic_ui_italicise_taxon()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_ui_italicise_taxon.md))
+([`episodic_ui_italicise_taxon()`](https://msberends.github.io/EpiSODIC/reference/episodic_ui_italicise_taxon.md))
 reads
 [`AMR::microorganisms`](https://amr-for-r.org/reference/microorganisms.html).
 There is no fallback for either, by design - see the DESCRIPTION for the
@@ -510,7 +510,7 @@ published methods this package is built on.
 House-style colours and typography are not an optional-dependency
 concern at all: the app always ships an organisation-neutral default
 palette
-([`inst/config/episodic_default_style.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml)),
+([`inst/config/episodic_default_style.yaml`](https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml)),
 overridable per instance by pointing `EPISODIC_STYLE` at an
 organisation’s own YAML file with its real colours and font - no package
 dependency involved either way. A webfont named there still needs
@@ -526,33 +526,33 @@ EpiSODIC can notify your team, through ntfy, email, Teams, or Slack,
 whenever new clusters are detected or a cron run fails. Notifications
 are configured in the same YAML file as detection thresholds
 (`EPISODIC_CONFIG`), under a `notifications` key. See
-[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)
+[**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html)
 for the full setup guide, with step-by-step instructions for every
 supported channel.
 
 ## See also
 
 - [**Getting your data
-  in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
+  in**](https://msberends.github.io/EpiSODIC/articles/data-format.html)
   for the case data requirements this vignette’s
-  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   calls expect.
 - [**Environment
-  variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)
+  variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html)
   for the full `EPISODIC_*` reference table, including every variable
   named above.
-- [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html)
+- [**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html)
   for setting up alerts on new clusters and run failures.
 - [**Scheduled
-  reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html)
+  reports**](https://msberends.github.io/EpiSODIC/articles/scheduled-reports.html)
   for emailing a recurring outbreak report to colleagues without a
   dashboard account.
 - [**Importing and exporting data between
-  instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html)
+  instances**](https://msberends.github.io/EpiSODIC/articles/import-export.html)
   for exporting cases to, and importing them from, partner instances on
   a schedule.
-- [**Plugins**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html)
+- [**Plugins**](https://msberends.github.io/EpiSODIC/articles/plugins.html)
   for extending the dashboard with buttons and run hooks of your own.
 - [**Frequently asked
-  questions**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html)
+  questions**](https://msberends.github.io/EpiSODIC/articles/faq.html)
   for hosting choices, account roles, and other operational questions.

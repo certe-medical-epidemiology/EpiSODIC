@@ -26,7 +26,7 @@ episodic_plugin_disable(
 - id:
 
   The plugin's id, as
-  [`episodic_plugin_list()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_list.md)
+  [`episodic_plugin_list()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_list.md)
   shows it.
 
 - episodic_config_path:
@@ -47,8 +47,8 @@ everything else in it as it is.
 
 ## See also
 
-[`episodic_plugin_list()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_list.md),
-[`episodic_plugin_install()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_install.md)
+[`episodic_plugin_list()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_list.md),
+[`episodic_plugin_install()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_install.md)
 
 ## Examples
 

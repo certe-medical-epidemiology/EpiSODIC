@@ -20,31 +20,31 @@ EpiSODIC never queries a laboratory information system, data warehouse,
 or any other data source itself - extracting and transforming your data
 into its expected shape is deliberately your own step, run before
 EpiSODIC. See [**Getting your data
-in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html)
+in**](https://msberends.github.io/EpiSODIC/articles/data-format.html)
 for exactly what that shape is. This keeps the detection engine reusable
 by any laboratory: every dependency is a CRAN-hosted package
 (`surveillance` for Farrington; no private, organisation-specific
 package is required or even referenced).
 
 House colours and typography
-([`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md))
+([`episodic_palette()`](https://msberends.github.io/EpiSODIC/reference/episodic_palette.md))
 come from a shipped, organisation-neutral default, overridable per
 instance by pointing `EPISODIC_STYLE` at a YAML file with an
 organisation’s own colours and font - the same mechanism used for
 detection configuration, a custom report template, and geographic
 reference data (see
-[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
+[**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)
 and [**Environment
-variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)).
+variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html)).
 Geography (the choropleth panel) is not tied to any one organisation or
 country either.
 
 Detection thresholds and priority score weights are configurable per
 instance
-([`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml),
+([`inst/config/episodic_default_config.yaml`](https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml),
 `EPISODIC_CONFIG`), so an organisation can tune them against its own
 signal volume as its evidence base grows - see [**Detection and
-reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)
+reconciliation**](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html)
 for how the detectors themselves work, and the FAQ for how to change the
 configuration.
 
@@ -143,11 +143,11 @@ verdicts together form a labelled dataset of detections. Two limits
 apply to what it can show. It says nothing about sensitivity, because a
 missed outbreak never becomes a cluster to judge; that is measured
 against synthetic ground truth instead
-([`vignette("detection-validation")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.md)).
+([`vignette("detection-validation")`](https://msberends.github.io/EpiSODIC/articles/detection-validation.md)).
 And only assessed clusters carry a label: clusters that close unassessed
 are absent from it, so PPV describes the clusters the board chose to
 look at
-([`vignette("tuning-detection")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.md),
+([`vignette("tuning-detection")`](https://msberends.github.io/EpiSODIC/articles/tuning-detection.md),
 “Against your own board’s verdicts”). Thresholds are not calibrated from
 these verdicts automatically.
 
@@ -200,21 +200,21 @@ settings.
 ## Where to go next
 
 - [**Getting your data
-  in**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) -
+  in**](https://msberends.github.io/EpiSODIC/articles/data-format.html) -
   the case data requirements: what columns to send, what each means, and
   how to check your extract before you schedule anything.
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) -
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html) -
   standing up a real instance: accounts, the database backend, and where
   configuration lives.
 - [**Environment
-  variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) -
+  variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html) -
   the full `EPISODIC_*` reference table.
 - [**Detection and
-  reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) -
+  reconciliation**](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html) -
   how a laboratory result becomes a dossier: the four detectors,
   reconciliation, and suppression.
 - [**Frequently asked
-  questions**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html) -
+  questions**](https://msberends.github.io/EpiSODIC/articles/faq.html) -
   answers to the questions that come up most often when getting started.
 
 Or skip straight to seeing it work - no data, no credentials, no

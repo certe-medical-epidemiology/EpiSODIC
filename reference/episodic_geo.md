@@ -37,7 +37,7 @@ variable at your own `.rds` file (an `sf` object with a `pc` column
 matching your case data's area codes, and a `geometry` column) to map
 your own region. The Dutch postcode geometry bundled with the package is
 used only by
-[`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md).
+[`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md).
 
 You can optionally add a second, purely visual layer of outlines - e.g.
 province or municipality borders - drawn on top of the choropleth for
@@ -57,7 +57,7 @@ default: with nothing configured the map is simply absent, and the
 dashboard falls back to a bar chart of case counts by area, which is
 correct everywhere.
 
-[`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+[`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
 sets `EPISODIC_GEO_DATA` to the bundled Netherlands geometry itself, so
 the demo still shows a map.
 

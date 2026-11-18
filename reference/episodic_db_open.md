@@ -1,10 +1,10 @@
 # Connect Using the `EPISODIC_DB` Environment Variable
 
 Like
-[`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md),
+[`episodic_db_connect()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_connect.md),
 but falls back to the `EPISODIC_DB` environment variable when you do not
 pass a path explicitly - handy for one-off console use, e.g.
-[`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
+[`episodic_add_user()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_user.md)
 uses it internally so adding an account needs only a username and
 password, not a connection you build yourself first.
 
@@ -22,16 +22,16 @@ episodic_db_open(
 - db_path:
 
   Path to an existing SQLite database, or a `mysql://` DSN (see
-  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
+  [`episodic_db_dsn_mariadb()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
   Defaults to the `EPISODIC_DB` environment variable.
 
 - check_schema_version:
 
   Whether to refuse a database whose schema version is not the one this
   build of EpiSODIC expects, with an error naming
-  [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
+  [`episodic_db_migrate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_migrate.md)
   as the fix. `TRUE` (the default) everywhere except inside
-  [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
+  [`episodic_db_migrate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_migrate.md)
   itself, which by definition has to open a database that is out of
   date.
 

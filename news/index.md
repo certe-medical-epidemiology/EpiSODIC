@@ -7,22 +7,22 @@
 - Every database carries an instance identifier of ten hexadecimal
   characters, in the new `episodic_instance` table (schema version 15),
   shown on the Info screen and read with
-  [`episodic_instance_id()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_instance_id.md)
-- [`episodic_import_export_keygen()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
+  [`episodic_instance_id()`](https://msberends.github.io/EpiSODIC/reference/episodic_instance_id.md)
+- [`episodic_import_export_keygen()`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
   writes an instance’s encryption and signing key pairs, the secret
   halves readable by their owner only
-- [`episodic_cases_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.md)
+- [`episodic_cases_export()`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_export.md)
   writes this instance’s own cases for a sample-date range to an
   encrypted, signed export file, to recipients’ public keys or with a
   passphrase
 - An export carries the optional case columns in `export.fields` and
   cuts postcodes to `export.pc_characters`; a column left out is absent
   from the file and recorded in it
-- [`episodic_cases_import()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_import.md)
+- [`episodic_cases_import()`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_import.md)
   verifies an export file in full and returns its cases with
   `source_key`, `patient_key` and `lab_number` prefixed by the sender’s
   instance identifier
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+- [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   takes imported cases through its new `imports` argument and records
   each import against the run in `episodic_import_event`
 - An import warns, per lattice level, about cases whose postcode this
@@ -38,10 +38,10 @@
   window
 - Every export is recorded in `episodic_export_event`, failed ones
   included
-- [`episodic_import_export_test_connection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_test_connection.md)
+- [`episodic_import_export_test_connection()`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_test_connection.md)
   tests an import source or export schedule the way the next run uses
   it, writing nothing
-- [`episodic_import_export_key_fingerprint()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_key_fingerprint.md)
+- [`episodic_import_export_key_fingerprint()`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_key_fingerprint.md)
   gives the fingerprint of a public key, to compare with a partner
 - The new vignette “Importing and exporting data between instances”
   covers keys, exporting, importing, scheduling, transport, the limits
@@ -49,13 +49,13 @@
 - Plugins: one YAML file each, with steps in R, Bash or Python, run from
   a button on the outbreak or epidemic dossier or after every detection
   run
-- [`episodic_plugin_install()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_install.md),
-  [`episodic_plugin_enable()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.md),
-  [`episodic_plugin_disable()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.md),
-  [`episodic_plugin_uninstall()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_uninstall.md),
-  [`episodic_plugin_list()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_list.md)
+- [`episodic_plugin_install()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_install.md),
+  [`episodic_plugin_enable()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_enable.md),
+  [`episodic_plugin_disable()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_enable.md),
+  [`episodic_plugin_uninstall()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_uninstall.md),
+  [`episodic_plugin_list()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_list.md)
   and
-  [`episodic_plugin_run()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_run.md)
+  [`episodic_plugin_run()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_run.md)
   manage and run plugins headless
 - The admin-only Plugins screen, reached from the Instance screen,
   installs, enables, disables, updates and uninstalls plugins and shows
@@ -83,11 +83,11 @@
   it reported and the false alarms its significance levels imply, in
   `episodic_detection_run_detector`
 - The run modal states per detector what it tested and what it reported
-- [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+- [`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
   takes `pathogen_copies`, `run_interval_days` and
   `reporting_delay_days`, to measure the alarm burden of watching more
   pathogens, of nightly runs and of late results
-- [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+- [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
   takes `pathogen_copies`, independent copies of the endemic pathogens
   with no outbreak seeded in them
 - The validation summary gives false alarms per week watched, false
@@ -104,7 +104,7 @@
 
 - `episodic_case` records the instance an imported case came from
   (`origin_instance_id`, schema version 15)
-- [`episodic_db_truncate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.md)
+- [`episodic_db_truncate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_truncate.md)
   keeps the instance identifier
 - An imported case’s institution adds an institution the receiver does
   not know, and never renames or retypes one it does
@@ -136,7 +136,7 @@
   into the baseline and the quantiles as though it were a count
 - The validation study stops on any warning, and the one warning it
   raises by design is suppressed where it is raised
-- [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+- [`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
   no longer deletes a pathogen configuration file passed to it as a path
 - On Windows a plugin’s bash step runs in Git for Windows’ bash, never
   in the launcher of the Windows Subsystem for Linux
@@ -220,7 +220,7 @@
 
 ### Changed
 
-- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+- [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
   replays the last `replay_days` days of its synthetic data as daily
   runs with a one-week reporting horizon, so the demo has measured
   reporting delays and a nowcast, and gives its transmissible pathogens
@@ -308,7 +308,7 @@
 
 ### Changed
 
-- [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+- [`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
   advises on `pc` values missing from the configured `EPISODIC_GEO_DATA`
   instead of on `pc` values that are not four digits
 - Country-specific terms (BSN, GGD, Gesundheitsamt) replaced by generic
@@ -326,7 +326,7 @@
 - `EPISODIC_MAIL_TEMPLATE_NEW_CLUSTERS` and
   `EPISODIC_MAIL_TEMPLATE_REPORT` set a Quarto template for the body of
   the new-clusters and scheduled-report emails
-- [`episodic_mail_template_preview()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_mail_template_preview.md)
+- [`episodic_mail_template_preview()`](https://msberends.github.io/EpiSODIC/reference/episodic_mail_template_preview.md)
   renders an email template against example data
 
 ### Changed
@@ -343,10 +343,10 @@
 - A detection run logs the time its stream loop spent per stage
 - MEM fits are cached per stream in `episodic_detector_cache` and reused
   only when their exact input is unchanged (schema version 8)
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+- [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   migrates a database behind the installed package before running,
   unless `database.auto_migrate` is `false`
-- [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
+- [`episodic_db_migrate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_migrate.md)
   copies a SQLite database beside itself before the first step
   (`backup = TRUE`)
 - A run that refuses a database records the refusal as a failed run
@@ -513,7 +513,7 @@
 
 ### Fixed
 
-- [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)’s
+- [`episodic_add_manual_cluster()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)’s
   `level` argument pointed at `vignette("architecture")`, a vignette
   that no longer exists; it now links to the pkgdown article that
   documents the five lattice levels
@@ -743,7 +743,7 @@
   `reconciliation.stale_open_days` close in that same run, and go
   straight to the Archive
 - `episodic_run_cron(backfill =)` overrides that decision;
-  [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+  [`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
   passes `FALSE`, so a replay still measures detection delay rather than
   an import
 - Schema version 4: `episodic_cluster.opened_in_backfill` and
@@ -782,7 +782,7 @@
 
 ### Fixed
 
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+- [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   failed on any case data at all, reading the case data itself where the
   check report was expected
 
@@ -859,20 +859,20 @@
 
 ### New
 
-- [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+- [`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
   replays generated history week by week and measures the detectors
   against the outbreaks that were injected into it
-- [`episodic_validate_comparator()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_comparator.md)
+- [`episodic_validate_comparator()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_comparator.md)
   runs a naive same-place rule or a 2-SD Shewhart limit over the same
   data, through the same metrics
-- [`episodic_validate_rethreshold()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md)
+- [`episodic_validate_rethreshold()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md)
   re-matches a validation result at different thresholds without
   replaying anything
-- [`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
+- [`episodic_synthetic_ground_truth()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
   returns what
-  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+  [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
   injected, per outbreak and per case
-- [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+- [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
   gains `outbreaks`, for a history with none injected, and
   `outbreak_offsets`, to disperse them across the window
 - `config$<detector>$enabled` switches any of the four detectors off,
@@ -895,14 +895,14 @@
 - `episodic_db_exists()` treated a schema shared with another
   application as an existing EpiSODIC database, so a first run refused
   and sent the operator to
-  [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md),
+  [`episodic_db_migrate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_migrate.md),
   which stamped it current with two of its twenty-four tables
 - `episodic_db_runs()` bound a double to `LIMIT`, which MySQL refuses,
   so the Activity screen failed on that dialect
 - Half the lattice resolved its geography from the run’s own
   configuration and half from `EPISODIC_CONFIG`, so a run given a config
   path silently matched no case to any geographic stream
-- [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md)
+- [`episodic_db_create()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_create.md)
   leaked the connection it opened when refusing a database that already
   had tables
 - With `EPISODIC_PC_PROVINCE_MAP` unset, a run said the shipped Dutch
@@ -918,10 +918,10 @@
 
 ### New
 
-- [`episodic_db_migrate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_migrate.md)
+- [`episodic_db_migrate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_migrate.md)
   brings an existing database up to the current schema; the schema now
   carries a recorded version and
-  [`episodic_db_connect()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_connect.md)
+  [`episodic_db_connect()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_connect.md)
   refuses a database it does not recognise
 - `config$geography` names the whole-catchment code and the area-code
   rule, so the two coarsest lattice levels are no longer hardcoded to
@@ -934,7 +934,7 @@
 - An instance configuration is validated against the shipped defaults:
   an unknown key, a wrong type, or a null where a value is needed stops
   the run and names the key
-- [`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
+- [`episodic_add_user()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_user.md)
   gains `must_change`, for an account that does not need a forced
   password change
 - Refused sign-ins are recorded in `episodic_app_login_failure` with the
@@ -959,7 +959,7 @@
   prefix are now `config$geography`, which changes every geographic
   stream key
 - BREAKING:
-  [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+  [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
   refuses a `db_path` that already exists and refuses a MariaDB DSN;
   `overwrite = TRUE` rebuilds a demo in place
 - An unsupported `EPISODIC_LANGUAGE` warns once and falls back to
@@ -968,13 +968,13 @@
   stylesheet uses logical properties, so Arabic renders right to left
 - Mail headers are RFC 2047 encoded and message bodies base64 encoded,
   so non-ASCII subjects and reports survive every relay
-- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+- [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
   configures its geography through the documented environment variables
   rather than relying on built-in defaults
-- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+- [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
   dates its run from the last day a supplied `cases` extract covers, and
   says so;
-  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   still dates every run from the system date
 - An explicit YAML `null` now keeps its key during the configuration
   merge instead of removing it
@@ -1126,9 +1126,9 @@
 
 ### Changed
 
-- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+- [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
   now takes any additional argument that
-  [`episodic_run_app()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_app.md)
+  [`episodic_run_app()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_app.md)
   provides
 
 ## EpiSODIC 0.13.1
@@ -1150,7 +1150,7 @@
   email addresses from the Reports panel, for colleagues without an
   EpiSODIC account (or only a viewer one) who need updates without
   opening the dashboard
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+- [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   sends every due scheduled report after each run, as a self-contained
   HTML attachment through an already-configured, email-capable
   notification channel (SMTP, sendmail or Microsoft 365); every attempt,
@@ -1163,7 +1163,7 @@
   version - new cases, and the priority score, ratio and case period
   deltas - in Quarto callout boxes
 - New
-  [`vignette("scheduled-reports")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.md)
+  [`vignette("scheduled-reports")`](https://msberends.github.io/EpiSODIC/articles/scheduled-reports.md)
   documenting the cadence, closure and delivery rules
 
 ### Changed
@@ -1189,7 +1189,7 @@
   a free-text, markdown-formatted scratchpad open to any signed-in role,
   stored as plain text and rendered on display
 - New
-  [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+  [`episodic_add_manual_cluster()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
   adds clusters detected by another algorithm or system, vectorised over
   any number of clusters in one call, never connected to this instance’s
   own case data - for output from another programming language or
@@ -1201,9 +1201,9 @@
   Imports to Suggests: `shiny` (a hard Import) already Imports every one
   of them, so they were never an independent dependency in the first
   place
-- [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+- [`vignette("data-format")`](https://msberends.github.io/EpiSODIC/articles/data-format.md)
   documents
-  [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
+  [`episodic_add_manual_cluster()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md)
   in a new “Clusters from another system” section
 
 ## EpiSODIC 0.11.0
@@ -1242,7 +1242,7 @@
   cases on only 10 of them (a sharp peak) or on 39 of them (a flat,
   sustained rise), the same duration and case count, two different
   epidemic shapes
-- [`episodic_add_user()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_user.md)
+- [`episodic_add_user()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_user.md)
   is now exported, so accounts can be provisioned from a script without
   reaching into the package’s internals
 
@@ -1302,7 +1302,7 @@
 - Opening the dashboard via a `?cluster=<id>` link no longer crashes
   with “Can’t access reactive value ‘url_search’ outside of reactive
   consumer”
-- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+- [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
   no longer leaves `EPISODIC_CONFIG`/`EPISODIC_DB`/`EPISODIC_GEO_DATA`
   permanently overwritten for the rest of the R session once it returns
 
@@ -1331,14 +1331,14 @@
   login (e.g. one obtained via
   [`Microsoft365R::get_business_outlook()`](https://rdrr.io/pkg/Microsoft365R/man/client.html)
   or
-  [`episodic_setup_microsoft365()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md))
+  [`episodic_setup_microsoft365()`](https://msberends.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md))
   by tenant, with no `client_id`, `client_secret`, or `from` required
 
 ## EpiSODIC 0.10.1
 
 ### Fixed
 
-- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)’s
+- [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)’s
   startup message once again mentions “demo account”, after an unrelated
   styling commit reworded it away from that phrase
 
@@ -1358,13 +1358,13 @@
 - Implemented various ways to send notifications of new clusters: ntfy,
   SMTP, sendmail, Microsoft 365, Teams (Power Automate Workflow), Slack
 - Added
-  [`vignette("notifications")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.md)
+  [`vignette("notifications")`](https://msberends.github.io/EpiSODIC/articles/notifications.md)
   with setup steps per channel
 - Added an `is_admin` account property and an in-app Settings screen for
   managing notification channels, dashboard accounts, and viewing
   (read-only) detection configuration, without needing server access
 - Added
-  [`episodic_config_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_config_export.md)
+  [`episodic_config_export()`](https://msberends.github.io/EpiSODIC/reference/episodic_config_export.md)
   to export the resolved configuration as a zip file, with notification
   secrets masked by default
 
@@ -1459,7 +1459,7 @@
 
 ### Changed
 
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+- [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   now batches writes instead of row-by-row, cutting MariaDB round trips
   from 12,549 to 1,868 on a synthetic run
 - Note: chunked `dbBind()` is not a true batch; single multi-row
@@ -1519,23 +1519,23 @@
   Dutch
 - Geography is documented as operator-supplied throughout, not
   Netherlands-specific: the “Geographic reference data” section in
-  [`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+  [`vignette("data-format")`](https://msberends.github.io/EpiSODIC/articles/data-format.md)
   is substantially expanded, now also covering
   `EPISODIC_PC_PROVINCE_MAP` (L4 stream detection) alongside the map
   data, and the FAQ’s geography entry does the same
-- [`vignette("overview")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.md)’s
+- [`vignette("overview")`](https://msberends.github.io/EpiSODIC/articles/overview.md)’s
   screen-by-screen section no longer stops at three screens (“a third
   screen closes the loop”) - it now covers all seven (Clusters,
   Pathogen, Performance, Archive, Streams, Activity, Info)
-- [`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+- [`episodic_check_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_denominators.md)
   and
-  [`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
+  [`episodic_check_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
   are now mentioned alongside
-  [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+  [`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
   everywhere the docs discuss checking input data before a run
-  ([`vignette("data-format")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md),
-  [`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md),
-  [`vignette("faq")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.md),
+  ([`vignette("data-format")`](https://msberends.github.io/EpiSODIC/articles/data-format.md),
+  [`vignette("deployment")`](https://msberends.github.io/EpiSODIC/articles/deployment.md),
+  [`vignette("faq")`](https://msberends.github.io/EpiSODIC/articles/faq.md),
   README)
 
 ### Fixed
@@ -1600,7 +1600,7 @@
 
 ### Fixed
 
-- [`episodic_db_truncate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.md)
+- [`episodic_db_truncate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_truncate.md)
   against MariaDB/MySQL crashed with `Error: bad_weak_ptr` right after
   successfully truncating every table. `on.exit(..., add = TRUE)`
   appends to the end of the exit-handler list, so the handler that
@@ -1616,7 +1616,7 @@
 
 ### New
 
-- [`episodic_db_truncate()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_truncate.md):
+- [`episodic_db_truncate()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_truncate.md):
   empties every EpiSODIC table (including dashboard accounts) while
   keeping the schema itself, for a hard reset back to “freshly created,
   no data” without a schema migration. Refuses to run outside an
@@ -1654,18 +1654,18 @@
 
 ### New
 
-- [`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+- [`episodic_check_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_denominators.md)
   and
-  [`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md):
+  [`episodic_check_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_institution_activity.md):
   the same non-throwing pre-flight report
-  [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+  [`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
   gives the case feed, now available for the optional positivity and
   hospital-activity feeds too
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+- [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   now refuses on a malformed `institution_activity` feed before writing
   anything (when handed as a plain data frame), instead of only
   mid-transaction
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+- [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   writes a timestamped
   [`message()`](https://rdrr.io/r/base/message.html) at every phase of a
   run (config resolution, DB connect, each feed load, lattice
@@ -1751,14 +1751,14 @@ recreated or migrated before running against this version.
 
 ### New
 
-- [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+- [`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
   reports all case data problems at once, with row-level detail and
   fixes
 - Lattice suppression collapses one outbreak seen at multiple levels
   into a single dossier
 - Linked clusters show e.g. “Linked to
-  [\#123](https://github.com/certe-medical-epidemiology/EpiSODIC/issues/123)”
-  and a Related clusters panel
+  [\#123](https://github.com/msberends/EpiSODIC/issues/123)” and a
+  Related clusters panel
 - `episodic_case_data` documents every column’s type, nullability and
   accepted values
 - Deduplication now checks against the most recently stored episode, not
@@ -1779,14 +1779,14 @@ recreated or migrated before running against this version.
   and `"viewer"` (read-only)
 - `episodic_validate_cases()` reports all problems in one error, not
   just the first
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+- [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   checks feeds before writing and stops cleanly on failure
 - Status strip and Activity screen show why a run failed
 - Farrington now retests every week since the last completed run, capped
   at 8 weeks
 - `config$effect_size_floor` now gates new-cluster candidates against
   borderline signals
-- [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+- [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
   demo data rebalanced to avoid spurious chance clusters
 - `lang` now defaults correctly to `EPISODIC_LANGUAGE` everywhere; unset
   means English
@@ -1812,25 +1812,25 @@ recreated or migrated before running against this version.
   cluster
 - Translation placeholders no longer break on backslashes
 - Epidemic curve thousands separator now follows the language by default
-- [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+- [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   no longer corrupts
   `sample_date`/`receipt_date`/`period_start`/`period_end` when the
   operator supplies them as `Date` columns (as `episodic_case_data`
   explicitly allows) - RSQLite was binding them by their raw numeric
   epoch value instead of `YYYY-MM-DD` text, so a later read failed with
   “character string is not in a standard unambiguous format”
-- [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)’s
+- [`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)’s
   allowed-value messages (`care_line`, `institution_type`, `sex`) now
   quote each value, and its
-  [`?episodic_case_data`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_case_data.md)
+  [`?episodic_case_data`](https://msberends.github.io/EpiSODIC/reference/episodic_case_data.md)
   references are clickable in terminals/RStudio that support it
-- [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md)
+- [`episodic_db_create()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_create.md)
   against MySQL no longer fails with “BLOB/TEXT column can’t have a
   default value” \[1101\] - `episodic_stream.denominator` and
   `episodic_case.care_line` are now widened to `VARCHAR` under the
   `mariadb` dialect, since MySQL (unlike MariaDB and SQLite) rejects a
   `DEFAULT` on `TEXT` columns outright
-- [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md)
+- [`episodic_db_create()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_create.md)
   against MySQL no longer fails with “BLOB/TEXT column … used in key
   specification without a key length” \[1170\] - every remaining `TEXT`
   column used in a `PRIMARY KEY`, composite `PRIMARY KEY`, or
@@ -1846,7 +1846,7 @@ recreated or migrated before running against this version.
   `NOT NULL`; it now has a surrogate `denominator_id` primary key with
   the natural key as a `UNIQUE` constraint instead, which permits
   multiple `NULL`s in both MySQL and SQLite
-- [`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md)
+- [`episodic_db_create()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_create.md)
   against MySQL no longer fails with “you have an error in your SQL
   syntax … near ‘trigger’” \[1064\] - `trigger` is a reserved word in
   MySQL; `episodic_cluster_state.trigger` and the raw SQL that
@@ -1975,5 +1975,5 @@ First development version.
 - Reporting: versioned Quarto outbreak reports with small-count
   suppression
 - SQLite backend, with optional `EpiEstim`/`mem`/`quarto`/`sf`
-- [`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+- [`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
   runs the whole system against bundled synthetic data

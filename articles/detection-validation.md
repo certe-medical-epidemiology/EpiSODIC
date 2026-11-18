@@ -9,7 +9,7 @@ thought of what the system showed them - and sensitivity cannot be got
 out of it at all, because an outbreak the detectors miss never becomes a
 cluster for anybody to have an opinion about.
 
-[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+[`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
 answers the other question. It measures the detectors against outbreaks
 that are known to be there because they were put there.
 
@@ -26,7 +26,7 @@ result
 Four things happen inside that call.
 
 **It generates history.**
-[`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+[`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
 produces years of endemic laboratory data for a fictional region and
 injects six outbreaks into it, each shaped for a different detection
 channel: a single case of an always-notable pathogen, a three-case ward
@@ -78,7 +78,7 @@ than measuring.
 
 Both are choices, and a result that only holds at one particular pair of
 values is not a result.
-[`episodic_validate_rethreshold()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md)
+[`episodic_validate_rethreshold()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md)
 re-matches a replay that has already been run, so sweeping them costs
 arithmetic rather than another few hours of detection:
 
@@ -134,7 +134,7 @@ ones that never were drop out of the risk set.
 ## A comparator, and a control
 
 Sensitivity and false-alarm figures mean little in isolation.
-[`episodic_validate_comparator()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_comparator.md)
+[`episodic_validate_comparator()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_comparator.md)
 runs a rule anyone could write in an afternoon over exactly the same
 data, through exactly the same metrics:
 
@@ -190,7 +190,7 @@ same way, has not yet been done.
 The board’s own verdicts (the Performance screen) do not fill this gap.
 They measure PPV only, only over clusters someone assessed, and never
 sensitivity
-([`vignette("tuning-detection")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/tuning-detection.md),
+([`vignette("tuning-detection")`](https://msberends.github.io/EpiSODIC/articles/tuning-detection.md),
 “Against your own board’s verdicts”).
 
 ## Where the real numbers live

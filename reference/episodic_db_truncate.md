@@ -3,14 +3,14 @@
 A hard reset back to "freshly created, no data" - every row in every
 EpiSODIC table is deleted, but the tables, indexes and constraints stay
 exactly as
-[`episodic_db_create()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_create.md)
+[`episodic_db_create()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_create.md)
 built them, so the database is immediately ready for a new
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 without a schema migration. This includes `episodic_app_user`: dashboard
 accounts are data too, and are deleted along with everything else -
 there is nothing this function leaves behind to sign in with afterwards.
 The one row kept is the instance identifier (see
-[`vignette("import-export")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md)):
+[`vignette("import-export")`](https://msberends.github.io/EpiSODIC/articles/import-export.md)):
 partners already know the instance by it, so it stays the same instance
 after a reset.
 
@@ -25,7 +25,7 @@ episodic_db_truncate(path)
 - path:
 
   Path to an existing SQLite file, or a `mysql://` DSN (see
-  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md))
+  [`episodic_db_dsn_mariadb()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md))
   pointing at an existing MariaDB/MySQL database.
 
 ## Value

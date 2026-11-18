@@ -1,9 +1,9 @@
 # Check Your Hospital Activity Data Before You Hand It to EpiSODIC
 
 The same purpose as
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md),
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md),
 for the optional `institution_activity` feed: every check
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 would refuse a run over, reported instead of thrown, plus a couple of
 things worth a look. Nothing is written, no database is needed.
 
@@ -20,14 +20,14 @@ episodic_check_institution_activity(institution_activity)
   Your hospital activity data: a data frame or `tibble` with
   `institution_key`, `period_start`, `period_end`, `patient_days`
   (nullable `admissions`, `n_beds`, `source`) - see
-  [`episodic_synthetic_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
+  [`episodic_synthetic_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_institution_activity.md)
   for the shape - or a zero-argument function returning one.
 
 ## Value
 
 A data frame of findings with class `episodic_case_check`, the same
 shape
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 returns. Zero rows means the data set passed every check.
 
 ## Details
@@ -41,9 +41,9 @@ compare against in the first place.
 
 ## See also
 
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 for the case data feed,
-[`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)
+[`episodic_check_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_denominators.md)
 for the positivity feed.
 
 ## Examples

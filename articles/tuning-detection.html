@@ -43,7 +43,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/certe-medical-epidemiology/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/msberends/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -59,7 +59,7 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Tuning detection for your catchment</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/tuning-detection.Rmd" class="external-link"><code>vignettes/tuning-detection.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/msberends/EpiSODIC/blob/main/vignettes/tuning-detection.Rmd" class="external-link"><code>vignettes/tuning-detection.Rmd</code></a></small>
       <div class="d-none name"><code>tuning-detection.Rmd</code></div>
     </div>
 
@@ -71,9 +71,9 @@ alarms, missing outbreaks, clusters closing too early, the wrong things
 at the top of the board. It maps each of those complaints to the
 parameters that control it, the trade-off each adjustment creates, and
 how to verify the change helped. It does not re-explain how the
-detectors work (<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html"><strong>Detection
+detectors work (<a href="https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html"><strong>Detection
 and reconciliation</strong></a>) or how the configuration overlay system
-works (<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>).</p>
+works (<a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>).</p>
 <div class="section level2">
 <h2 id="before-you-change-anything">Before you change anything<a class="anchor" aria-label="anchor" href="#before-you-change-anything"></a>
 </h2>
@@ -85,7 +85,7 @@ past one. You can tune with confidence, since nothing becomes
 retroactively wrong.</p>
 <p>Point the <code>EPISODIC_CONFIG</code> environment variable at a YAML
 file with only the keys you want to change; everything else keeps its
-shipped default. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
+shipped default. See <a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
 for the mechanics.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="co"># my_instance.yaml - only what differs from the defaults.</span></span>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">farrington</span><span class="kw">:</span></span>
@@ -378,7 +378,7 @@ cases fall within an 8-week peak window.</p>
 <span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a><span class="at">  </span><span class="fu">climatology_smooth_weeks</span><span class="kw">:</span><span class="at"> </span><span class="dv">7</span></span>
 <span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a><span class="at">  </span><span class="fu">trough_percentile</span><span class="kw">:</span><span class="at"> </span><span class="fl">0.20</span></span></code></pre></div>
 <p>Declaring the season started or ended is always a human act, never
-automatic. MEM raises the signal; a person declares. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html"><strong>Detection
+automatic. MEM raises the signal; a person declares. See <a href="https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html"><strong>Detection
 and reconciliation</strong></a>.</p>
 </div>
 </div>
@@ -386,7 +386,7 @@ and reconciliation</strong></a>.</p>
 <h2 id="per-pathogen-parameters">Per-pathogen parameters<a class="anchor" aria-label="anchor" href="#per-pathogen-parameters"></a>
 </h2>
 <p>Per-pathogen biology lives in a CSV, separate from the YAML
-configuration. The default file is <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv" class="external-link"><code>inst/config/episodic_default_pathogen_config.csv</code></a>.</p>
+configuration. The default file is <a href="https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv" class="external-link"><code>inst/config/episodic_default_pathogen_config.csv</code></a>.</p>
 <p>To override it, point <code>EPISODIC_PATHOGEN_CONFIG</code> at your
 own CSV containing only the pathogens and columns you want to change.
 For each pathogen you list, non-empty values override the default; empty
@@ -523,7 +523,7 @@ CSV columns) with the settings you want to test:</p>
 improve sensitivity, reduce false alarms, or affect time-to-detection?
 The defaults are deliberately small (one seed, four weeks) so it returns
 in seconds; for a proper comparison use more seeds and a longer window.
-See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html"><strong>Measuring
+See <a href="https://msberends.github.io/EpiSODIC/articles/detection-validation.html"><strong>Measuring
 detection against known truth</strong></a> for the full framework.</p>
 </div>
 <div class="section level3">
@@ -1418,7 +1418,7 @@ settings</td>
 </tr>
 </tbody>
 </table>
-<p>Every channel’s settings, and how to test them, are in <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>.</p>
+<p>Every channel’s settings, and how to test them, are in <a href="https://msberends.github.io/EpiSODIC/articles/notifications.html"><strong>Notifications</strong></a>.</p>
 </div>
 <div class="section level3">
 <h3 id="report">Report<a class="anchor" aria-label="anchor" href="#report"></a>
@@ -1455,7 +1455,7 @@ prevent re-identification</td>
 </h3>
 <p>Which columns an export to a partner instance carries, and how coarse
 its postcodes are. They change what leaves the instance, never what a
-run computes, and are left out of <code>config_hash</code>. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html"><strong>Importing
+run computes, and are left out of <code>config_hash</code>. See <a href="https://msberends.github.io/EpiSODIC/articles/import-export.html"><strong>Importing
 and exporting data between instances</strong></a>.</p>
 <table class="table">
 <colgroup>
@@ -1520,7 +1520,7 @@ switches the check off</td>
 <p>Which plugins may run, and what each was granted. Plugins act on what
 a run has computed and never take part in detection, so this section is
 left out of <code>config_hash</code>. The Plugins screen writes it; it
-can also be edited by hand. See <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html"><strong>Plugins</strong></a>.</p>
+can also be edited by hand. See <a href="https://msberends.github.io/EpiSODIC/articles/plugins.html"><strong>Plugins</strong></a>.</p>
 <table class="table">
 <colgroup>
 <col width="25%">
@@ -1580,7 +1580,7 @@ plugin not listed does not run</td>
 <td><code style="white-space: nowrap;">database:<br>  auto_migrate</code></td>
 <td><code>TRUE</code></td>
 <td>Whether a scheduled run brings the database up to the installed
-package’s schema itself; see <a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>’s
+package’s schema itself; see <a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>’s
 “Upgrading EpiSODIC”</td>
 </tr></tbody>
 </table>
@@ -1668,18 +1668,18 @@ package’s schema itself; see <a href="https://certe-medical-epidemiology.githu
 </h2>
 <ul>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html"><strong>Detection
+<a href="https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html"><strong>Detection
 and reconciliation</strong></a> - how the detectors, reconciliation,
 suppression, and MEM work</li>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
+<a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
 - the configuration overlay system and instance setup</li>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html"><strong>Measuring
+<a href="https://msberends.github.io/EpiSODIC/articles/detection-validation.html"><strong>Measuring
 detection against known truth</strong></a> - measuring detection against
 known truth</li>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
+<a href="https://msberends.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
 variables</strong></a> - all <code>EPISODIC_*</code> variables including
 <code>EPISODIC_PATHOGEN_CONFIG</code>
 </li>

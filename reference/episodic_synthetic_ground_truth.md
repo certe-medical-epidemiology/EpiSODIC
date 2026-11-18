@@ -1,12 +1,12 @@
 # Read Back What Was Injected Into Synthetic Data
 
-[`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+[`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
 injects outbreaks into an otherwise endemic history. This reads back
 exactly what it injected: one row per outbreak saying where and when it
 ran and how large it was, and the case-level membership that goes with
 it. It is what makes a detection result measurable against known truth
 rather than against an epidemiologist's verdict on it - see
-[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md).
+[`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md).
 
 ## Usage
 
@@ -19,7 +19,7 @@ episodic_synthetic_ground_truth(cases)
 - cases:
 
   A data frame from
-  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
+  [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
 
 ## Value
 
@@ -51,8 +51,8 @@ cases rather than an error, the first time the convention changes.
 
 ## See also
 
-[`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md),
-[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+[`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md),
+[`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
 
 ## Examples
 

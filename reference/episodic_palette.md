@@ -25,7 +25,7 @@ typography, not a colour.
 ## Details
 
 The palette ships with an organisation-neutral default
-([`inst/config/episodic_default_style.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml)).
+([`inst/config/episodic_default_style.yaml`](https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml)).
 To use your own institute's colours or fonts instead, point the
 `EPISODIC_STYLE` environment variable at a YAML file that overrides only
 the roles you want to change - anything you do not set keeps its shipped
@@ -33,7 +33,7 @@ default.
 
 The same palette governs everything EpiSODIC draws: the dashboard, the
 outbreak reports rendered by
-[`episodic_report_render()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_report_render.md)
+[`episodic_report_render()`](https://msberends.github.io/EpiSODIC/reference/episodic_report_render.md)
 (their charts, text, headings, links and tables) and the emails it
 sends. The process doing the render resolves it and hands it to the
 template, so a report or an email always carries the colours and font of

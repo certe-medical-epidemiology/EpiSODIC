@@ -20,9 +20,9 @@ episodic_validate_rethreshold(
 - result:
 
   An `episodic_validation` object, from
-  [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+  [`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
   or
-  [`episodic_validate_comparator()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_comparator.md).
+  [`episodic_validate_comparator()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_comparator.md).
 
 - min_recall, min_precision:
 
@@ -44,7 +44,7 @@ are measurements, and no threshold changes them.
 
 ## See also
 
-[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+[`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
 
 ## Examples
 

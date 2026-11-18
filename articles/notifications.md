@@ -1,7 +1,7 @@
 # Notifications
 
 EpiSODIC can notify your team whenever
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 detects new clusters or when a detection run fails. Notifications are
 entirely optional: if you do not configure them, the system continues to
 work exactly as before, and you review clusters through the dashboard
@@ -26,9 +26,9 @@ failure never rolls back a successful detection run.
 
 Notification settings go in your instance YAML configuration file, the
 same file that `EPISODIC_CONFIG` points at (see [**Environment
-variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)).
+variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html)).
 Add a `notifications` key at the top level. The shipped
-[`inst/config/episodic_default_config.yaml`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml)
+[`inst/config/episodic_default_config.yaml`](https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_config.yaml)
 contains commented-out examples for every channel; copy the ones you
 need into your instance file and fill in the values.
 
@@ -205,7 +205,7 @@ In your instance YAML, omit `client_secret`:
 days of inactivity. If the cron runs at least once within that window,
 the token refreshes itself automatically. If the token does expire,
 re-run
-[`episodic_setup_microsoft365()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md).
+[`episodic_setup_microsoft365()`](https://msberends.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md).
 
 ### Option C: Reuse an already-cached login (no app registration needed)
 
@@ -213,7 +213,7 @@ If staff at your organisation already sign in to Microsoft 365 through a
 shared login on this server, for example by running
 [`Microsoft365R::get_business_outlook()`](https://rdrr.io/pkg/Microsoft365R/man/client.html)
 interactively for other purposes, or by running
-[`episodic_setup_microsoft365()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md)
+[`episodic_setup_microsoft365()`](https://msberends.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md)
 once as in Option B, you do not need to configure `client_id` or
 `client_secret` at all. Omit `client_id` and
 `episodic_notify_microsoft365()` will look up whichever cached Azure AD
@@ -316,7 +316,7 @@ Three triggers are available, each independently toggleable:
 | Trigger | Fires when | Default |
 |----|----|----|
 | `new_clusters` | The cron run created at least one new cluster | Must be explicitly set to `true` |
-| `run_failure` | The cron run’s status is `"failed"`, including a run that stopped before it began: case data that failed its checks, or a database it would not open (see “Upgrading EpiSODIC” in [`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)) | Must be explicitly set to `true` |
+| `run_failure` | The cron run’s status is `"failed"`, including a run that stopped before it began: case data that failed its checks, or a database it would not open (see “Upgrading EpiSODIC” in [`vignette("deployment")`](https://msberends.github.io/EpiSODIC/articles/deployment.md)) | Must be explicitly set to `true` |
 | `stale_data` | No new case of this instance’s own has arrived for more than `stale_data.max_days_without_new_cases` days (see below) | Must be explicitly set to `true` |
 
 ``` yaml
@@ -471,7 +471,7 @@ before you check any logs.
 
 Every email is styled from the instance palette, the same colours and
 font the dashboard uses
-([`episodic_palette()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_palette.md),
+([`episodic_palette()`](https://msberends.github.io/EpiSODIC/reference/episodic_palette.md),
 overridden per instance with `EPISODIC_STYLE`). The styles are written
 inline on each element, since Outlook drops a `<style>` block and Gmail
 restricts one. A mail client does not load web fonts, so the email shows
@@ -542,7 +542,7 @@ The report template also receives `cluster_id`, `ref`, `pathogen`,
 `final` (whether this send ends the schedule), `interval_days`,
 `attachment_name`, and `diff`: what changed since the previous report,
 in the shape described in [**Scheduled
-reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html),
+reports**](https://msberends.github.io/EpiSODIC/articles/scheduled-reports.html),
 or `NULL` when there is nothing to compare against.
 
 An email is not a web page, and a template has to be written for an
@@ -561,13 +561,13 @@ missing, is not a `.qmd`, Quarto is not installed, or the render fails,
 the email goes out with the built-in body and the run log carries a line
 saying why. The same problems are shown beside each variable on the
 dashboard’s Info screen and reported by
-[`episodic_notify_test()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.md),
+[`episodic_notify_test()`](https://msberends.github.io/EpiSODIC/reference/episodic_notify_test.md),
 so they can be fixed before the next alert.
 
 ## Troubleshooting
 
 **“Notifications are not enabled in the configuration”** when calling
-[`episodic_notify_test()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.md):
+[`episodic_notify_test()`](https://msberends.github.io/EpiSODIC/reference/episodic_notify_test.md):
 Check that your instance YAML has `notifications: enabled: true` and
 that `EPISODIC_CONFIG` points at that file.
 
@@ -596,17 +596,17 @@ webhook URL must be an Incoming Webhook, not a Slack API endpoint.
 ## See also
 
 - [**Scheduled
-  reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html)
+  reports**](https://msberends.github.io/EpiSODIC/articles/scheduled-reports.html)
   for emailing a recurring outbreak report to colleagues without a
   dashboard account, through these same channels.
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)
   for how to stand up an instance and configure `EPISODIC_CONFIG`.
 - [**Environment
-  variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)
+  variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html)
   for the full reference table of `EPISODIC_*` variables.
-- [`?episodic_notifications`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notifications.md)
+- [`?episodic_notifications`](https://msberends.github.io/EpiSODIC/reference/episodic_notifications.md)
   for the API-level documentation.
-- [`?episodic_notify_test`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_notify_test.md)
+- [`?episodic_notify_test`](https://msberends.github.io/EpiSODIC/reference/episodic_notify_test.md)
   for the test function.
-- [`?episodic_setup_microsoft365`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md)
+- [`?episodic_setup_microsoft365`](https://msberends.github.io/EpiSODIC/reference/episodic_setup_microsoft365.md)
   for the Microsoft 365 delegated auth setup helper.

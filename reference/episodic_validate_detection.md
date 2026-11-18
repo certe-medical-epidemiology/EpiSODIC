@@ -62,7 +62,7 @@ print(x, ...)
 - outbreaks, outbreak_offsets:
 
   Passed to
-  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
+  [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
   `outbreaks = FALSE` generates history with nothing seeded in it, which
   is the negative control: every alarm raised on it is a false one.
 
@@ -91,7 +91,7 @@ print(x, ...)
 - pathogen_copies:
 
   Passed to
-  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md):
+  [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md):
   how many independent copies of the endemic pathogens to watch. Each
   copy inherits its original's per-pathogen configuration and
   `same_place` rule, so it is watched exactly as the original is. With
@@ -117,7 +117,7 @@ print(x, ...)
 - quiet:
 
   If `TRUE` (the default), the per-run progress
-  [`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+  [`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
   writes is suppressed; a replay is hundreds of lines of it. Warnings
   and errors are not suppressed.
 
@@ -163,7 +163,7 @@ An `episodic_validation` object: a list of
   What was injected: the outbreak table and the case-level membership,
   per seed. Kept with the result so the matching thresholds can be
   varied afterwards
-  ([`episodic_validate_rethreshold()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md))
+  ([`episodic_validate_rethreshold()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md))
   without replaying anything.
 
 - `time_to_detection`:
@@ -185,9 +185,9 @@ An `episodic_validation` object: a list of
 
 This measures the detectors against outbreaks that are known to be there
 because they were put there. It generates synthetic history with
-[`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md),
+[`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md),
 replays it week by week through
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 against a throwaway database, and compares the clusters that came out
 against the ground truth that went in.
 
@@ -207,7 +207,7 @@ outbreak overlaps it perfectly in time and shares not one case with it.
 Both thresholds are arguments because both are choices, and a result
 that only holds at one particular pair of values is not a result. Sweep
 them and see
-([`episodic_validate_rethreshold()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md)
+([`episodic_validate_rethreshold()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_rethreshold.md)
 does it without replaying anything; `data-raw/validation/` does it over
 a grid).
 
@@ -252,9 +252,9 @@ by the test suite, by `R CMD check`, or by anything a user installs.
 
 ## See also
 
-[`episodic_synthetic_ground_truth()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
+[`episodic_synthetic_ground_truth()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_ground_truth.md)
 for what is being measured against, and
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 for the detection run this replays.
 
 ## Examples

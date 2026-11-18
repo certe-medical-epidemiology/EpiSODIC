@@ -54,8 +54,8 @@ than `"success"` is also raised as a warning.
 
 ## See also
 
-[`episodic_plugin_list()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_list.md),
-[`vignette("plugins")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.md)
+[`episodic_plugin_list()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_list.md),
+[`vignette("plugins")`](https://msberends.github.io/EpiSODIC/articles/plugins.md)
 
 ## Examples
 

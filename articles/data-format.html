@@ -43,7 +43,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/certe-medical-epidemiology/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/msberends/EpiSODIC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -59,7 +59,7 @@
       <img src="../logo.svg" class="logo" alt=""><h1>Getting your data in</h1>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/vignettes/data-format.Rmd" class="external-link"><code>vignettes/data-format.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/msberends/EpiSODIC/blob/main/vignettes/data-format.Rmd" class="external-link"><code>vignettes/data-format.Rmd</code></a></small>
       <div class="d-none name"><code>data-format.Rmd</code></div>
     </div>
 
@@ -344,7 +344,7 @@ cases are counted today.</p>
 </h3>
 <p>EpiSODIC collapses positives for the same patient and pathogen into
 one case per episode, using the episode length configured per pathogen
-in the shipped <a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv" class="external-link"><code>inst/config/episodic_default_pathogen_config.csv</code></a>
+in the shipped <a href="https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv" class="external-link"><code>inst/config/episodic_default_pathogen_config.csv</code></a>
 - and it does this correctly across runs, not just within one extract:
 each run checks incoming positives against the most recent episode
 already on file for that patient/pathogen, so a recurring extract only
@@ -555,7 +555,7 @@ municipality codes, census tracts, anything with a shape) and a
 <code>geometry</code> column. See <code>R/geo_data.R</code> for the
 exact requirements.</p>
 <p>There is deliberately <strong>no default map</strong>. EpiSODIC does
-bundle Dutch four-digit postcode geometry (<a href="https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/extdata/geo_postcodes4_nl.rds" class="external-link"><code>inst/extdata/geo_postcodes4_nl.rds</code></a>,
+bundle Dutch four-digit postcode geometry (<a href="https://github.com/msberends/EpiSODIC/blob/main/inst/extdata/geo_postcodes4_nl.rds" class="external-link"><code>inst/extdata/geo_postcodes4_nl.rds</code></a>,
 geometry only, sourced from <code>certegis</code> under the same GPL-2
 licence - see <code>data-raw/geo_postcodes4_nl.R</code> for provenance),
 and <code><a href="../reference/episodic_demo.html">episodic_demo()</a></code> points the variable at it, but nothing
@@ -728,20 +728,20 @@ dashboard.</li>
 </h2>
 <ul>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
+<a href="https://msberends.github.io/EpiSODIC/articles/deployment.html"><strong>Deployment</strong></a>
 for scheduling <code><a href="../reference/episodic_run_cron.html">episodic_run_cron()</a></code>, the database backend,
 accounts, and custom report templates.</li>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
+<a href="https://msberends.github.io/EpiSODIC/articles/environment-variables.html"><strong>Environment
 variables</strong></a> for <code>EPISODIC_GEO_DATA</code>,
 <code>EPISODIC_GEO_DATA_OVERLAY</code> and every other
 <code>EPISODIC_*</code> variable mentioned above.</li>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html"><strong>Importing
+<a href="https://msberends.github.io/EpiSODIC/articles/import-export.html"><strong>Importing
 and exporting data between instances</strong></a> for taking in the
 cases of a partner EpiSODIC instance alongside your own.</li>
 <li>
-<a href="https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html"><strong>Frequently
+<a href="https://msberends.github.io/EpiSODIC/articles/faq.html"><strong>Frequently
 asked questions</strong></a> for combining more than one source system,
 resending data safely, and handling a rectified/corrected lab
 result.</li>

@@ -47,7 +47,7 @@ public keys' fingerprints (`encryption_fingerprint`,
   `EPISODIC_EXPORT_SIGNING_KEY` at the secret key file.
 
 Give your partners the two `.pub` files and your instance identifier
-([`episodic_instance_id()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_instance_id.md)),
+([`episodic_instance_id()`](https://msberends.github.io/EpiSODIC/reference/episodic_instance_id.md)),
 and never the `.key` files. The secret key files are written readable by
 their owner only; on Windows, which keeps no such permission bits, keep
 them in a directory only the account running EpiSODIC can read.
@@ -58,10 +58,10 @@ file.
 
 ## See also
 
-[`episodic_cases_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.md),
-[`episodic_cases_import()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_import.md),
-[`episodic_import_export_key_fingerprint()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_key_fingerprint.md),
-[`vignette("import-export")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md)
+[`episodic_cases_export()`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_export.md),
+[`episodic_cases_import()`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_import.md),
+[`episodic_import_export_key_fingerprint()`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_key_fingerprint.md),
+[`vignette("import-export")`](https://msberends.github.io/EpiSODIC/articles/import-export.md)
 
 ## Examples
 

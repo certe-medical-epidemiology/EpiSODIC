@@ -7,9 +7,9 @@ at the top of the board. It maps each of those complaints to the
 parameters that control it, the trade-off each adjustment creates, and
 how to verify the change helped. It does not re-explain how the
 detectors work ([**Detection and
-reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html))
+reconciliation**](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html))
 or how the configuration overlay system works
-([**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)).
+([**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)).
 
 ## Before you change anything
 
@@ -22,7 +22,7 @@ with confidence, since nothing becomes retroactively wrong.
 Point the `EPISODIC_CONFIG` environment variable at a YAML file with
 only the keys you want to change; everything else keeps its shipped
 default. See
-[**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html)
+[**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html)
 for the mechanics.
 
 ``` yaml
@@ -38,7 +38,7 @@ Three guidelines before you start:
 2.  State what you expect the change to do before you make it.
 3.  Decide how you will measure whether it worked: the Performance
     screen for a live instance, or
-    [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+    [`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
     for a controlled experiment. See “Verifying that a change helped”
     below.
 
@@ -338,13 +338,13 @@ mem:
 Declaring the season started or ended is always a human act, never
 automatic. MEM raises the signal; a person declares. See [**Detection
 and
-reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html).
+reconciliation**](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html).
 
 ## Per-pathogen parameters
 
 Per-pathogen biology lives in a CSV, separate from the YAML
 configuration. The default file is
-[`inst/config/episodic_default_pathogen_config.csv`](https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv).
+[`inst/config/episodic_default_pathogen_config.csv`](https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_pathogen_config.csv).
 
 To override it, point `EPISODIC_PATHOGEN_CONFIG` at your own CSV
 containing only the pathogens and columns you want to change. For each
@@ -392,7 +392,7 @@ result <- episodic_validate_detection(
 
 ### Against synthetic ground truth
 
-[`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
+[`episodic_validate_detection()`](https://msberends.github.io/EpiSODIC/reference/episodic_validate_detection.md)
 replays generated history through the full detection pipeline week by
 week and matches what it found against seeded outbreaks on case sets.
 Pass a `config` list (for YAML keys) or a `pathogen_config` data frame
@@ -423,7 +423,7 @@ sensitivity, reduce false alarms, or affect time-to-detection? The
 defaults are deliberately small (one seed, four weeks) so it returns in
 seconds; for a proper comparison use more seeds and a longer window. See
 [**Measuring detection against known
-truth**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html)
+truth**](https://msberends.github.io/EpiSODIC/articles/detection-validation.html)
 for the full framework.
 
 ### Against your own board’s verdicts
@@ -661,7 +661,7 @@ of `config_hash`.
 [TABLE]
 
 Every channel’s settings, and how to test them, are in
-[**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html).
+[**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html).
 
 ### Report
 
@@ -673,7 +673,7 @@ Which columns an export to a partner instance carries, and how coarse
 its postcodes are. They change what leaves the instance, never what a
 run computes, and are left out of `config_hash`. See [**Importing and
 exporting data between
-instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html).
+instances**](https://msberends.github.io/EpiSODIC/articles/import-export.html).
 
 [TABLE]
 
@@ -693,7 +693,7 @@ Which plugins may run, and what each was granted. Plugins act on what a
 run has computed and never take part in detection, so this section is
 left out of `config_hash`. The Plugins screen writes it; it can also be
 edited by hand. See
-[**Plugins**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.html).
+[**Plugins**](https://msberends.github.io/EpiSODIC/articles/plugins.html).
 
 [TABLE]
 
@@ -712,13 +712,13 @@ edited by hand. See
 ## See also
 
 - [**Detection and
-  reconciliation**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) -
+  reconciliation**](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html) -
   how the detectors, reconciliation, suppression, and MEM work
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) -
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html) -
   the configuration overlay system and instance setup
 - [**Measuring detection against known
-  truth**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html) -
+  truth**](https://msberends.github.io/EpiSODIC/articles/detection-validation.html) -
   measuring detection against known truth
 - [**Environment
-  variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) -
+  variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html) -
   all `EPISODIC_*` variables including `EPISODIC_PATHOGEN_CONFIG`

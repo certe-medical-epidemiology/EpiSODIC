@@ -16,7 +16,7 @@ episodic_import_export_key_fingerprint(key)
 - key:
 
   A public key: its text, or the path of the `.pub` file
-  [`episodic_import_export_keygen()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
+  [`episodic_import_export_keygen()`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
   wrote. An encryption key and a signing key are both accepted; a secret
   key is refused.
 
@@ -26,7 +26,7 @@ A 64-character hexadecimal string.
 
 ## See also
 
-[`vignette("import-export")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md)
+[`vignette("import-export")`](https://msberends.github.io/EpiSODIC/articles/import-export.md)
 
 ## Examples
 
@@ -34,6 +34,6 @@ A 64-character hexadecimal string.
 dir <- tempfile()
 keys <- episodic_import_export_keygen(dir)
 episodic_import_export_key_fingerprint(keys$signing_public)
-#> [1] "43c8ebd9ca5b28e75c7410f7e3454dbf888dc2fac71f60ca047f09e559b869f7"
+#> [1] "d7782b8e55086b571d7c965c36f39e0faabc4038506c63b54fdd7f6305ae9185"
 unlink(dir, recursive = TRUE)
 ```

@@ -1,6 +1,6 @@
 # Generate Synthetic Data at Tunable Cluster Volume
 
-[`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+[`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
 injects six outbreaks in total - enough to show every detector working,
 and few enough that a demo dashboard reads like a real morning's work.
 That is the wrong shape for tuning a configuration against (e.g.
@@ -30,7 +30,7 @@ episodic_synthetic_cases_calibration(
 - start_date, end_date:
 
   The window to generate over; defaults as in
-  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
+  [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
 
 - pathogen:
 
@@ -50,9 +50,9 @@ episodic_synthetic_cases_calibration(
 ## Value
 
 A data frame satisfying
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md),
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md),
 including everything
-[`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+[`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
 produces (background baseline, the six demo outbreaks) plus the extra
 volume.
 

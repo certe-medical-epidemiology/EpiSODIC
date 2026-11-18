@@ -1,7 +1,7 @@
 # Check Your Positivity Data Before You Hand It to EpiSODIC
 
 The same purpose as
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md),
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md),
 for the optional `denominators` feed: every check
 `episodic_validate_denominators()` would throw on, reported instead of
 thrown - what is wrong, how many rows, which ones, and what to do about
@@ -21,21 +21,21 @@ episodic_check_denominators(denominators)
 
   Your positivity data: a data frame or `tibble` with `pathogen`,
   `sample_date`, `care_line`, `area_code` and `n_tests` (see
-  [`episodic_synthetic_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md)
+  [`episodic_synthetic_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_denominators.md)
   for the shape), or a zero-argument function returning one.
 
 ## Value
 
 A data frame of findings with class `episodic_case_check`, the same
 shape
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 returns. Zero rows means the data set passed every check.
 
 ## See also
 
-[`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)
+[`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)
 for the case data feed,
-[`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
+[`episodic_check_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_institution_activity.md)
 for the hospital activity feed.
 
 ## Examples

@@ -46,7 +46,7 @@ Invisibly, the plugin's id.
 ## Details
 
 Installing never enables: see
-[`episodic_plugin_enable()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.md).
+[`episodic_plugin_enable()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_enable.md).
 Installing a newer version over an enabled plugin keeps it enabled,
 unless the new version asks for permissions or secrets it was not
 granted, in which case it does not run until enabled again.
@@ -54,13 +54,13 @@ granted, in which case it does not run until enabled again.
 A plugin runs code on this server with the account EpiSODIC runs as.
 Install only plugins from a source you trust, and read a plugin's steps
 before enabling it. See
-[`vignette("plugins")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/plugins.md).
+[`vignette("plugins")`](https://msberends.github.io/EpiSODIC/articles/plugins.md).
 
 ## See also
 
-[`episodic_plugin_list()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_list.md),
-[`episodic_plugin_enable()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_enable.md),
-[`episodic_plugin_uninstall()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_plugin_uninstall.md)
+[`episodic_plugin_list()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_list.md),
+[`episodic_plugin_enable()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_enable.md),
+[`episodic_plugin_uninstall()`](https://msberends.github.io/EpiSODIC/reference/episodic_plugin_uninstall.md)
 
 ## Examples
 

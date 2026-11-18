@@ -1,11 +1,11 @@
 # Import an Encrypted Export File as Case Data
 
 Opens a file written by
-[`episodic_cases_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.md)
+[`episodic_cases_export()`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_export.md)
 at another instance, verifies it in full, and returns its cases as a
 validated data frame in the case data format. It does **not** write to
 the database: hand the result to
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 as `imports`, and the cases are loaded, deduplicated, detected on and
 recorded like every other case, with the import itself recorded against
 that run.
@@ -31,7 +31,7 @@ episodic_cases_import(
 - key:
 
   Your secret encryption key, as its text or as the path of the file
-  [`episodic_import_export_keygen()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
+  [`episodic_import_export_keygen()`](https://msberends.github.io/EpiSODIC/reference/episodic_import_export_keygen.md)
   wrote. Defaults to the `EPISODIC_IMPORT_KEY` environment variable. Not
   used for a passphrase file.
 
@@ -95,15 +95,15 @@ records.
 
 Imports are append-only: a case the sender later corrects or retracts
 stays as it was first imported. See
-[`vignette("import-export")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md)
+[`vignette("import-export")`](https://msberends.github.io/EpiSODIC/articles/import-export.md)
 for this and the other limits (patient linkage across laboratories,
 pathogen naming, history imported after the first run).
 
 ## See also
 
-[`episodic_cases_export()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_cases_export.md),
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md),
-[`vignette("import-export")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.md)
+[`episodic_cases_export()`](https://msberends.github.io/EpiSODIC/reference/episodic_cases_export.md),
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md),
+[`vignette("import-export")`](https://msberends.github.io/EpiSODIC/articles/import-export.md)
 
 ## Examples
 

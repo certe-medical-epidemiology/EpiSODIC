@@ -25,7 +25,7 @@ episodic_synthetic_institution_activity(
   A data frame (or tibble) of institutions from **your own** registry,
   with `institution_key`, `institution_type` and `n_beds`; filtered
   internally to hospitals only. Defaults to the synthetic registry
-  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
+  [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md)
   draws on, so the two feeds line up with no arguments at all.
 
   `institution_key` must be the same identifier your case feed uses, not
@@ -38,7 +38,7 @@ episodic_synthetic_institution_activity(
 
   The period to generate weekly rows for. Defaults to the five years up
   to today, matching
-  [`episodic_synthetic_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
+  [`episodic_synthetic_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_synthetic_cases.md).
 
 - seed:
 
@@ -55,7 +55,7 @@ This function is a synthetic example showing the expected shape: weekly
 patient-days per hospital, modelled as bed count times occupancy, with a
 realistic winter peak. Use it as a template for your own data, which you
 pass to
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 as `institution_activity` - normally a data frame or `tibble`.
 
 ## Examples

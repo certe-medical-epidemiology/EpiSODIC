@@ -1,6 +1,6 @@
 # EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification
 
-[![R-CMD-check](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/certe-medical-epidemiology/EpiSODIC/actions/workflows/R-CMD-check.yaml)
+[![R-CMD-check](https://github.com/msberends/EpiSODIC/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/msberends/EpiSODIC/actions/workflows/R-CMD-check.yaml)
 
 > \[!WARNING\] **Under very intensive development.** EpiSODIC has not
 > been released and is not yet ready for use. Its functions, database
@@ -75,7 +75,7 @@ hardcoded.
 
 An instance needs R, a database (SQLite, MariaDB or MySQL) and a regular
 case extract from your laboratory information system;
-[`vignette("deployment")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.md)
+[`vignette("deployment")`](https://msberends.github.io/EpiSODIC/articles/deployment.md)
 describes the steps. Case data is stored only on infrastructure you
 control, and leaves it only through channels you configure yourself,
 such as notifications and exports to other instances. The dashboard and
@@ -100,7 +100,7 @@ clusters](reference/figures/archive_screen.png)
 ``` r
 
 # install.packages("remotes")
-remotes::install_github("certe-medical-epidemiology/EpiSODIC")
+remotes::install_github("msberends/EpiSODIC")
 ```
 
 ## See it work, right now
@@ -124,7 +124,7 @@ populated database path back, e.g. for scripting.
   known, injected outbreaks: sensitivity, timeliness and false alarms
   per stream-week, with a negative control and naive comparators
   ([Measuring detection against known
-  truth](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html)).
+  truth](https://msberends.github.io/EpiSODIC/articles/detection-validation.html)).
   It has not yet been evaluated retrospectively against documented
   outbreaks in real laboratory data.
 - **Testing intensity** is not corrected for. Farrington takes a
@@ -134,7 +134,7 @@ populated database path back, e.g. for scripting.
   before detection, and test counts, if supplied, are shown on the
   dossier as an aid to judgement but never enter detection ([Detection
   and
-  reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html)).
+  reconciliation](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html)).
 - **Multiplicity** is not controlled. Each stream is tested at its own
   significance level; suppression removes restatements of one signal
   across geographic levels, not independent false alarms. The expected
@@ -153,17 +153,17 @@ page:
 
 | Read this… | …for |
 |----|----|
-| [Overview](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/overview.html) | What EpiSODIC does: the Clusters and Pathogen screens’ two altitudes, and the Performance, Archive, Streams, Activity and Info screens around them. |
-| [Getting your data in](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.html) | The case data requirements - every column, what’s optional, [`episodic_check_cases()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_cases.md)/[`episodic_check_denominators()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_denominators.md)/[`episodic_check_institution_activity()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_check_institution_activity.md) to check your extract before anything runs, and [`episodic_add_manual_cluster()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md) for clusters detected by another system entirely. |
-| [Deployment](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) | Standing up a real instance: scheduling, accounts, the database backend, custom report templates. |
-| [Environment variables](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) | The full `EPISODIC_*` reference table. |
-| [Detection and reconciliation](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-reconciliation.html) | How a laboratory result becomes a dossier: the four detectors, denominators, reconciliation, and suppression. |
-| [Measuring detection against known truth](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/detection-validation.html) | How detection is validated against synthetic outbreaks, and what that does not measure. |
-| [FAQ](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/faq.html) | Answers to the questions that come up most often when getting started. |
+| [Overview](https://msberends.github.io/EpiSODIC/articles/overview.html) | What EpiSODIC does: the Clusters and Pathogen screens’ two altitudes, and the Performance, Archive, Streams, Activity and Info screens around them. |
+| [Getting your data in](https://msberends.github.io/EpiSODIC/articles/data-format.html) | The case data requirements - every column, what’s optional, [`episodic_check_cases()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_cases.md)/[`episodic_check_denominators()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_denominators.md)/[`episodic_check_institution_activity()`](https://msberends.github.io/EpiSODIC/reference/episodic_check_institution_activity.md) to check your extract before anything runs, and [`episodic_add_manual_cluster()`](https://msberends.github.io/EpiSODIC/reference/episodic_add_manual_cluster.md) for clusters detected by another system entirely. |
+| [Deployment](https://msberends.github.io/EpiSODIC/articles/deployment.html) | Standing up a real instance: scheduling, accounts, the database backend, custom report templates. |
+| [Environment variables](https://msberends.github.io/EpiSODIC/articles/environment-variables.html) | The full `EPISODIC_*` reference table. |
+| [Detection and reconciliation](https://msberends.github.io/EpiSODIC/articles/detection-reconciliation.html) | How a laboratory result becomes a dossier: the four detectors, denominators, reconciliation, and suppression. |
+| [Measuring detection against known truth](https://msberends.github.io/EpiSODIC/articles/detection-validation.html) | How detection is validated against synthetic outbreaks, and what that does not measure. |
+| [FAQ](https://msberends.github.io/EpiSODIC/articles/faq.html) | Answers to the questions that come up most often when getting started. |
 
 Building the package locally (or browsing offline) works the same way:
 `vignette(package = "EpiSODIC")` lists all of them, and
-[`vignette("data-format", package = "EpiSODIC")`](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/data-format.md)
+[`vignette("data-format", package = "EpiSODIC")`](https://msberends.github.io/EpiSODIC/articles/data-format.md)
 (etc.) opens one.
 
 ## Licence

@@ -1,7 +1,7 @@
 # How notifications work
 
 When
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md)
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md)
 detects new clusters or fails, it can notify your team through one or
 more channels: ntfy, SMTP, sendmail, Microsoft 365, Teams (Power
 Automate Workflow webhook), or Slack. Notifications are configured in

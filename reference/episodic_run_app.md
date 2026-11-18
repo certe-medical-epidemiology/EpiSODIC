@@ -1,7 +1,7 @@
 # Open the EpiSODIC Dashboard
 
 Launches the Shiny dashboard against a database already populated by
-[`episodic_run_cron()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_run_cron.md):
+[`episodic_run_cron()`](https://msberends.github.io/EpiSODIC/reference/episodic_run_cron.md):
 an overview of monitored surveillance streams and each cluster's
 dossier, with charts, its narrative interpretation, and an assessment
 form. Anyone can browse the dashboard; signing in is only required to
@@ -23,7 +23,7 @@ episodic_run_app(
 
   Path to the EpiSODIC database: a SQLite file, or a MariaDB/MySQL DSN
   (see
-  [`episodic_db_dsn_mariadb()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
+  [`episodic_db_dsn_mariadb()`](https://msberends.github.io/EpiSODIC/reference/episodic_db_dsn_mariadb.md)).
   Defaults to the `EPISODIC_DB` environment variable.
 
 - lang:
@@ -49,7 +49,7 @@ blocks until the app is stopped.
 
 If you just want to explore EpiSODIC without setting anything up first,
 use
-[`episodic_demo()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_demo.md)
+[`episodic_demo()`](https://msberends.github.io/EpiSODIC/reference/episodic_demo.md)
 instead - it populates a database with synthetic data and calls this
 function for you.
 
