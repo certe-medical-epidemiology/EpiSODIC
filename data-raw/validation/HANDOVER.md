@@ -8,6 +8,25 @@ are wrong with it.
 Everything here is reproducible from this repository. Nothing in it was
 tuned after seeing a result.
 
+> [!WARNING]
+> **This document describes the study run against EpiSODIC 0.17.0 in
+> September 2026, and has not yet been rewritten for the study that
+> replaced it.** The CSVs in `results/` were re-run against 0.25.0 on
+> 18 November 2026, after the scale boundary, the lattice suppression
+> change, the bounded re-runs and the MEM rework, so every number below
+> is superseded by the file beside it.
+>
+> Two conclusions reversed, not only the figures. MEM found nothing of
+> its own in 0.17.0 and removing it cost no sensitivity; in 0.25.0
+> removing it costs thirteen seasonal waves. Farrington cost five points
+> of sensitivity when removed in 0.17.0 and costs none in 0.25.0. Section
+> 4.4 argues the first of those at length and is now wrong about it.
+>
+> Section 2 (design), section 5 (what is wrong with this) and section 7
+> (what was deliberately not done) are about the harness rather than a
+> particular run, and still hold. Section 3 and section 4 are a record of
+> one superseded run.
+
 ---
 
 ## 1. The question, and why the obvious answer is circular
