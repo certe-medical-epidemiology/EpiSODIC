@@ -142,6 +142,26 @@ test_that("a draw is never below its floor, and a floor beyond the model's reach
   expect_true(all(is.finite(episodic_outlook_draw_at_least(rep(50, 100), rep(20, 100), 500))))
 })
 
+test_that("parameters that describe no distribution give no draw, and no warning", {
+  # A mean that is not finite is not a draw of zero, nor of anything: the
+  # distribution functions answer it with NA, which would read as a count
+  # everywhere downstream.
+  for (floor in c(0, 12)) {
+    expect_null(episodic_outlook_draw_at_least(c(1, Inf), c(5, 5), floor))
+    expect_null(episodic_outlook_draw_at_least(c(1, NaN), c(5, 5), floor))
+    expect_null(episodic_outlook_draw_at_least(c(1, NA_real_), c(5, 5), floor))
+    expect_null(episodic_outlook_draw_at_least(c(1, -1), c(5, 5), floor))
+    expect_null(episodic_outlook_draw_at_least(c(1, 1), c(5, NA_real_), floor))
+    expect_null(episodic_outlook_draw_at_least(c(1, 1), c(5, 0), floor))
+  }
+  # The Poisson limit is a distribution, and both branches take it.
+  expect_length(episodic_outlook_draw_at_least(rep(3, 10), rep(Inf, 10), 0), 10)
+  expect_true(all(episodic_outlook_draw_at_least(rep(3, 10), rep(Inf, 10), 5) >= 5))
+  # A floor the model cannot reach is answered by the floor, not by a
+  # warning escaping to whatever is watching for one.
+  expect_no_warning(episodic_outlook_draw_at_least(rep(1, 50), rep(2, 50), 400))
+})
+
 test_that("the ensemble averages the models' quantiles, and reads the band chances from them", {
   set.seed(1)
   low <- matrix(stats::rpois(2000, 10), ncol = 2)
