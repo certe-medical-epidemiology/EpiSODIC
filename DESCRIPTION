@@ -1,9 +1,9 @@
 Package: EpiSODIC
+Version: 0.25.0
+Date: 2026-11-18
 Type: Package
 Title: Epidemiological Signal Observation, Detection, Identification,
     and Classification
-Version: 0.25.0
-Date: 2026-11-18
 Authors@R: c(
     person(given = c("Matthijs", "S."),
            family = "Berends",
