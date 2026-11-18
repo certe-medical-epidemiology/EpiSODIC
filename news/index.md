@@ -131,6 +131,11 @@
 
 ### Fixed
 
+- An epidemic outlook whose model puts an infinite or negative mean on a
+  week is refused, where before the week’s draw was `NA` and was carried
+  into the baseline and the quantiles as though it were a count
+- The validation study stops on any warning, and the one warning it
+  raises by design is suppressed where it is raised
 - [`episodic_validate_detection()`](https://certe-medical-epidemiology.github.io/EpiSODIC/reference/episodic_validate_detection.md)
   no longer deletes a pathogen configuration file passed to it as a path
 - On Windows a plugin’s bash step runs in Git for Windows’ bash, never
