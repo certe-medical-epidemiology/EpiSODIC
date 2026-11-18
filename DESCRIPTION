@@ -1,19 +1,23 @@
 Package: EpiSODIC
 Type: Package
-Title: Epidemiological Signal Observation, Detection, Identification, and
-    Classification
+Title: Epidemiological Signal Observation, Detection, Identification,
+    and Classification
 Version: 0.25.0
+Date: 2026-11-18
 Authors@R: c(
     person(given = c("Matthijs", "S."),
            family = "Berends",
            role = c("aut", "cre"),
-           email = "m.berends@certe.nl"),
-    person(given = "Certe Medical Diagnostics & Advice Foundation",
-           role = c("cph", "fnd"),
-           comment = c(ROR = "04m8g8w48")),
+           email = "m.berends@umcg.nl"),
+    person(given = c("T.", "Maarten"),
+           family = "Homburg",
+           role = "aut"),
     person(given = "University Medical Center Groningen",
            role = c("cph", "fnd"),
-           comment = c(ROR = "03cv38k47")))
+           comment = c(ROR = "03cv38k47")),
+    person(given = "Certe Medical Diagnostics & Advice Foundation",
+           role = c("cph", "fnd"),
+           comment = c(ROR = "04m8g8w48")))
 Description: An automated surveillance system for infectious disease
     epidemiologists that detects aberrations in laboratory-confirmed
     infections, records epidemiologist's formal assessment with a full
