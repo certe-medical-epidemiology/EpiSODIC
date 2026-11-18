@@ -1,7 +1,7 @@
 "point","dimension","label","config_hash","n_seeds","sensitivity","ppv","false_alarms_per_stream_week","stream_weeks","median_delay_days"
-"sweep_shipped","shipped","shipped defaults (alpha 0.05, same_place 3 in 14)","9b97cc3f4a58930263747e5bed741e401860ad34",5,1,0.76,0.000102413545898337,117172,6
-"sweep_farrington_alpha_001","farrington.alpha","farrington alpha 0.01","aa6d1b60f800ddba70ba3e7be34bdd7b8d29e18a",5,1,0.714285714285714,0.000119482470214727,117172,8.5
-"sweep_farrington_alpha_010","farrington.alpha","farrington alpha 0.10","fabab941c3309f71b77bb31e9f4f20f083b3d018",5,1,0.716981132075472,0.000128016932372922,117172,6
-"sweep_same_place_2_in_14","same_place","same_place 2 in 14","6eb9c0c0fd4ceea1a70230509f635ab1d663cafb",5,1,0.534090909090909,0.00069423866570715,118115,6
-"sweep_same_place_4_in_14","same_place","same_place 4 in 14","2c0dd200a1d29a8ed2059d84db1894d84fe7be38",5,0.966666666666667,0.866666666666667,5.12386954628135e-05,117099,5.5
-"sweep_same_place_3_in_7","same_place","same_place 3 in 7","f5dce101c6c2768ca60bdee46550c92ee1bac81c",5,0.9,0.847826086956522,5.97789885395139e-05,117098,5
+"sweep_shipped","shipped","shipped defaults (alpha 0.05, same_place 3 in 14)","7fef366a6991df0382427e610f8bd8ebd25bf015",5,1,0.844444444444444,6.09379216686544e-05,114871,10
+"sweep_farrington_alpha_001","farrington.alpha","farrington alpha 0.01","2292a5f9d0fffb521959d09feee763b82dcc72c7",5,1,0.795454545454545,7.83487564311271e-05,114871,10
+"sweep_farrington_alpha_010","farrington.alpha","farrington alpha 0.10","123f32f0f7868ed02303285e194efb3d799a89f4",5,1,0.822222222222222,6.96433390498908e-05,114871,10
+"sweep_same_place_2_in_14","same_place","same_place 2 in 14","aa68806e3e8d69aec2ee48e94afd4bf74afd5ab1",5,1,0.458333333333333,0.000562600077898472,115535,6.5
+"sweep_same_place_4_in_14","same_place","same_place 4 in 14","fcf92b6715b8cb60ca9a4ef85af12f7b5bb9610b",5,0.933333333333333,0.883720930232558,4.35407323551182e-05,114835,11
+"sweep_same_place_3_in_7","same_place","same_place 3 in 7","34400a1f77f322b0dc1e34c52d3b3c1fbc651813",5,0.933333333333333,0.863636363636364,5.22375065296883e-05,114860,11
