@@ -17,7 +17,7 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-url: https://certe-medical-epidemiology.github.io/EpiSODIC/
+url: https://msberends.github.io/EpiSODIC/
 
 template:
   bootstrap: 5

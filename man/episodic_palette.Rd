@@ -23,7 +23,7 @@ reports to the house style, or check what colour a given status uses.
 }
 \details{
 The palette ships with an organisation-neutral default
-(\href{https://github.com/certe-medical-epidemiology/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml}{\code{inst/config/episodic_default_style.yaml}}). To use your own institute's colours or fonts instead,
+(\href{https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml}{\code{inst/config/episodic_default_style.yaml}}). To use your own institute's colours or fonts instead,
 point the \code{EPISODIC_STYLE} environment variable at a YAML file
 that overrides only the roles you want to change - anything you do not set
 keeps its shipped default.

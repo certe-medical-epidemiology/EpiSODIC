@@ -13,24 +13,25 @@ An automated surveillance system for infectious disease epidemiologists that det
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://certe-medical-epidemiology.github.io/EpiSODIC}
-  \item \url{https://github.com/certe-medical-epidemiology/EpiSODIC}
-  \item Report bugs at \url{https://github.com/certe-medical-epidemiology/EpiSODIC/issues}
+  \item \url{https://msberends.github.io/EpiSODIC}
+  \item \url{https://github.com/msberends/EpiSODIC}
+  \item Report bugs at \url{https://github.com/msberends/EpiSODIC/issues}
 }
 
 }
 \author{
-\strong{Maintainer}: Matthijs S. Berends \email{m.berends@certe.nl}
+\strong{Maintainer}: Matthijs S. Berends \email{m.berends@umcg.nl}
 
 Authors:
 \itemize{
-  \item Matthijs S. Berends \email{m.berends@certe.nl}
+  \item Matthijs S. Berends \email{m.berends@umcg.nl}
+  \item T. Maarten Homburg
 }
 
 Other contributors:
 \itemize{
-  \item Certe Medical Diagnostics & Advice Foundation (\href{https://ror.org/04m8g8w48}{ROR}) [copyright holder, funder]
   \item University Medical Center Groningen (\href{https://ror.org/03cv38k47}{ROR}) [copyright holder, funder]
+  \item Certe Medical Diagnostics & Advice Foundation (\href{https://ror.org/04m8g8w48}{ROR}) [copyright holder, funder]
 }
 
 }

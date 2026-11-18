@@ -238,8 +238,8 @@ The plugin API version changes only when the file format, the payload or the res
 
 ## See also
 
-- [**Importing and exporting data between instances**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/import-export.html) for sharing case data with another EpiSODIC instance, which needs no plugin.
-- [**Notifications**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/notifications.html) for alerts on new clusters through the built-in channels.
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) for the configuration file and administrator accounts.
-- [**Environment variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) for `EPISODIC_PLUGIN_DIR` and every other `EPISODIC_*` variable.
+- [**Importing and exporting data between instances**](https://msberends.github.io/EpiSODIC/articles/import-export.html) for sharing case data with another EpiSODIC instance, which needs no plugin.
+- [**Notifications**](https://msberends.github.io/EpiSODIC/articles/notifications.html) for alerts on new clusters through the built-in channels.
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html) for the configuration file and administrator accounts.
+- [**Environment variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html) for `EPISODIC_PLUGIN_DIR` and every other `EPISODIC_*` variable.
 - `?episodic_plugin_install`, `?episodic_plugin_enable` and `?episodic_plugin_run` for the details of each function.

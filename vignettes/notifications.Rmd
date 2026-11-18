@@ -28,7 +28,7 @@ You can enable as many channels in parallel as you like. Each channel is indepen
 
 ## Where to configure
 
-Notification settings go in your instance YAML configuration file, the same file that `EPISODIC_CONFIG` points at (see [**Environment variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html)). Add a `notifications` key at the top level. The shipped `r EpiSODIC:::doc_system_file("inst/config/episodic_default_config.yaml")` contains commented-out examples for every channel; copy the ones you need into your instance file and fill in the values.
+Notification settings go in your instance YAML configuration file, the same file that `EPISODIC_CONFIG` points at (see [**Environment variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html)). Add a `notifications` key at the top level. The shipped `r EpiSODIC:::doc_system_file("inst/config/episodic_default_config.yaml")` contains commented-out examples for every channel; copy the ones you need into your instance file and fill in the values.
 
 Notification configuration is deliberately **excluded** from the detection `config_hash`. This means:
 
@@ -416,7 +416,7 @@ A template reads its data with `readRDS(params$data_path)`. Both kinds receive:
 
 The new-clusters template also receives `n_new`, `run_date`, `dashboard_url` (`NULL` when none is configured) and `clusters`, a data frame with one row per new cluster, ordered as every cluster table on screen is: `cluster_id`, `ref` (`O-12`), `url` (the cluster's dossier, `NA` without a `dashboard_url`), `pathogen`, `level`, `location`, `first_day`, `last_day`, `period`, `duration_days`, `n_cases`, `case_days`, `expected`, `ratio` and `priority_score`. A value that was not measured is `NA`, never `0`.
 
-The report template also receives `cluster_id`, `ref`, `pathogen`, `level`, `location`, `first_day`, `last_day`, `period`, `n_cases`, `final` (whether this send ends the schedule), `interval_days`, `attachment_name`, and `diff`: what changed since the previous report, in the shape described in [**Scheduled reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html), or `NULL` when there is nothing to compare against.
+The report template also receives `cluster_id`, `ref`, `pathogen`, `level`, `location`, `first_day`, `last_day`, `period`, `n_cases`, `final` (whether this send ends the schedule), `interval_days`, `attachment_name`, and `diff`: what changed since the previous report, in the shape described in [**Scheduled reports**](https://msberends.github.io/EpiSODIC/articles/scheduled-reports.html), or `NULL` when there is nothing to compare against.
 
 An email is not a web page, and a template has to be written for an inbox:
 
@@ -442,9 +442,9 @@ A template that cannot be used never costs an email. When the file is missing, i
 
 ## See also
 
-- [**Scheduled reports**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/scheduled-reports.html) for emailing a recurring outbreak report to colleagues without a dashboard account, through these same channels.
-- [**Deployment**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/deployment.html) for how to stand up an instance and configure `EPISODIC_CONFIG`.
-- [**Environment variables**](https://certe-medical-epidemiology.github.io/EpiSODIC/articles/environment-variables.html) for the full reference table of `EPISODIC_*` variables.
+- [**Scheduled reports**](https://msberends.github.io/EpiSODIC/articles/scheduled-reports.html) for emailing a recurring outbreak report to colleagues without a dashboard account, through these same channels.
+- [**Deployment**](https://msberends.github.io/EpiSODIC/articles/deployment.html) for how to stand up an instance and configure `EPISODIC_CONFIG`.
+- [**Environment variables**](https://msberends.github.io/EpiSODIC/articles/environment-variables.html) for the full reference table of `EPISODIC_*` variables.
 - `?episodic_notifications` for the API-level documentation.
 - `?episodic_notify_test` for the test function.
 - `?episodic_setup_microsoft365` for the Microsoft 365 delegated auth setup helper.
