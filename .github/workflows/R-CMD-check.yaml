@@ -1,11 +1,11 @@
 # ===================================================================== #
-#  An R package by Certe:                                               #
-#  https://github.com/certe-medical-epidemiology                        #
+#  This open-source project is publicly available at:                   #
+#  https://github.com/msberends/EpiSODIC                                #
 #                                                                       #
 #  Licensed as GPL-v2.0.                                                #
 #                                                                       #
-#  Developed at non-profit organisation Certe Medical Diagnostics &     #
-#  Advice, department of Medical Epidemiology.                          #
+#  Developed at the University Medical Center Groningen, and non-profit #
+#  organisation Certe Medical Diagnostics & Advice, in the Netherlands. #
 #                                                                       #
 #  This R package is free software; you can freely use and distribute   #
 #  it for both personal and commercial purposes under the terms of the  #

@@ -8,16 +8,12 @@ Authors@R: c(
     person(given = c("Matthijs", "S."),
            family = "Berends",
            role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-7620-1800"),
            email = "m.berends@umcg.nl"),
     person(given = c("T.", "Maarten"),
            family = "Homburg",
-           role = "aut"),
-    person(given = "University Medical Center Groningen",
-           role = c("cph", "fnd"),
-           comment = c(ROR = "03cv38k47")),
-    person(given = "Certe Medical Diagnostics & Advice Foundation",
-           role = c("cph", "fnd"),
-           comment = c(ROR = "04m8g8w48")))
+           comment = c(ORCID = "0000-0002-3295-4656"),
+           role = "aut"))
 Description: An automated surveillance system for infectious disease
     epidemiologists that detects aberrations in laboratory-confirmed
     infections, records epidemiologist's formal assessment with a full
