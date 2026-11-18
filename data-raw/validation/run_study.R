@@ -45,6 +45,14 @@
 
 suppressMessages(pkgload::load_all(quiet = TRUE))
 
+# Every warning stops the study. A warning here is a quantity the code
+# could not compute, and a five-hour run that prints "There were 50 or
+# more warnings" at the end of each scenario reports nothing about which
+# of them mattered: one that is expected and handled hides fifty that are
+# neither. A warning worth tolerating is worth suppressing where it is
+# raised, with the reason beside it.
+options(warn = 2)
+
 quick <- tolower(Sys.getenv("EPISODIC_VALIDATION_QUICK")) %in% c("true", "1", "yes")
 
 # A three-hour script that cannot resume loses three hours to any
