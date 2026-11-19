@@ -51,8 +51,7 @@ rsconnect/
 
 # Instance configuration and data are never versioned - only the shipped
 # defaults and palette template, the shipped reference plugins, CI
-# workflow files, and
-# pkgdown's own config are exceptions.
+# workflow files, and pkgdown's own config are exceptions.
 *.yaml
 !inst/config/episodic_default_config.yaml
 !inst/config/episodic_default_style.yaml
