@@ -25,11 +25,13 @@
 #'
 #' @param screen A list from `episodic_app_pathogen_screen()`.
 #' @param lang Session language.
+#' @param curve_scale The weekly curve's y axis: `"linear"` or `"log"`.
 #' @return A `shiny::tags` element.
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_screen <- function(screen,
-                                        lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                        lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                        curve_scale = "linear") {
   if (nrow(screen$pathogens) == 0 || is.null(screen$pathogen)) {
     return(shiny::tags$div(
       class = "episodic-streams-screen",
@@ -56,7 +58,7 @@ episodic_ui_pathogen_screen <- function(screen,
     ),
     episodic_ui_pathogen_controls(screen, lang = lang),
     episodic_ui_pathogen_stats(screen, lang = lang),
-    episodic_ui_pathogen_curve_panel(screen, lang = lang),
+    episodic_ui_pathogen_curve_panel(screen, lang = lang, y_scale = curve_scale),
     episodic_ui_pathogen_overlay_panel(screen, lang = lang),
     episodic_ui_pathogen_rt_panel(screen, lang = lang),
     episodic_ui_pathogen_denominator_panel(screen, lang = lang),
@@ -408,10 +410,16 @@ episodic_ui_intensity_stat <- function(label,
 }
 
 #' The weekly curve, with MEM thresholds where they exist
+#'
+#' @param screen A list from `episodic_app_pathogen_screen()`.
+#' @param lang Session language.
+#' @param y_scale The y axis: `"linear"` or `"log"`, switched by the
+#'   panel's own buttons (input `pathogen_curve_scale`).
 #' @keywords internal
 #' @noRd
 episodic_ui_pathogen_curve_panel <- function(screen,
-                                             lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+                                             lang = Sys.getenv("EPISODIC_LANGUAGE"),
+                                             y_scale = "linear") {
   # An all-zero curve is not a chart worth drawing: a period with no
   # cases of this pathogen is a sentence, not a row of empty bars.
   if (
@@ -454,7 +462,13 @@ episodic_ui_pathogen_curve_panel <- function(screen,
     episodic_tr("pathogen.panel.curve.note", lang = lang)
   }
   note <- paste(
-    c(note, episodic_ui_mem_no_low_band_note(thresholds, lang = lang)),
+    c(
+      note,
+      episodic_ui_mem_no_low_band_note(thresholds, lang = lang),
+      if (identical(y_scale, "log")) {
+        episodic_tr("pathogen.panel.curve.log_note", lang = lang)
+      }
+    ),
     collapse = "<br>"
   )
 
@@ -466,13 +480,66 @@ episodic_ui_pathogen_curve_panel <- function(screen,
       lang = lang
     ),
     note = shiny::HTML(note),
+    episodic_ui_curve_scale_picker(y_scale, lang = lang),
     shiny::renderPlot(
       episodic_ui_pathogen_curve_chart(
         screen$weekly, thresholds,
-        lang = lang
+        lang = lang,
+        y_scale = y_scale
       ),
       height = 300
     )
+  )
+}
+
+#' Linear or logarithmic: the weekly curve's y axis switch
+#'
+#' Two buttons in the period picker's style. A log axis is what makes a
+#' rise legible while counts are still small beside an earlier peak, and
+#' what shows whether growth is steady (a straight line); a linear axis
+#' is what shows how many cases there actually were. Neither is the
+#' right one for every question, so the reader chooses.
+#'
+#' @param y_scale The scale now drawn: `"linear"` or `"log"`.
+#' @param lang Session language.
+#' @return A `shiny::tags$div`.
+#' @keywords internal
+#' @noRd
+episodic_ui_curve_scale_picker <- function(y_scale,
+                                           lang = Sys.getenv("EPISODIC_LANGUAGE")) {
+  pal <- episodic_palette()
+  buttons <- lapply(episodic_chart_y_scales, function(id) {
+    active <- identical(id, y_scale)
+    shiny::tags$button(
+      type = "button",
+      class = if (active) {
+        "episodic-picker-btn active"
+      } else {
+        "episodic-picker-btn"
+      },
+      style = if (active) {
+        sprintf(
+          "background:%s;border-color:%s;color:%s;",
+          pal$primary,
+          pal$primary,
+          episodic_ui_text_on(pal$primary)
+        )
+      } else {
+        ""
+      },
+      `aria-pressed` = if (active) "true" else "false",
+      onclick = sprintf(
+        "Shiny.setInputValue('pathogen_curve_scale', '%s', {priority: 'event'}); return false;",
+        id
+      ),
+      episodic_tr(paste0("pathogen.panel.curve.scale.", id), lang = lang)
+    )
+  })
+  shiny::tags$div(
+    class = "episodic-picker episodic-picker-inline episodic-curve-scale",
+    role = "group",
+    `aria-label` = episodic_tr("pathogen.panel.curve.scale_label", lang = lang),
+    buttons
   )
 }
 

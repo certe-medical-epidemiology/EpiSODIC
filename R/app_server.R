@@ -271,6 +271,17 @@ episodic_app_server_factory <- function(db_path,
     pathogen_selected <- shiny::reactiveVal(NULL)
     pathogen_period <- shiny::reactiveVal("year_current")
     pathogen_range <- shiny::reactiveVal(list(from = NULL, to = NULL))
+    pathogen_curve_scale <- shiny::reactiveVal("linear")
+    shiny::observeEvent(input$pathogen_curve_scale, {
+      # The value comes from the browser: anything but a known scale is
+      # refused here rather than handed to the chart to fail on.
+      shiny::req(
+        is.character(input$pathogen_curve_scale),
+        length(input$pathogen_curve_scale) == 1,
+        input$pathogen_curve_scale %in% episodic_chart_y_scales
+      )
+      pathogen_curve_scale(input$pathogen_curve_scale)
+    })
     shiny::observeEvent(
       input$pathogen_select,
       pathogen_selected(input$pathogen_select)
@@ -418,21 +429,28 @@ episodic_app_server_factory <- function(db_path,
       )
     })
 
+    # Computed apart from the rendering, so switching the curve's y axis
+    # redraws the screen without reading the pathogen's cases again.
+    pathogen_screen_data <- shiny::reactive({
+      range <- pathogen_range()
+      episodic_app_pathogen_screen(
+        con,
+        pathogen = pathogen_selected(),
+        period = pathogen_period(),
+        from = range$from,
+        to = range$to,
+        lang = lang
+      )
+    })
+
     output$pathogen_screen <- shiny::renderUI({
       if (!access_granted()) {
         return(NULL)
       }
-      range <- pathogen_range()
       episodic_ui_pathogen_screen(
-        episodic_app_pathogen_screen(
-          con,
-          pathogen = pathogen_selected(),
-          period = pathogen_period(),
-          from = range$from,
-          to = range$to,
-          lang = lang
-        ),
-        lang = lang
+        pathogen_screen_data(),
+        lang = lang,
+        curve_scale = pathogen_curve_scale()
       )
     })
 

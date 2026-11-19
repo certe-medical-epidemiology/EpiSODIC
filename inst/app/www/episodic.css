@@ -1340,6 +1340,15 @@ dl.episodic-settings dd { margin: 0; }
   margin-bottom: 0;
   white-space: nowrap;
 }
+/* The curve's y axis switch: at the end of the line, above the chart. */
+.episodic-curve-scale {
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.episodic-curve-scale .episodic-picker-btn {
+  font-size: 0.846rem;
+  padding: 4px 10px;
+}
 .episodic-select,
 .episodic-date-input {
   font-family: var(--episodic-font);

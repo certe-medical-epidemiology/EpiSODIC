@@ -34,6 +34,7 @@
 - The validation summary gives false alarms per week watched, false alarms per stream-week by first detector, and Farrington's tests, nominal false alarms and detections per run
 - Every run counts the days since new cases of the instance's own last arrived, and warns in its log past `stale_data.max_days_without_new_cases` (default 2)
 - The `stale_data` notification trigger sends that warning through the configured channels on every run while the feed stays stale, and the Settings screen can switch it on
+- The Pathogen screen's weekly curve switches between a linear and a logarithmic, log(1 + n), y axis
 
 ## Changed
 
@@ -49,6 +50,8 @@
 - The vignettes "Detection and reconciliation", "Measuring detection against known truth", "Tuning detection" and "Overview" document denominators, the limits of synthetic validation, and the selection bias in PPV from verdicts
 - The README no longer claims that set-up takes minutes or that the software is perfectly safe
 - The pkgdown site no longer publishes CLAUDE.md, and is always built from a clean directory
+- SARS-CoV-2 ships with `mem_mode` `yes`, since its several waves a year keep it below the automatic seasonality test
+- The Activity screen names the account a detection run ran as beside the host it ran on
 
 ## Fixed
 

@@ -770,7 +770,21 @@ episodic_app_activity_log <- function(con,
         function(s) episodic_tr(paste0("activity.action_run_", s), lang = lang),
         character(1)
       ),
-      target = runs$host,
+      # Who ran it as well as where: a host shared by several accounts
+      # (a server's cron user beside an operator's own run from a
+      # script) names no one on its own.
+      target = vapply(
+        seq_len(nrow(runs)),
+        function(i) {
+          episodic_tr(
+            "activity.target_run",
+            account = runs$account[i],
+            host = runs$host[i],
+            lang = lang
+          )
+        },
+        character(1)
+      ),
       target_cluster_id = NA_integer_,
       target_scale = NA_character_,
       detail = vapply(

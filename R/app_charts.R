@@ -81,6 +81,44 @@ episodic_chart_count_breaks <- function(limits) {
   breaks[abs(breaks - round(breaks)) < 1e-9]
 }
 
+#' The y axes a weekly curve can be drawn on
+#' @keywords internal
+#' @noRd
+episodic_chart_y_scales <- c("linear", "log")
+
+#' Whole-number breaks for a logarithmic axis of counts
+#'
+#' The 1-2-5 steps of each decade from 0 up to the top of the axis, so a
+#' log axis is labelled with counts a reader can name rather than with
+#' the powers of e or 10 a log scale would otherwise pick. Zero is kept:
+#' the axis is `log(1 + n)`, on which a week with no cases sits at the
+#' baseline. Past eight labels only 0 and the powers of ten remain, so a
+#' tall axis is not crowded.
+#'
+#' @param limits The axis limits, as passed by `ggplot2` (on the count
+#'   scale, not the transformed one).
+#' @return A numeric vector of whole-number breaks, possibly empty.
+#' @keywords internal
+#' @noRd
+episodic_chart_log_count_breaks <- function(limits) {
+  limits <- limits[is.finite(limits)]
+  if (length(limits) < 2) {
+    return(numeric(0))
+  }
+  low <- max(min(limits), 0)
+  top <- max(limits)
+  if (top < 1) {
+    return(if (low <= 0) 0 else numeric(0))
+  }
+  decades <- 10^(0:ceiling(log10(top)))
+  candidates <- sort(unique(c(0, as.vector(outer(c(1, 2, 5), decades)))))
+  breaks <- candidates[candidates >= low & candidates <= top]
+  if (length(breaks) > 8) {
+    breaks <- breaks[breaks == 0 | abs(log10(breaks) - round(log10(breaks))) < 1e-9]
+  }
+  breaks
+}
+
 #' The shared chart theme
 #'
 #' Axis labels are set in the muted grey the rest of the interface uses
@@ -1170,6 +1208,11 @@ episodic_ui_denominator_chart <- function(series,
 #'   (`episodic_cluster_forecast_week`'s `target_date` (`Date`), `q05`,
 #'   `q50` and `q95`), each as a line over its 90% interval and a point
 #'   at its median, with a key.
+#' @param y_scale `"linear"` (the default) or `"log"`: a `log(1 + n)` y
+#'   axis, on which a week with no cases stays at the baseline instead
+#'   of falling off the chart, labelled in counts by
+#'   `episodic_chart_log_count_breaks()`. The bars, bands and threshold
+#'   lines are the same counts either way; only the axis changes.
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
@@ -1177,9 +1220,22 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
                                              thresholds = NULL,
                                              lang = Sys.getenv("EPISODIC_LANGUAGE"),
                                              accent = NULL,
-                                             outlook = NULL) {
+                                             outlook = NULL,
+                                             y_scale = "linear") {
   pal <- episodic_palette()
   accent <- accent %||% pal$primary
+  if (
+    !is.character(y_scale) ||
+      length(y_scale) != 1 ||
+      !y_scale %in% episodic_chart_y_scales
+  ) {
+    stop(
+      "`y_scale` must be one of ",
+      paste0("\"", episodic_chart_y_scales, "\"", collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
   # Named rather than assumed. Without the column, `weekly$incomplete`
   # is NULL, `NULL %in% TRUE` is `logical(0)`, and the assignment below
   # fails with "replacement has 0 rows" - an arithmetic complaint about
@@ -1240,6 +1296,22 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
   }
   typical <- episodic_chart_typical_layers(weekly, x = "week_start", lang = lang)
   outlook_layers <- episodic_chart_outlook_layers(outlook, lang = lang)
+  # log1p rather than log10: a week with no cases is a count of zero,
+  # which a plain log axis cannot place and would drop from the chart.
+  y_axis <- if (identical(y_scale, "log")) {
+    ggplot2::scale_y_continuous(
+      transform = "log1p",
+      breaks = episodic_chart_log_count_breaks,
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    )
+  } else {
+    ggplot2::scale_y_continuous(
+      breaks = episodic_chart_count_breaks,
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    )
+  }
   p <- p +
     typical +
     ggplot2::geom_col(
@@ -1251,11 +1323,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
     ggplot2::scale_alpha_identity() +
     episodic_chart_nowcast_layers(weekly, x = "week_start") +
     outlook_layers +
-    ggplot2::scale_y_continuous(
-      breaks = episodic_chart_count_breaks,
-      labels = episodic_chart_number_labels(lang),
-      expand = episodic_chart_y_expand()
-    ) +
+    y_axis +
     episodic_chart_week_scale(
       c(weekly$week_start, if (!is.null(outlook)) as.Date(outlook$target_date)),
       lang = lang
