@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">EpiSODIC</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.25.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.26.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -152,15 +152,22 @@ detection for your catchment</strong></a> for the column reference.</td>
 <td>
 <code><a href="../reference/episodic_palette.html">episodic_palette()</a></code> (<code>palette_config_path</code>
 argument)</td>
-<td>Path to an instance override of the UI colour palette (including the
-five <code>severity_*</code> roles that colour verdicts and MEM
-intensity bands alike) and typography (<code>font</code>,
-<code>font_size_base</code>), overlaid key-by-key on the shipped <a href="https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml" class="external-link"><code>inst/config/episodic_default_style.yaml</code></a>.
-The same palette styles the outbreak reports and the emails EpiSODIC
-sends. Each value is checked: a colour must be a quoted hex colour,
+<td>Path to an instance override of the UI colour palette and
+typography, overlaid key-by-key on the shipped <a href="https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_default_style.yaml" class="external-link"><code>inst/config/episodic_default_style.yaml</code></a>;
+<a href="https://github.com/msberends/EpiSODIC/blob/main/inst/config/episodic_style_template.yaml" class="external-link"><code>inst/config/episodic_style_template.yaml</code></a>
+is a complete file to start from. The file is layered:
+<code>swatches</code> (an organisation’s own colours, named),
+<code>neutral</code>, <code>brand</code>, <code>status</code>,
+<code>severity</code> (the scale that colours verdicts and MEM intensity
+bands alike) and <code>components</code> (what each meaningful thing on
+screen is drawn in), each colour a hex value or the name of one defined
+above it. Text stays readable whatever the colours: a colour written as
+text is darkened to 4.5:1 against its background. The same palette
+styles the outbreak reports and the emails EpiSODIC sends. Each value is
+checked: a colour must be a quoted hex colour or a name that names one,
 <code>font</code> a CSS font-family stack and
 <code>font_size_base</code> a CSS length. A value that fails keeps the
-shipped value for that role only, and a path that does not exist or a
+shipped value for that key only, and a path that does not exist or a
 file that is not valid YAML keeps the whole shipped palette - neither
 stops the dashboard, a report or an email, and both are shown on the
 Info screen, written to every run’s log and raised once as a warning.

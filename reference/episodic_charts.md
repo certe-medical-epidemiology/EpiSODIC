@@ -53,10 +53,10 @@ episodic_ui_rt_chart(rt, lang = Sys.getenv("EPISODIC_LANGUAGE"), accent = NULL)
 
 - accent:
 
-  Fill colour for the bars. Defaults to the palette's `primary`, which
-  every chart in the dashboard uses for its main series; the status
-  colours are kept for marks that mean something (thresholds,
-  positivity).
+  Fill colour for the bars. Defaults to the palette's `chart_bars`
+  component, which every chart in the dashboard uses for its main
+  series; the status colours are kept for marks that mean something
+  (thresholds, positivity).
 
 - trend:
 

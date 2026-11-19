@@ -15,12 +15,12 @@ Source:
 
 Berends MS, Homburg TM (2026). *EpiSODIC: Epidemiological Signal
 Observation, Detection, Identification, and Classification*. R package
-version 0.25.0, <https://msberends.github.io/EpiSODIC>.
+version 0.26.0, <https://msberends.github.io/EpiSODIC>.
 
     @Manual{,
       title = {EpiSODIC: Epidemiological Signal Observation, Detection, Identification, and Classification},
       author = {Matthijs S. Berends and T. Maarten Homburg},
       year = {2026},
-      note = {R package version 0.25.0},
+      note = {R package version 0.26.0},
       url = {https://msberends.github.io/EpiSODIC},
     }
