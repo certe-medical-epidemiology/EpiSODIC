@@ -1,0 +1,170 @@
+# ===================================================================== #
+#  This open-source project is publicly available at:                   #
+#  https://github.com/msberends/EpiSODIC                                #
+#                                                                       #
+#  Licensed as GPL-v2.0.                                                #
+#                                                                       #
+#  Developed at the University Medical Center Groningen, and non-profit #
+#  organisation Certe Medical Diagnostics & Advice, in the Netherlands. #
+#                                                                       #
+#  This R package is free software; you can freely use and distribute   #
+#  it for both personal and commercial purposes under the terms of the  #
+#  GNU General Public License version 2.0 (GNU GPL-2), as published by  #
+#  the Free Software Foundation.                                        #
+#                                                                       #
+#  We created this package for both routine data analysis and academic  #
+#  research and it was publicly released in the hope that it will be    #
+#  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
+# ===================================================================== #
+
+# EpiSODIC palette template.
+#
+# A complete palette file to copy, edit and point EPISODIC_STYLE at. It
+# holds every key EpiSODIC reads, set to the shipped default, so a copy
+# left unedited changes nothing. Keys you have no reason to change can
+# be deleted: anything absent keeps its shipped default, and a later
+# version's new defaults then reach you too.
+#
+# How to fill it in:
+#
+#   1. Enter your organisation's colours once, under `swatches`, with
+#      names of your own.
+#   2. Point the roles at them: `brand` (identity), `status` (success,
+#      warning, danger) and, if you like, `neutral` and `severity`.
+#   3. Only where a particular thing should differ from the role it
+#      follows, change it under `components`.
+#
+# Write colours as quoted hex values ("#4A647D": a bare # starts a YAML
+# comment) or as names. Never darken a colour for legibility yourself:
+# text in any colour is made readable automatically, so choose each one
+# for what it should look like.
+#
+# Whatever cannot be used is named on the Info screen (Reference data,
+# EPISODIC_STYLE) and in every detection run's log, and keeps its
+# shipped value; the dashboard always starts.
+
+
+# -- Typography -------------------------------------------------------
+#
+# font: a CSS font-family stack (quote any name containing a space).
+# font_size_base: the base size every other size in the app scales from
+# (all of them are in rem), so a font that reads smaller or larger than
+# IBM Plex Sans at the same pixel size is compensated for here.
+typography:
+  font: '"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif'
+  font_size_base: "13px"
+
+
+# -- Swatches ---------------------------------------------------------
+#
+# Your own colours, under names of your choosing (lower case, digits and
+# underscores, starting with a letter, and not the name of a role
+# below). Swatches are hex values only; nothing refers to them until a
+# role or component below names them. The shipped palette needs none.
+swatches: {}
+
+
+# -- Neutrals ---------------------------------------------------------
+#
+# A true grey scale, independent of the brand hue, so body text is never
+# tinted by it. These are used as set: ink and muted are text, and a
+# value that does not reach 4.5:1 against surface and bg is reported on
+# the Info screen.
+neutral:
+  ink: "#222222"         # body text
+  muted: "#495057"       # secondary text, axis labels, anything not yet judged
+  faint: "#ADB5BD"       # hairlines, placeholders and reference lines; never text to be read
+  border: "#DEE2E6"      # panel and table borders
+  bg_subtle: "#EBEBEB"   # table headers, empty map areas
+  bg: "#F8F9FA"          # the page behind the panels
+  surface: "#FFFFFF"     # panels, cards, charts
+
+
+# -- Brand ------------------------------------------------------------
+#
+# These defaults are Bootswatch "Yeti" (light), the theme the pkgdown
+# site is built with, so the app and its documentation look alike.
+brand:
+  primary: "#008CBA"         # buttons, links, selection, focus, the bars of the curves
+  primary_strong: "#005F7A"  # the navigation bar, headings, nowcast marks
+  primary_soft: "#66BAD6"    # a lighter primary, for the 'new' state
+  primary_tint: "#D9EDF5"    # the wash behind a selected row
+  secondary: "#333333"       # a second identity colour, for the components that name it
+  tertiary: "#20C997"        # a third, likewise
+
+
+# -- Status -----------------------------------------------------------
+#
+# Feedback: whether something worked, needs a look, or failed. Kept for
+# status alone, apart from the brand.
+status:
+  success: "#43AC6A"
+  warning: "#F8AC59"
+  danger: "#F36A5A"
+
+
+# -- Severity ---------------------------------------------------------
+#
+# One ordinal scale, read wherever EpiSODIC grades how serious something
+# is: an epidemiologist's verdict on a cluster and MEM's intensity band
+# alike, so a colour is the same step on every screen, report and email.
+# Each step must read as more severe than the one before it at a glance.
+# The defaults are Yeti's $gray-500, $success, $warning, $danger and
+# $gray-900.
+severity:
+  baseline: "#ADB5BD"
+  low: "#43AC6A"
+  medium: "#E99002"
+  high: "#F04124"
+  very_high: "#222222"
+
+
+# -- Components -------------------------------------------------------
+#
+# What each thing that carries a meaning is drawn in. Usually a name
+# from above, so it follows the palette; a hex value pins it.
+components:
+  header:
+    navbar: primary_strong            # the bar along the top
+    brand_accent: secondary           # the accented part of the name in it
+    brand_bar: [warning, success, danger, primary, secondary]  # the stripe under it, left to right
+  # The state of an outbreak or epidemic, on its chip and its dot.
+  state:
+    new: primary_soft
+    assessing: primary
+    monitoring: danger
+    closed: success
+    reassess: tertiary
+  # The care line a stream belongs to, on the rail's chip. Each line also
+  # differs in form (filled, tinted, outlined, dashed), so two close
+  # colours still tell apart.
+  care_line:
+    first: primary
+    second: tertiary
+    third: secondary
+    other: muted
+  # The outlined chips in the header of an outbreak or epidemic.
+  chip:
+    level: primary                    # its care line, level and place
+    season: secondary                 # the season an epidemic belongs to
+    during_epidemic: secondary        # an epidemic an outbreak ran during
+    linked_cluster: danger            # another outbreak or epidemic sharing these cases
+    flag: tertiary                    # added by hand, or changed since assessed
+    mute_reason: secondary            # the reasons for muting a stream
+  # The direction of a count compared with the period before.
+  trend:
+    rising: danger
+    falling: success
+    steady: muted
+  chart:
+    bars: primary                     # case counts
+    observed: ink                     # an observed line against an expected one
+    nowcast: primary_strong           # the expected final count of weeks still being reported
+    outlook: secondary                # the forecast weeks ahead
+    mem_start: secondary              # MEM's epidemic start threshold
+    mem_end: tertiary                 # MEM's epidemic end threshold
+    positivity: danger                # test positivity
+    current_period: primary           # the period being read, among earlier ones
+    earlier_periods: muted            # earlier periods, fading with age
+    male: primary                     # the age pyramid
+    female: secondary
