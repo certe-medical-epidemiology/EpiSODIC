@@ -17,90 +17,164 @@
 #  useful, but it comes WITHOUT ANY WARRANTY OR LIABILITY.              #
 # ===================================================================== #
 
-# EpiSODIC's shipped default UI palette.
+# EpiSODIC's shipped default palette and typography.
 #
-# Deliberately a separate file from episodic_default_config.yaml: this is a display-only
-# concern (the app's colours), not part of detection configuration, so it
-# must never affect episodic_config_hash()/config_snapshot - that
-# reproducibility guarantee is about detection results, not colour
-# swatches. Resolved the same way: this file's values are the defaults,
-# an operator overrides them by pointing EPISODIC_STYLE at their
-# own YAML with only the keys they want to change - any organisation runs
-# EpiSODIC in its own house colours this way, without EpiSODIC ever
-# shipping (or depending on) any specific organisation's house-style
-# package.
-
-
-
-# Typography: a CSS font-family stack (quote any name containing a space)
-# and the base font size the rest of the app scales from. Every font-size
-# in inst/app/www/episodic.css is expressed in rem, so font_size_base is
-# the single dial for the whole app's type scale - an instance that
-# swaps in a font reading naturally smaller or larger than IBM Plex Sans
-# at the same pixel size can compensate here without touching CSS. Keys
-# are named to match the CSS custom properties they become (`font` ->
-# `--episodic-font`, `font_size_base` -> `--episodic-font-size-base`),
-# same as every colour role above.
-font: '"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif'
-font_size_base: "13px"
-
-
-# Colours: rhese defaults match the Bootswatch "Yeti" theme (light variant),
-# the same theme the pkgdown site (_pkgdown.yml) is built with, so the Shiny
-# app and the documentation site share one visual identity out of the
-# box.
+# Display only: the colours and font of the dashboard, the reports and
+# the emails. Deliberately a file of its own, apart from
+# episodic_default_config.yaml, so it never enters config_hash: how a
+# result looks has no bearing on how it was computed.
 #
-# Neutrals: text, borders and backgrounds are their own true grey scale,
-# independent of whichever hue is "primary", so body text is never
-# tinted by the brand colour. Deriving "ink" from the primary hue's own
-# dark step passes for a muted blue-grey and renders every letter of
-# body text in the brand colour the moment primary is saturated.
-ink: "#222222"
-muted: "#495057"
-faint: "#ADB5BD"
-border: "#DEE2E6"
-bg_subtle: "#EBEBEB"
-bg: "#F8F9FA"
-surface: "#FFFFFF"
+# An instance overrides it by pointing EPISODIC_STYLE at a YAML file
+# with only the keys it wants to change; everything else keeps the value
+# below. inst/config/episodic_style_template.yaml is a complete copy to
+# start from.
+#
+# The file is layered, from what a colour is to what it is used for:
+#
+#   swatches    an organisation's own colours, under names of its choosing
+#   neutral     text, lines and backgrounds
+#   brand       the identity colours
+#   status      success, warning, danger
+#   severity    the one ordinal scale for verdicts and MEM intensity
+#   components  every place on screen where a colour carries a meaning,
+#               each naming the colour it is drawn in
+#
+# Any colour may be written as a hex value in quotes ("#4A647D"; a bare
+# # starts a YAML comment) or as the name of a colour defined above it:
+# a swatch ("certe_blue"), a neutral, brand or status role ("primary",
+# "muted", "danger"), or a severity step ("severity.high"). So a house
+# palette is entered once, as swatches, and every role and component
+# follows it.
+#
+# Text is always readable, whatever the colours. Nothing here sets a
+# text colour: where a colour is written as text, EpiSODIC darkens it
+# just enough to reach a contrast of 4.5:1 (WCAG AA) against the
+# background it sits on, keeping its hue, and writes text on a filled
+# colour in ink, white or black, whichever reads. Chart lines and marks
+# are lifted the same way to 3:1 against the chart's background.
 
-# Brand / semantic roles: Yeti's own primary, secondary and status
-# colours, each paired with a darkened step for hover/emphasis states
-# that this codebase's components expect but Yeti itself does not name.
-primary: "#008CBA"
-primary_dark: "#005F7A"
-primary_light: "#66BAD6"
-primary_tint: "#D9EDF5"
 
-secondary: "#333333"
-secondary_dark: "#1A1A1A"
+# -- Typography -------------------------------------------------------
+#
+# font: a CSS font-family stack (quote any name containing a space).
+# font_size_base: the base size every other size in the app scales from
+# (all of them are in rem), so a font that reads smaller or larger than
+# IBM Plex Sans at the same pixel size is compensated for here.
+typography:
+  font: '"IBM Plex Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif'
+  font_size_base: "13px"
 
-tertiary: "#20C997"
-tertiary_dark: "#168D6A"
 
-success: "#43AC6A"
-success_dark: "#2F784A"
+# -- Swatches ---------------------------------------------------------
+#
+# Your own colours, under names of your choosing (lower case, digits and
+# underscores, starting with a letter, and not the name of a role
+# below). Swatches are hex values only; nothing refers to them until a
+# role or component below names them. The shipped palette needs none.
+swatches: {}
 
-warning: "#F8AC59"
-warning_dark: "#AE783E"
 
-danger: "#F36A5A"
-danger_dark: "#AA4A3F"
+# -- Neutrals ---------------------------------------------------------
+#
+# A true grey scale, independent of the brand hue, so body text is never
+# tinted by it. These are used as set: ink and muted are text, and a
+# value that does not reach 4.5:1 against surface and bg is reported on
+# the Info screen.
+neutral:
+  ink: "#222222"         # body text
+  muted: "#495057"       # secondary text, axis labels, anything not yet judged
+  faint: "#ADB5BD"       # hairlines, placeholders and reference lines; never text to be read
+  border: "#DEE2E6"      # panel and table borders
+  bg_subtle: "#EBEBEB"   # table headers, empty map areas
+  bg: "#F8F9FA"          # the page behind the panels
+  surface: "#FFFFFF"     # panels, cards, charts
 
-# Severity: one ordinal scale, read wherever EpiSODIC grades how serious
-# something is - an epidemiologist's verdict on a cluster and MEM's
-# intensity band for an epidemic alike - so a colour means the same step
-# on the same scale on every screen, in every report and in every email.
-# Kept apart from the semantic roles above, which also colour buttons,
-# form states and trends: an instance can recolour the severity scale
-# without recolouring those, and the other way round. Each step must read
-# as more severe than the one before it at a glance. The defaults are
-# Bootswatch Yeti's own: $gray-500, $success, $warning, $danger and
-# $gray-900; from medium up each is darker than the last, while Yeti's
-# green and amber are close in lightness and differ by hue. Text on a severity colour is ink, white or black, whichever
-# reads (the rule of Bootstrap's own color-contrast()), so any colour set
-# here stays readable.
-severity_baseline: "#ADB5BD"
-severity_low: "#43AC6A"
-severity_medium: "#E99002"
-severity_high: "#F04124"
-severity_very_high: "#222222"
+
+# -- Brand ------------------------------------------------------------
+#
+# These defaults are Bootswatch "Yeti" (light), the theme the pkgdown
+# site is built with, so the app and its documentation look alike.
+brand:
+  primary: "#008CBA"         # buttons, links, selection, focus, the bars of the curves
+  primary_strong: "#005F7A"  # the navigation bar, headings, nowcast marks
+  primary_soft: "#66BAD6"    # a lighter primary, for the 'new' state
+  primary_tint: "#D9EDF5"    # the wash behind a selected row
+  secondary: "#333333"       # a second identity colour, for the components that name it
+  tertiary: "#20C997"        # a third, likewise
+
+
+# -- Status -----------------------------------------------------------
+#
+# Feedback: whether something worked, needs a look, or failed. Kept for
+# status alone, apart from the brand.
+status:
+  success: "#43AC6A"
+  warning: "#F8AC59"
+  danger: "#F36A5A"
+
+
+# -- Severity ---------------------------------------------------------
+#
+# One ordinal scale, read wherever EpiSODIC grades how serious something
+# is: an epidemiologist's verdict on a cluster and MEM's intensity band
+# alike, so a colour is the same step on every screen, report and email.
+# Each step must read as more severe than the one before it at a glance.
+# The defaults are Yeti's $gray-500, $success, $warning, $danger and
+# $gray-900.
+severity:
+  baseline: "#ADB5BD"
+  low: "#43AC6A"
+  medium: "#E99002"
+  high: "#F04124"
+  very_high: "#222222"
+
+
+# -- Components -------------------------------------------------------
+#
+# What each thing that carries a meaning is drawn in. Usually a name
+# from above, so it follows the palette; a hex value pins it.
+components:
+  header:
+    navbar: primary_strong            # the bar along the top
+    brand_accent: secondary           # the accented part of the name in it
+    brand_bar: [warning, success, danger, primary, secondary]  # the stripe under it, left to right
+  # The state of an outbreak or epidemic, on its chip and its dot.
+  state:
+    new: primary_soft
+    assessing: primary
+    monitoring: danger
+    closed: success
+    reassess: tertiary
+  # The care line a stream belongs to, on the rail's chip. Each line also
+  # differs in form (filled, tinted, outlined, dashed), so two close
+  # colours still tell apart.
+  care_line:
+    first: primary
+    second: tertiary
+    third: secondary
+    other: muted
+  # The outlined chips in the header of an outbreak or epidemic.
+  chip:
+    level: primary                    # its care line, level and place
+    season: secondary                 # the season an epidemic belongs to
+    during_epidemic: secondary        # an epidemic an outbreak ran during
+    linked_cluster: danger            # another outbreak or epidemic sharing these cases
+    flag: tertiary                    # added by hand, or changed since assessed
+    mute_reason: secondary            # the reasons for muting a stream
+  # The direction of a count compared with the period before.
+  trend:
+    rising: danger
+    falling: success
+    steady: muted
+  chart:
+    bars: primary                     # case counts
+    observed: ink                     # an observed line against an expected one
+    nowcast: primary_strong           # the expected final count of weeks still being reported
+    outlook: secondary                # the forecast weeks ahead
+    mem_start: secondary              # MEM's epidemic start threshold
+    mem_end: tertiary                 # MEM's epidemic end threshold
+    positivity: danger                # test positivity
+    current_period: primary           # the period being read, among earlier ones
+    earlier_periods: muted            # earlier periods, fading with age
+    male: primary                     # the age pyramid
+    female: secondary

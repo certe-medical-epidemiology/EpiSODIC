@@ -325,7 +325,7 @@ episodic_ui_settings_access_panel <- function(config,
             if (required) "settings.access.closed" else "settings.access.open",
             lang = lang
           ),
-          if (required) pal$success_dark else pal$muted,
+          if (required) pal$success else pal$muted,
           filled = TRUE
         )
       )

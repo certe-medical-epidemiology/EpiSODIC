@@ -39,8 +39,8 @@ one (\code{"en-US"}, \code{"es-419"}). Defaults to the
 that is unset.}
 
 \item{accent}{Fill colour for the bars. Defaults to the palette's
-\code{primary}, which every chart in the dashboard uses for its main
-series; the status colours are kept for marks that mean something
+\code{chart_bars} component, which every chart in the dashboard uses for
+its main series; the status colours are kept for marks that mean something
 (thresholds, positivity).}
 
 \item{trend}{A data frame with one row per week: \code{week_start} (\code{Date}),

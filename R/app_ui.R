@@ -152,7 +152,7 @@ episodic_app_ui <- function(lang = Sys.getenv("EPISODIC_LANGUAGE")) {
       # Tints the browser's own chrome (Safari's toolbar, Android
       # Chrome's) to the header's colour, so it reads as part of the app
       # rather than a white bar Safari drew on top of it.
-      shiny::tags$meta(name = "theme-color", content = pal$primary_dark),
+      shiny::tags$meta(name = "theme-color", content = pal$header_navbar),
       # Only fetched when the resolved palette still uses the shipped
       # default font - the moment an instance overrides `font` in its
       # EPISODIC_STYLE, this Google Fonts request for a face
@@ -441,6 +441,9 @@ episodic_app_palette_css <- function(pal) {
   # (episodic_palette()'s own list names, e.g. "primary_tint", follow R's
   # convention instead); translated here so the stylesheet's var(--episodic-
   # primary-tint) references match what actually gets defined.
+  # One value per property: the brand bar is a sequence, drawn by
+  # `episodic_app_ui()` itself, and has no CSS form.
+  pal <- pal[vapply(pal, function(v) length(v) == 1, logical(1))]
   css_names <- gsub("_", "-", names(pal), fixed = TRUE)
   vars <- vapply(
     seq_along(pal),

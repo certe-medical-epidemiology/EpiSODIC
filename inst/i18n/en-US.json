@@ -4,7 +4,8 @@
   "date.format.range_year": "{month_from} {day_from} - {month_to} {day_to}, {year}",
   "date.format.single": "{month} {day}, {year}",
   "info.about.license": "License: {license}",
-  "info.reference.style.invalid_colour": "`{role}` is set to \"{value}\", which is not a hex color (#RGB, #RRGGBB or #RRGGBBAA, in quotes: a bare # starts a YAML comment), so the shipped {default} is used instead.",
+  "info.reference.style.invalid_colour": "`{role}` is set to \"{value}\", which is neither a hex color (#RGB, #RRGGBB or #RRGGBBAA, in quotes: a bare # starts a YAML comment) nor the name of a color, so the shipped {default} is used instead.",
+  "info.reference.style.retired_key": "`{role}` is ignored: this color is now derived from its base color, so that text in it is always readable, and has no place in the file.",
   "interpretation.fragment.demography.shifted": "The age distribution has shifted toward the {dominant_band} group, against a baseline of {baseline_band}.",
   "misc.language.en": "British English"
 }

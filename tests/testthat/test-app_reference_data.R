@@ -260,16 +260,16 @@ test_that("the reference-data screen names the language rather than printing its
 test_that("a palette with a rejected value reads as a problem, naming the value and what stands in", {
   override_path <- tempfile(fileext = ".yaml")
   on.exit(unlink(override_path))
-  yaml::write_yaml(list(primary = "blue", secondary = "#123456"), override_path)
+  yaml::write_yaml(list(brand = list(primary = "blue-ish", secondary = "#123456")), override_path)
   withr::local_envvar(EPISODIC_STYLE = override_path)
 
   row <- suppressWarnings(episodic_app_reference_style(lang = "en"))
   expect_equal(row$status, "problem")
-  expect_match(row$detail, "`primary` is set to \"blue\"", fixed = TRUE)
+  expect_match(row$detail, "`brand.primary` is set to \"blue-ish\"", fixed = TRUE)
   expect_match(row$detail, episodic_palette_shipped()$primary, fixed = TRUE)
   expect_equal(row$path, override_path)
 
-  yaml::write_yaml(list(secondary = "#123456"), override_path)
+  yaml::write_yaml(list(brand = list(secondary = "#123456")), override_path)
   fine_path <- tempfile(fileext = ".yaml")
   on.exit(unlink(fine_path), add = TRUE)
   file.copy(override_path, fine_path)

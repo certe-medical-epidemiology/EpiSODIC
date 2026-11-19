@@ -375,6 +375,30 @@ test_that("each care-line chip differs from the others in form, whatever the pal
   expect_match(html[["other"]], "overig", fixed = TRUE)
 })
 
+test_that("each care-line chip's text reads on the background it sits on, however pale the colour", {
+  path <- tempfile(fileext = ".yaml")
+  on.exit(unlink(path))
+  yaml::write_yaml(
+    list(components = list(care_line = list(
+      first = "#CEB9D6",
+      second = "#93984C",
+      third = "#D4C230",
+      other = "#E0E0E0"
+    ))),
+    path
+  )
+  withr::local_envvar(EPISODIC_STYLE = path)
+  pal <- episodic_palette()
+  for (line in c("first", "second", "third", "other")) {
+    style <- episodic_ui_care_line_style(line)
+    background <- style$background %||% pal$surface
+    expect_gte(episodic_colour_contrast(style$text_colour, background), 4.5)
+  }
+  # The tint is the colour itself over the panel, not a second colour.
+  tinted <- episodic_ui_care_line_style("second")
+  expect_equal(tinted$background, episodic_colour_mix(pal$surface, "#93984C", 0.2))
+})
+
 test_that("breakdown bars take the app's accent unless a caller names one", {
   rows <- data.frame(label = c("9711", "9712"), n = c(3L, 1L))
   plain <- as.character(episodic_ui_bars(rows, lang = "en"))
@@ -405,7 +429,7 @@ test_that("one accent colours every screen, and no screen is tinted", {
   ))
 })
 
-test_that("charts draw their main series in primary, with no screen's colour", {
+test_that("charts draw their main series in chart_bars, with no screen's colour", {
   pal <- episodic_palette()
   curve <- data.frame(
     sample_date = as.Date("2025-01-01") + 0:2,
@@ -413,7 +437,7 @@ test_that("charts draw their main series in primary, with no screen's colour", {
     incomplete = FALSE
   )
   p <- episodic_ui_epi_curve_chart(curve, lang = "en")
-  expect_equal(unique(ggplot2::layer_data(p, 1)$fill), pal$primary)
+  expect_equal(unique(ggplot2::layer_data(p, 1)$fill), pal$chart_bars)
   expect_false(exists("episodic_nav_accent", envir = asNamespace("EpiSODIC")))
 })
 

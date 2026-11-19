@@ -102,6 +102,8 @@ Validation (`episodic_config_validate()`) checks against shipped defaults: unkno
 
 The same palette styles everything: dashboard, reports, emails. A colour written literally into an email or report is a bug. Emails are styled inline from `episodic_mail_style()`.
 
+The palette file is layered (`swatches`, `neutral`, `brand`, `status`, `severity`, `components`), and a colour may name another. Code reads what a thing *is*: a new place where a colour carries a meaning gets its own `components` key (read as `pal$<group>_<key>`), never a borrowed `pal$secondary`. Text colours are never configured: write a colour as text through `episodic_ui_text_in()` or a `*_text` variant, and text on a fill through `episodic_ui_text_on()` or a `*_on` variant.
+
 Pathogen-specific parameters live in `inst/config/episodic_default_pathogen_config.csv`. An operator's CSV (`EPISODIC_PATHOGEN_CONFIG`) overlays row-by-row: non-NA values override, unlisted pathogens keep shipped defaults.
 
 ### Internationalisation

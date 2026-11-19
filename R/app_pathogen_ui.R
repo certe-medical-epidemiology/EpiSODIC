@@ -123,9 +123,10 @@ episodic_ui_pathogen_controls <- function(screen,
       },
       style = if (active) {
         sprintf(
-          "background:%s;border-color:%s;color:#fff;",
+          "background:%s;border-color:%s;color:%s;",
           pal$primary,
-          pal$primary
+          pal$primary,
+          pal$primary_on
         )
       } else {
         ""
@@ -278,11 +279,11 @@ episodic_ui_pathogen_stats <- function(screen,
           lang = lang
         ),
         colour = if (!is.na(s$change_pct) && s$change_pct > 0) {
-          pal$danger
+          pal$trend_rising
         } else if (!is.na(s$change_pct) && s$change_pct < 0) {
-          pal$success
+          pal$trend_falling
         } else {
-          pal$muted
+          pal$trend_steady
         }
       ))
     )
@@ -522,7 +523,7 @@ episodic_ui_curve_scale_picker <- function(y_scale,
           "background:%s;border-color:%s;color:%s;",
           pal$primary,
           pal$primary,
-          episodic_ui_text_on(pal$primary)
+          pal$primary_on
         )
       } else {
         ""

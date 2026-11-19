@@ -22,12 +22,11 @@ doc_vect <- function(x) {
 }
 
 doc_palette <- function() {
-  vals <- readLines(system.file("config", "episodic_default_style.yaml", package = "EpiSODIC"))
-  vals <- vals[grepl(": ", vals) & !grepl("^#", vals)]
-  vals_split <- strsplit(vals, ":")
-  keys <- format(paste0(vapply(FUN.VALUE = character(1), vals_split, function(x) x[1]), ":"))
-  values <- vapply(FUN.VALUE = character(1), vals_split, function(x) x[2])
-  paste0("```yaml\n", paste0(paste(keys, values), collapse = "\n"), "\n```")
+  lines <- readLines(system.file("config", "episodic_default_style.yaml", package = "EpiSODIC"))
+  # From the file's own description on: the licence banner above it is
+  # not part of what an operator copies.
+  start <- grep("^# EpiSODIC's shipped default palette", lines)[1]
+  paste0("```yaml\n", paste(lines[start:length(lines)], collapse = "\n"), "\n```")
 }
 
 #' How many foreign keys the schema declares
