@@ -100,7 +100,11 @@ test_that("the pathogen curve draws on a log(1 + n) axis when asked, in whole co
   log <- episodic_ui_pathogen_curve_chart(weekly, lang = "en", y_scale = "log")
 
   expect_identical(y_scale(linear)$get_transformation()$name, "identity")
-  expect_identical(y_scale(log)$get_transformation()$name, "log-1p")
+  # Checked by what it does, not by its name, which differs between
+  # versions of `scales`: zero stays at zero and e - 1 maps to 1.
+  transformation <- y_scale(log)$get_transformation()
+  expect_equal(transformation$transform(c(0, exp(1) - 1)), c(0, 1))
+  expect_equal(transformation$inverse(c(0, 1)), c(0, exp(1) - 1))
 
   # The axis is labelled in counts, every one a whole number of cases.
   breaks <- y_scale(log)$get_breaks()
