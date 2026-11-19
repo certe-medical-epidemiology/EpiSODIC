@@ -57,11 +57,11 @@ episodic_reference_statuses <- c(
 episodic_reference_status_colour <- function(status) {
   pal <- episodic_palette()
   switch(status,
-    in_use = pal$success_dark,
+    in_use = pal$success,
     default = pal$muted,
     unset = pal$muted,
     problem = pal$danger,
-    unavailable = pal$warning_dark,
+    unavailable = pal$warning,
     pal$muted
   )
 }

@@ -167,7 +167,7 @@ episodic_ui_dossier_header <- function(obj,
       ),
       episodic_ui_chip(
         episodic_app_level_label(obj$level, obj$care_line, lang = lang),
-        pal$primary
+        pal$chip_level
       ),
       episodic_ui_chip(
         episodic_tr(paste0("state.", state), lang = lang),
@@ -180,13 +180,13 @@ episodic_ui_dossier_header <- function(obj,
       if (identical(obj$origin, "manual")) {
         episodic_ui_chip(
           episodic_tr("dossier.manual_badge", lang = lang),
-          pal$tertiary_dark
+          pal$chip_flag
         )
       },
       if (isTRUE(obj$changed_since_assessment)) {
         episodic_ui_chip(
           episodic_tr("dossier.changed_badge", lang = lang),
-          pal$tertiary_dark
+          pal$chip_flag
         )
       },
       # The epidemic this outbreak ran during, where there is one. It
@@ -1200,11 +1200,10 @@ episodic_ui_linked_chips <- function(linked,
   pal <- episodic_palette()
   shown <- utils::head(linked, max_chips)
 
-  # The theme's own red, not a red: the palette is overridable per
-  # instance, and a hardcoded hex would survive an organisation's own
-  # colours. The dark variant rather than `danger` itself, because the
-  # `monitoring` state chip is `danger` and two identical reds in one
-  # header say nothing - and because 10.5px uppercase needs the contrast.
+  # The palette's own component, not a red: the palette is overridable
+  # per instance, and a hardcoded hex would survive an organisation's
+  # own colours. Outlined, where the `monitoring` state chip beside it is
+  # filled, so the two do not read as one even when both are `danger`.
   chips <- lapply(seq_len(nrow(shown)), function(i) {
     episodic_ui_chip_link(
       episodic_tr(
@@ -1216,7 +1215,7 @@ episodic_ui_linked_chips <- function(linked,
         ),
         lang = lang
       ),
-      pal$danger_dark,
+      pal$chip_linked_cluster,
       cluster_id = shown$cluster_id[i],
       lang = lang
     )
@@ -1229,7 +1228,7 @@ episodic_ui_linked_chips <- function(linked,
         n = episodic_format_number(nrow(linked) - nrow(shown), lang = lang),
         lang = lang
       ),
-      pal$danger_dark
+      pal$chip_linked_cluster
     )
   }
   shiny::tagList(chips)
@@ -1271,7 +1270,7 @@ episodic_ui_during_chips <- function(during,
         ),
         lang = lang
       ),
-      pal$secondary,
+      pal$chip_during_epidemic,
       cluster_id = shown$cluster_id[i],
       lang = lang,
       scale = "epidemic"
@@ -1285,7 +1284,7 @@ episodic_ui_during_chips <- function(during,
         n = episodic_format_number(nrow(during) - nrow(shown), lang = lang),
         lang = lang
       ),
-      pal$secondary
+      pal$chip_during_epidemic
     )
   }
   shiny::tagList(chips)
@@ -2009,7 +2008,7 @@ episodic_ui_assessment_form <- function(con,
     list(
       value = r,
       label = episodic_tr(paste0("assessment.mute_reason.", r), lang = lang),
-      colour = pal$secondary
+      colour = pal$chip_mute_reason
     )
   })
 

@@ -162,7 +162,7 @@ episodic_mail_style <- function(palette = episodic_palette()) {
       ";color:", palette$ink,
       ";background-color:", palette$surface
     ),
-    heading = paste0(font, ";margin:0 0 12px;color:", palette$primary_dark),
+    heading = paste0(font, ";margin:0 0 12px;color:", palette$primary_strong_text),
     # No colour of its own: a paragraph inherits the body's, so a caller
     # prefixing `muted` to it is not overridden by a later declaration.
     paragraph = "margin:0 0 8px",
@@ -177,7 +177,7 @@ episodic_mail_style <- function(palette = episodic_palette()) {
       ";border-bottom:2px solid ", palette$border
     ),
     td = paste0("padding:4px;border-bottom:1px solid ", palette$border),
-    link = paste0("color:", palette$primary),
+    link = paste0("color:", palette$primary_text),
     muted = paste0("color:", palette$muted)
   )
 }

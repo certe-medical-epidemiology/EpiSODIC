@@ -81,6 +81,44 @@ episodic_chart_count_breaks <- function(limits) {
   breaks[abs(breaks - round(breaks)) < 1e-9]
 }
 
+#' The y axes a weekly curve can be drawn on
+#' @keywords internal
+#' @noRd
+episodic_chart_y_scales <- c("linear", "log")
+
+#' Whole-number breaks for a logarithmic axis of counts
+#'
+#' The 1-2-5 steps of each decade from 0 up to the top of the axis, so a
+#' log axis is labelled with counts a reader can name rather than with
+#' the powers of e or 10 a log scale would otherwise pick. Zero is kept:
+#' the axis is `log(1 + n)`, on which a week with no cases sits at the
+#' baseline. Past eight labels only 0 and the powers of ten remain, so a
+#' tall axis is not crowded.
+#'
+#' @param limits The axis limits, as passed by `ggplot2` (on the count
+#'   scale, not the transformed one).
+#' @return A numeric vector of whole-number breaks, possibly empty.
+#' @keywords internal
+#' @noRd
+episodic_chart_log_count_breaks <- function(limits) {
+  limits <- limits[is.finite(limits)]
+  if (length(limits) < 2) {
+    return(numeric(0))
+  }
+  low <- max(min(limits), 0)
+  top <- max(limits)
+  if (top < 1) {
+    return(if (low <= 0) 0 else numeric(0))
+  }
+  decades <- 10^(0:ceiling(log10(top)))
+  candidates <- sort(unique(c(0, as.vector(outer(c(1, 2, 5), decades)))))
+  breaks <- candidates[candidates >= low & candidates <= top]
+  if (length(breaks) > 8) {
+    breaks <- breaks[breaks == 0 | abs(log10(breaks) - round(log10(breaks))) < 1e-9]
+  }
+  breaks
+}
+
 #' The shared chart theme
 #'
 #' Axis labels are set in the muted grey the rest of the interface uses
@@ -362,8 +400,8 @@ episodic_chart_week_scale <- function(week_starts,
 #'   `EPISODIC_LANGUAGE` environment variable, falling back to `"en"` if
 #'   that is unset.
 #' @param accent Fill colour for the bars. Defaults to the palette's
-#'   `primary`, which every chart in the dashboard uses for its main
-#'   series; the status colours are kept for marks that mean something
+#'   `chart_bars` component, which every chart in the dashboard uses for
+#'   its main series; the status colours are kept for marks that mean something
 #'   (thresholds, positivity).
 #' @return A [ggplot2::ggplot] object.
 #' @examples
@@ -378,7 +416,7 @@ episodic_ui_epi_curve_chart <- function(curve,
                                         lang = Sys.getenv("EPISODIC_LANGUAGE"),
                                         accent = NULL) {
   pal <- episodic_palette()
-  accent <- accent %||% pal$primary
+  accent <- accent %||% pal$chart_bars
   # `%in% TRUE`, not the bare column: an `NA` there would make the whole
   # bar's alpha `NA` and the bar itself vanish from the chart without a
   # word. The pathogen curve has always read its own flag this way; this
@@ -458,7 +496,7 @@ episodic_chart_typical_layers <- function(curve, x, lang = Sys.getenv("EPISODIC_
 #' The outlook drawn after a weekly curve's bars
 #'
 #' Each week ahead as a line over its 90% interval and an open point at
-#' its median, in the palette's secondary colour so it reads apart from
+#' its median, in the palette's `chart_outlook` so it reads apart from
 #' the counts and the nowcast marks, with a key. Nothing without an
 #' outlook.
 #'
@@ -480,7 +518,7 @@ episodic_chart_outlook_layers <- function(outlook, lang = Sys.getenv("EPISODIC_L
       data = outlook,
       ggplot2::aes(x = .data$target_date, ymin = .data$q05, ymax = .data$q95),
       inherit.aes = FALSE,
-      colour = pal$secondary_dark,
+      colour = pal$chart_outlook,
       linewidth = 0.6
     ),
     ggplot2::geom_point(
@@ -489,7 +527,7 @@ episodic_chart_outlook_layers <- function(outlook, lang = Sys.getenv("EPISODIC_L
       inherit.aes = FALSE,
       size = 1.8,
       stroke = 0.8,
-      colour = pal$secondary_dark,
+      colour = pal$chart_outlook,
       fill = pal$surface
     ),
     ggplot2::scale_shape_manual(
@@ -504,7 +542,7 @@ episodic_chart_outlook_layers <- function(outlook, lang = Sys.getenv("EPISODIC_L
 #'
 #' A line from the 5% to the 95% quantile of each nowcast day's or week's
 #' expected final count, and an open point at its median, in the
-#' palette's dark primary so they read apart from the bars they sit on.
+#' palette's `chart_nowcast` so they read apart from the bars they sit on.
 #' Nothing for a curve without the nowcast columns, or with none filled:
 #' the pathogen screen's curves carry no nowcast.
 #'
@@ -529,7 +567,7 @@ episodic_chart_nowcast_layers <- function(curve, x) {
         ymax = .data$nowcast_high
       ),
       inherit.aes = FALSE,
-      colour = pal$primary_dark,
+      colour = pal$chart_nowcast,
       linewidth = 0.6
     ),
     ggplot2::geom_point(
@@ -539,7 +577,7 @@ episodic_chart_nowcast_layers <- function(curve, x) {
       shape = 21,
       size = 1.8,
       stroke = 0.8,
-      colour = pal$primary_dark,
+      colour = pal$chart_nowcast,
       fill = pal$surface
     )
   )
@@ -562,7 +600,7 @@ episodic_ui_trend_chart <- function(trend,
                                     lang = Sys.getenv("EPISODIC_LANGUAGE"),
                                     accent = NULL) {
   pal <- episodic_palette()
-  accent <- accent %||% pal$primary
+  accent <- accent %||% pal$chart_bars
   trend$week_start <- as.Date(trend$week_start)
   legend_labels <- c(
     obs = episodic_tr("panel.trend.legend_observed", lang = lang),
@@ -584,7 +622,7 @@ episodic_ui_trend_chart <- function(trend,
       linewidth = 0.9
     ) +
     ggplot2::scale_colour_manual(
-      values = c(obs = pal$ink, exp = accent),
+      values = c(obs = pal$chart_observed, exp = accent),
       labels = legend_labels
     ) +
     ggplot2::scale_y_continuous(
@@ -616,7 +654,7 @@ episodic_ui_rt_chart <- function(rt,
                                  lang = Sys.getenv("EPISODIC_LANGUAGE"),
                                  accent = NULL) {
   pal <- episodic_palette()
-  accent <- accent %||% pal$primary
+  accent <- accent %||% pal$chart_bars
   # Plotted as log2(Rt) on a plain continuous axis whose labels are Rt,
   # rather than through a log transformation of the scale. A credible
   # interval whose lower end is zero is legitimate - an Rt that cannot be
@@ -745,7 +783,7 @@ episodic_chart_rt_axis <- function(log_values,
 #'   context map; area labels are skipped since a full-region view has
 #'   too many polygons to label legibly.
 #' @param accent Colour for the high end of the case-density gradient.
-#'   Defaults to the palette's `primary`.
+#'   Defaults to the palette's `chart_bars`.
 #' @return A `ggplot` object, or `NULL` if no geographic data is
 #'   available at all, or the join/plot fails for any reason (e.g. a PC
 #'   value not in the reference geometry - synthetic demo postcodes are
@@ -763,7 +801,7 @@ episodic_ui_geo_map_chart <- function(rows,
     return(NULL)
   }
   pal <- episodic_palette()
-  accent <- accent %||% pal$primary
+  accent <- accent %||% pal$chart_bars
   tryCatch(
     {
       geo <- episodic_geo_join(rows)
@@ -1097,20 +1135,20 @@ episodic_ui_denominator_chart <- function(series,
     # it is drawn quietly, in a light step of primary.
     ggplot2::geom_col(
       ggplot2::aes(y = .data$n_tests),
-      fill = pal$primary,
+      fill = pal$chart_bars,
       alpha = 0.28,
       width = 4,
       na.rm = TRUE
     ) +
     ggplot2::geom_line(
       ggplot2::aes(y = .data$positivity_scaled),
-      colour = pal$danger,
+      colour = pal$chart_positivity,
       linewidth = 0.9,
       na.rm = TRUE
     ) +
     ggplot2::geom_point(
       ggplot2::aes(y = .data$positivity_scaled),
-      colour = pal$danger,
+      colour = pal$chart_positivity,
       size = 1.6,
       na.rm = TRUE
     ) +
@@ -1134,7 +1172,7 @@ episodic_ui_denominator_chart <- function(series,
       ),
       axis.title.y.right = ggplot2::element_text(
         size = episodic_chart_text_size[["title"]],
-        colour = pal$danger_dark
+        colour = episodic_colour_readable(pal$chart_positivity, pal$surface)
       )
     )
 }
@@ -1163,13 +1201,18 @@ episodic_ui_denominator_chart <- function(series,
 #'   `NULL` to draw the bars alone.
 #' @param lang Language for labels.
 #' @param accent Fill colour for the bars. Defaults to the palette's
-#'   `primary`, which keeps the bars apart from the intensity lines in
+#'   `chart_bars`, which keeps the bars apart from the intensity lines in
 #'   `episodic_mem_threshold_lines()` (`severity_medium`/`severity_high`/
 #'   `severity_very_high`), whose colour is what they mean.
 #' @param outlook `NULL`, or the weeks ahead to draw after the bars
 #'   (`episodic_cluster_forecast_week`'s `target_date` (`Date`), `q05`,
 #'   `q50` and `q95`), each as a line over its 90% interval and a point
 #'   at its median, with a key.
+#' @param y_scale `"linear"` (the default) or `"log"`: a `log(1 + n)` y
+#'   axis, on which a week with no cases stays at the baseline instead
+#'   of falling off the chart, labelled in counts by
+#'   `episodic_chart_log_count_breaks()`. The bars, bands and threshold
+#'   lines are the same counts either way; only the axis changes.
 #' @return A [ggplot2::ggplot] object.
 #' @keywords internal
 #' @noRd
@@ -1177,9 +1220,22 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
                                              thresholds = NULL,
                                              lang = Sys.getenv("EPISODIC_LANGUAGE"),
                                              accent = NULL,
-                                             outlook = NULL) {
+                                             outlook = NULL,
+                                             y_scale = "linear") {
   pal <- episodic_palette()
-  accent <- accent %||% pal$primary
+  accent <- accent %||% pal$chart_bars
+  if (
+    !is.character(y_scale) ||
+      length(y_scale) != 1 ||
+      !y_scale %in% episodic_chart_y_scales
+  ) {
+    stop(
+      "`y_scale` must be one of ",
+      paste0("\"", episodic_chart_y_scales, "\"", collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
   # Named rather than assumed. Without the column, `weekly$incomplete`
   # is NULL, `NULL %in% TRUE` is `logical(0)`, and the assignment below
   # fails with "replacement has 0 rows" - an arithmetic complaint about
@@ -1240,6 +1296,22 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
   }
   typical <- episodic_chart_typical_layers(weekly, x = "week_start", lang = lang)
   outlook_layers <- episodic_chart_outlook_layers(outlook, lang = lang)
+  # log1p rather than log10: a week with no cases is a count of zero,
+  # which a plain log axis cannot place and would drop from the chart.
+  y_axis <- if (identical(y_scale, "log")) {
+    ggplot2::scale_y_continuous(
+      transform = "log1p",
+      breaks = episodic_chart_log_count_breaks,
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    )
+  } else {
+    ggplot2::scale_y_continuous(
+      breaks = episodic_chart_count_breaks,
+      labels = episodic_chart_number_labels(lang),
+      expand = episodic_chart_y_expand()
+    )
+  }
   p <- p +
     typical +
     ggplot2::geom_col(
@@ -1251,11 +1323,7 @@ episodic_ui_pathogen_curve_chart <- function(weekly,
     ggplot2::scale_alpha_identity() +
     episodic_chart_nowcast_layers(weekly, x = "week_start") +
     outlook_layers +
-    ggplot2::scale_y_continuous(
-      breaks = episodic_chart_count_breaks,
-      labels = episodic_chart_number_labels(lang),
-      expand = episodic_chart_y_expand()
-    ) +
+    y_axis +
     episodic_chart_week_scale(
       c(weekly$week_start, if (!is.null(outlook)) as.Date(outlook$target_date)),
       lang = lang
@@ -1379,7 +1447,7 @@ episodic_mem_threshold_lines <- function(thresholds,
   # scale.
   keys <- c("pre_epidemic", "post_epidemic")
   values <- c(thresholds$pre_epidemic, thresholds$post_epidemic)
-  colours <- c(pal$secondary, pal$tertiary)
+  colours <- c(pal$chart_mem_start, pal$chart_mem_end)
 
   if (!is.null(thresholds$intensity)) {
     bands <- c("medium", "high", "very_high")
@@ -1433,16 +1501,16 @@ episodic_ui_pathogen_overlay_chart <- function(overlay,
   # lighten with age: the chart asks how this period compares with the
   # ones before it, and a distinct hue per earlier period would make
   # each of them as loud as the one the question is about.
-  colours <- stats::setNames(rep(pal$muted, length(groups)), groups)
+  colours <- stats::setNames(rep(pal$chart_earlier_periods, length(groups)), groups)
   if (length(earlier) > 0) {
     # Newest first, so the season just before this one is the darkest.
     fade <- seq(0.8, 0.3, length.out = max(length(earlier), 2L))
     colours[rev(earlier)] <- ggplot2::alpha(
-      pal$muted,
+      pal$chart_earlier_periods,
       fade[seq_along(earlier)]
     )
   }
-  colours[overlay$current] <- pal$primary
+  colours[overlay$current] <- pal$chart_current_period
 
   # Week labels run 40..52 then 1..20 for a season, so the x axis is an
   # index and the labels are looked up from it - a numeric week number

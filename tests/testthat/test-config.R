@@ -315,6 +315,16 @@ test_that("episodic_pathogen_config_resolve() with no overlay returns shipped de
   expect_true("MRSA" %in% pc$pathogen)
 })
 
+test_that("SARS-CoV-2 ships with MEM forced on", {
+  # Several waves a year keep SARS-CoV-2 below the single-peak
+  # seasonality test, so `auto` would never fit MEM to it.
+  pc <- episodic_pathogen_config_resolve(NA)
+  expect_identical(
+    as.character(pc$mem_mode[pc$pathogen == "SARS-CoV-2"]),
+    "yes"
+  )
+})
+
 test_that("episodic_pathogen_config_merge() overrides a single column for one pathogen", {
   defaults <- data.frame(
     pathogen = c("A", "B"),

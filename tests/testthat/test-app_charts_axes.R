@@ -79,6 +79,71 @@ test_that("episodic_chart_count_breaks() keeps whole numbers only", {
   expect_equal(episodic_chart_count_breaks(c(NA, 3)), numeric(0))
 })
 
+test_that("episodic_chart_log_count_breaks() steps 1-2-5 per decade from zero", {
+  expect_equal(episodic_chart_log_count_breaks(c(0, 30)), c(0, 1, 2, 5, 10, 20))
+  expect_equal(episodic_chart_log_count_breaks(c(0, 1)), c(0, 1))
+  # Past eight labels only zero and the powers of ten remain.
+  expect_equal(
+    episodic_chart_log_count_breaks(c(0, 5000)),
+    c(0, 1, 10, 100, 1000)
+  )
+  expect_equal(episodic_chart_log_count_breaks(c(NA, 3)), numeric(0))
+})
+
+test_that("the pathogen curve draws on a log(1 + n) axis when asked, in whole counts", {
+  weekly <- data.frame(
+    week_start = as.Date("2025-01-06") + (0:4) * 7,
+    n_cases = c(0, 3, 40, 250, 12),
+    incomplete = FALSE
+  )
+  linear <- episodic_ui_pathogen_curve_chart(weekly, lang = "en")
+  log <- episodic_ui_pathogen_curve_chart(weekly, lang = "en", y_scale = "log")
+
+  expect_identical(y_scale(linear)$get_transformation()$name, "identity")
+  # Checked by what it does, not by its name, which differs between
+  # versions of `scales`: zero stays at zero and e - 1 maps to 1.
+  transformation <- y_scale(log)$get_transformation()
+  expect_equal(transformation$transform(c(0, exp(1) - 1)), c(0, 1))
+  expect_equal(transformation$inverse(c(0, 1)), c(0, exp(1) - 1))
+
+  # The axis is labelled in counts, every one a whole number of cases.
+  breaks <- y_scale(log)$get_breaks()
+  counts <- expm1(breaks[!is.na(breaks)])
+  expect_gt(length(counts), 1)
+  expect_equal(counts, round(counts))
+
+  # A week with no cases stays a bar of height zero at the baseline,
+  # rather than a value a plain log axis could not place.
+  bars <- ggplot2::layer_data(log, 1)
+  expect_equal(bars$ymax[bars$x == min(bars$x)], 0)
+  expect_true(all(is.finite(bars$ymax)))
+})
+
+test_that("the pathogen curve refuses a y axis it does not know", {
+  weekly <- data.frame(
+    week_start = as.Date("2025-01-06") + (0:1) * 7,
+    n_cases = c(1, 2),
+    incomplete = FALSE
+  )
+  expect_error(
+    episodic_ui_pathogen_curve_chart(weekly, lang = "en", y_scale = "sqrt"),
+    "`y_scale` must be one of"
+  )
+  expect_error(
+    episodic_ui_pathogen_curve_chart(weekly, lang = "en", y_scale = NA_character_),
+    "`y_scale` must be one of"
+  )
+})
+
+test_that("the curve's y axis switch marks the scale drawn and sends the other", {
+  html <- as.character(episodic_ui_curve_scale_picker("log", lang = "en"))
+  expect_match(html, "Linear")
+  expect_match(html, "Logarithmic")
+  expect_match(html, "pathogen_curve_scale")
+  pressed <- regmatches(html, gregexpr("aria-pressed=\"[a-z]+\"", html))[[1]]
+  expect_equal(pressed, c("aria-pressed=\"false\"", "aria-pressed=\"true\""))
+})
+
 test_that("a count axis is never labelled with a fraction of a case", {
   curve <- data.frame(
     sample_date = as.Date("2025-01-01") + 0:3,

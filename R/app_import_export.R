@@ -329,7 +329,7 @@ episodic_ui_import_export_last <- function(rows, name_col, name, when_col, lang 
   shiny::tagList(
     episodic_ui_chip(
       episodic_tr(paste0("import_export.status.", latest$status), lang = lang),
-      if (ok) pal$success_dark else pal$danger_dark,
+      if (ok) pal$success else pal$danger,
       filled = TRUE
     ),
     " ",
@@ -544,7 +544,7 @@ episodic_ui_import_export_test_panel <- function(test, lang = Sys.getenv("EPISOD
               if (isTRUE(line$ok)) "import_export.test.mark_ok" else if (identical(line$ok, FALSE)) "import_export.test.mark_fail" else "import_export.test.mark_info",
               lang = lang
             ),
-            if (isTRUE(line$ok)) pal$success_dark else if (identical(line$ok, FALSE)) pal$danger_dark else pal$muted,
+            if (isTRUE(line$ok)) pal$success else if (identical(line$ok, FALSE)) pal$danger else pal$muted,
             filled = TRUE
           ),
           " ",
@@ -593,7 +593,7 @@ episodic_ui_import_export_audit_panel <- function(data, lang = Sys.getenv("EPISO
   status_chip <- function(status) {
     episodic_ui_chip(
       episodic_tr(paste0("import_export.status.", status), lang = lang),
-      if (status %in% c("written", "imported")) pal$success_dark else pal$danger_dark,
+      if (status %in% c("written", "imported")) pal$success else pal$danger,
       filled = TRUE
     )
   }

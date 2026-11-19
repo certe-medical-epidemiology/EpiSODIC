@@ -328,9 +328,10 @@ episodic_ui_multi_picker <- function(input_id,
                                      all_label) {
   pal <- episodic_palette()
   active_style <- sprintf(
-    "background:%s;border-color:%s;color:#fff;",
+    "background:%s;border-color:%s;color:%s;",
     pal$primary,
-    pal$primary
+    pal$primary,
+    pal$primary_on
   )
   all_active <- length(selected) == 0
   chips <- c(
@@ -402,47 +403,65 @@ episodic_colour_contrast <- function(a, b) {
 
 #' The text colour to write on a filled background
 #'
-#' The palette's `ink` or white, whichever contrasts more with
-#' `background`, as long as that reaches WCAG's 4.5:1 for small text;
-#' where neither does - a mid-tone such as Bootswatch Yeti's own red sits
-#' between them - black, which reaches further than `ink` on any fill
-#' light enough to defeat white. The same rule as Bootstrap's
-#' `color-contrast()`. Every palette colour is an operator's to set, so a
-#' fixed white on a fill is unreadable the moment that fill is light: a
-#' yellow `severity_medium` or a pale grey `severity_baseline` would carry
-#' text nobody can read.
+#' `episodic_colour_on()` with the palette's own `ink`. Every palette
+#' colour is an operator's to set, so a fixed white on a fill is
+#' unreadable the moment that fill is light: a yellow `severity_medium`
+#' or a pale grey `severity_baseline` would carry text nobody can read.
 #'
 #' @param background A hex colour.
 #' @return A hex colour.
 #' @keywords internal
 #' @noRd
 episodic_ui_text_on <- function(background) {
-  candidates <- c(episodic_palette()$ink, "#FFFFFF")
-  contrast <- vapply(
-    candidates,
-    function(fg) episodic_colour_contrast(background, fg),
-    numeric(1)
+  episodic_colour_on(background, episodic_palette()$ink)
+}
+
+#' A colour as text on the page
+#'
+#' The colour itself where it reads, otherwise darkened to 4.5:1 against
+#' both `surface` (panels) and `bg` (the page), since a chip or a number
+#' can sit on either. What lets an operator choose a pale brand colour
+#' for a component without making its label unreadable.
+#'
+#' @param colour A hex colour.
+#' @return A hex colour.
+#' @keywords internal
+#' @noRd
+episodic_ui_text_in <- function(colour) {
+  pal <- episodic_palette()
+  episodic_colour_readable(colour, c(pal$surface, pal$bg))
+}
+
+#' The inline style of an outlined chip in one colour
+#'
+#' The border is the colour at 40% over `surface`, written as the colour
+#' that results rather than as an alpha suffix, which an `#RRGGBBAA`
+#' palette colour would already carry. The text is the colour made
+#' readable (`episodic_ui_text_in()`).
+#' @keywords internal
+#' @noRd
+episodic_ui_outline_style <- function(colour, border = "solid") {
+  pal <- episodic_palette()
+  sprintf(
+    "color:%s;border:1px %s %s;",
+    episodic_ui_text_in(colour),
+    border,
+    episodic_colour_mix(pal$surface, colour, 0.4)
   )
-  if (max(contrast) >= 4.5) {
-    return(unname(candidates[which.max(contrast)]))
-  }
-  if (episodic_colour_contrast(background, "#000000") > max(contrast)) {
-    return("#000000")
-  }
-  unname(candidates[which.max(contrast)])
 }
 
 #' @param text Chip text.
 #' @param colour A hex colour.
 #' @param filled If `TRUE`, filled background, with text in the colour
-#'   that reads on it (`episodic_ui_text_on()`); otherwise an outline chip.
+#'   that reads on it (`episodic_ui_text_on()`); otherwise an outline chip,
+#'   its text the colour made readable (`episodic_ui_text_in()`).
 #' @keywords internal
 #' @noRd
 episodic_ui_chip <- function(text, colour, filled = FALSE) {
   style <- if (filled) {
     sprintf("color:%s;background:%s;", episodic_ui_text_on(colour), colour)
   } else {
-    sprintf("color:%s;border:1px solid %s66;", colour, colour)
+    episodic_ui_outline_style(colour)
   }
   class <- paste(
     "episodic-chip",
@@ -476,7 +495,7 @@ episodic_ui_chip_link <- function(text,
                                   scale = "outbreak") {
   shiny::tags$span(
     class = "episodic-chip episodic-chip-outline episodic-chip-link",
-    style = sprintf("color:%s;border:1px solid %s66;", colour, colour),
+    style = episodic_ui_outline_style(colour),
     tabindex = "0",
     role = "link",
     title = episodic_tr(
@@ -590,7 +609,7 @@ episodic_ui_stat <- function(label, value, sub = NULL, colour = NULL, lead = NUL
     if (!is.null(lead)) shiny::tags$div(class = "episodic-stat-lead", lead),
     shiny::tags$div(
       class = "episodic-stat-value",
-      style = if (!is.null(colour)) sprintf("color:%s;", colour),
+      style = if (!is.null(colour)) sprintf("color:%s;", episodic_ui_text_in(colour)),
       value
     ),
     if (!is.null(sub)) shiny::tags$div(class = "episodic-stat-sub", sub)
@@ -737,11 +756,11 @@ episodic_ui_state_dot <- function(state) {
 episodic_ui_state_colour <- function(state) {
   pal <- episodic_palette()
   switch(state,
-    new = pal$primary_light,
-    assessing = pal$primary,
-    monitoring = pal$danger,
-    closed = pal$success_dark,
-    reassess = pal$tertiary_dark,
+    new = pal$state_new,
+    assessing = pal$state_assessing,
+    monitoring = pal$state_monitoring,
+    closed = pal$state_closed,
+    reassess = pal$state_reassess,
     pal$muted
   )
 }
@@ -750,41 +769,51 @@ episodic_ui_state_colour <- function(state) {
 #'
 #' Each care line differs from the others in form as well as colour:
 #' first line filled, second tinted, third outlined, `"other"` outlined
-#' with a dashed border. The colours come from the instance's palette,
-#' and nothing guarantees an operator's `primary`, `tertiary`,
-#' `secondary` and `muted` are far enough apart to tell apart at chip
-#' size - a slate primary beside the muted grey is not - so colour alone
-#' would leave the chip carrying no information. Deliberately not
-#' primary/secondary/tertiary in line order: first line takes primary
-#' since it is the one an epidemiologist sees most often. `"unknown"`
-#' (and anything else) gets `NULL`: no chip, rather than a chip saying
-#' nothing was recorded.
+#' with a dashed border. The colours are the palette's `care_line`
+#' components, and nothing guarantees an operator's choices are far
+#' enough apart to tell apart at chip size, so colour alone would leave
+#' the chip carrying no information. `"unknown"` (and anything else)
+#' gets `NULL`: no chip, rather than a chip saying nothing was recorded.
+#'
+#' The text colour is derived for the background it actually sits on: on
+#' the fill for a filled chip, on the tint (the colour at 20% over
+#' `surface`) for a tinted one, and on the page for the outlined ones. A
+#' colour chosen for its hue therefore never has to be a readable text
+#' colour as well.
 #'
 #' @param care_line A stream `care_line` value, or `NA`.
-#' @return A list with `colour`, `text_colour` and `form` (`"filled"`,
-#'   `"tinted"`, `"outline"` or `"dashed"`), or `NULL`.
+#' @return A list with `colour`, `background` (`NULL` for the outlined
+#'   forms), `text_colour` and `form` (`"filled"`, `"tinted"`,
+#'   `"outline"` or `"dashed"`), or `NULL`.
 #' @keywords internal
 #' @noRd
 episodic_ui_care_line_style <- function(care_line) {
   if (length(care_line) != 1 || is.na(care_line)) {
     return(NULL)
   }
-  pal <- episodic_palette()
-  switch(care_line,
-    first = list(colour = pal$primary, text_colour = "#fff", form = "filled"),
-    second = list(
-      colour = pal$tertiary,
-      text_colour = pal$tertiary_dark,
-      form = "tinted"
-    ),
-    third = list(
-      colour = pal$secondary,
-      text_colour = pal$secondary,
-      form = "outline"
-    ),
-    other = list(colour = pal$muted, text_colour = pal$muted, form = "dashed"),
+  form <- switch(care_line,
+    first = "filled",
+    second = "tinted",
+    third = "outline",
+    other = "dashed",
     NULL
   )
+  if (is.null(form)) {
+    return(NULL)
+  }
+  pal <- episodic_palette()
+  colour <- pal[[paste0("care_line_", care_line)]]
+  background <- switch(form,
+    filled = colour,
+    tinted = episodic_colour_mix(pal$surface, colour, 0.2),
+    NULL
+  )
+  text_colour <- switch(form,
+    filled = episodic_ui_text_on(colour),
+    tinted = episodic_colour_readable(colour, background),
+    episodic_ui_text_in(colour)
+  )
+  list(colour = colour, background = background, text_colour = text_colour, form = form)
 }
 
 #' The rail's care-line chip
@@ -801,9 +830,8 @@ episodic_ui_care_line_chip <- function(care_line,
     return(NULL)
   }
   css <- switch(style$form,
-    filled = sprintf("color:%s;background:%s;", style$text_colour, style$colour),
-    # 0x33 alpha on the colour itself: about a fifth of it over the card.
-    tinted = sprintf("color:%s;background:%s33;", style$text_colour, style$colour),
+    filled = sprintf("color:%s;background:%s;", style$text_colour, style$background),
+    tinted = sprintf("color:%s;background:%s;", style$text_colour, style$background),
     outline = sprintf("color:%s;border:1px solid %s;", style$text_colour, style$colour),
     dashed = sprintf("color:%s;border:1px dashed %s;", style$text_colour, style$colour)
   )

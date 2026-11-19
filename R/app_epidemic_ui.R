@@ -343,7 +343,7 @@ episodic_ui_epidemic_header <- function(obj,
       ),
       episodic_ui_chip(
         episodic_app_level_label(obj$level, obj$care_line, lang = lang),
-        pal$primary
+        pal$chip_level
       ),
       episodic_ui_chip(
         episodic_tr(paste0("state.", state), lang = lang),
@@ -357,7 +357,7 @@ episodic_ui_epidemic_header <- function(obj,
             season = season_label,
             lang = lang
           ),
-          pal$secondary
+          pal$chip_season
         )
       },
       # The intensity band this week sits in, where MEM could fit one:
@@ -475,9 +475,9 @@ episodic_ui_epidemic_stat_grid <- function(obj,
       episodic_format_number(course$latest_n, lang = lang),
       sub,
       colour = if (!is.na(course$change_pct) && course$change_pct > 0) {
-        pal$danger
+        pal$trend_rising
       } else if (!is.na(course$change_pct) && course$change_pct < 0) {
-        pal$success
+        pal$trend_falling
       } else {
         NULL
       }
@@ -554,9 +554,9 @@ episodic_ui_epidemic_stat_grid <- function(obj,
       # Coloured only when the interval is on one side of 1: an interval
       # straddling it has not said which way the epidemic is going.
       colour = if (!is.na(rt_latest$lower) && rt_latest$lower > 1) {
-        pal$danger
+        pal$trend_rising
       } else if (!is.na(rt_latest$upper) && rt_latest$upper < 1) {
-        pal$success
+        pal$trend_falling
       } else {
         NULL
       }
@@ -704,9 +704,9 @@ episodic_ui_epidemic_direction_stats <- function(direction,
     change(rate$estimate),
     sub,
     colour = if (rate$lower > 0) {
-      pal$danger
+      pal$trend_rising
     } else if (rate$upper < 0) {
-      pal$success
+      pal$trend_falling
     } else {
       NULL
     },

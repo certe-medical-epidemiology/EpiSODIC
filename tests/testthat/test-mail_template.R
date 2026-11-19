@@ -79,8 +79,8 @@ test_that("every template problem is described in every shipped language", {
 
 test_that("the email styles are built from the palette, not from fixed colours", {
   pal <- episodic_palette_shipped()
-  pal$primary <- "#123456"
-  pal$primary_dark <- "#0A0B0C"
+  pal$primary_text <- "#123456"
+  pal$primary_strong_text <- "#0A0B0C"
   pal$ink <- "#010203"
   pal$font <- "\"Noto Sans\", Arial, sans-serif"
   pal$font_size_base <- "15px"
@@ -101,7 +101,7 @@ test_that("the email styles are built from the palette, not from fixed colours",
 
 test_that("the built-in emails carry the palette's colours and font, and no fixed ones", {
   pal <- episodic_palette_shipped()
-  pal$primary <- "#123456"
+  pal$primary_text <- "#123456"
   pal$bg_subtle <- "#ABCDEF"
   pal$font <- "Georgia, serif"
   style <- episodic_mail_style(pal)
@@ -349,7 +349,7 @@ test_that("a preview with no template writes the built-in body the email would g
     expect_equal(path, out)
     html <- paste(readLines(out, encoding = "UTF-8", warn = FALSE), collapse = "\n")
     expect_match(html, "<html><body", fixed = TRUE)
-    expect_match(html, episodic_palette()$primary_dark, fixed = TRUE)
+    expect_match(html, episodic_palette()$primary_strong_text, fixed = TRUE)
     unlink(out)
   }
 })
@@ -374,7 +374,7 @@ test_that("both shipped templates render, in the instance palette", {
       lang = "en"
     ))
     html <- paste(readLines(out, encoding = "UTF-8", warn = FALSE), collapse = "\n")
-    expect_match(html, episodic_palette()$primary_dark, fixed = TRUE, info = kind)
+    expect_match(html, episodic_palette()$primary_strong_text, fixed = TRUE, info = kind)
     expect_false(grepl("<script", html, fixed = TRUE), info = kind)
     unlink(out)
   }

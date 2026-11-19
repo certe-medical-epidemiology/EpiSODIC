@@ -1,3 +1,28 @@
+# EpiSODIC 0.26.0
+
+## New
+
+- The Pathogen screen's weekly curve switches between a linear and a logarithmic, log(1 + n), y axis
+- The palette file (`EPISODIC_STYLE`) is layered: `typography`, `swatches`, `neutral`, `brand`, `status`, `severity` and `components`
+- A palette colour may name a swatch or another role instead of a hex value, so a house palette is entered once
+- `components` names what each meaningful thing on screen is drawn in: cluster states, care lines, dossier chips, trends, chart series and the header
+- `inst/config/episodic_style_template.yaml` is a complete palette file to copy and edit
+- Every colour written as text is darkened to 4.5:1 against its background, and every chart line and mark lifted to 3:1, whatever the palette
+- The palette derives `<role>_text` and `<role>_on` for the brand and status roles, as list entries and CSS custom properties
+- The Info screen reports a palette name that names nothing, a circular one, a key of the earlier flat format with where it now lives, and an `ink` or `muted` too light to read
+
+## Changed
+
+- The palette's flat keys are replaced by the layered format; `primary_dark` is `brand.primary_strong`, `primary_light` is `brand.primary_soft`, and the other `*_dark` keys are derived rather than set
+- `episodic_palette()` returns components as `<group>_<key>` entries and no longer returns the `*_dark` and `primary_light` entries
+- SARS-CoV-2 ships with `mem_mode` `yes`, since its several waves a year keep it below the automatic seasonality test
+- The Activity screen names the account a detection run ran as beside the host it ran on
+
+## Fixed
+
+- An outlined chip in a pale colour, such as the "During" and care-line chips, had unreadable text
+- The navigation bar's links and status text were written in fixed colours rather than from the palette
+
 # EpiSODIC 0.25.0
 
 ## New

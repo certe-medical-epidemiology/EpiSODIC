@@ -1084,8 +1084,8 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   }
   expect_null(p$guides$guides$colour$params$override.aes$linewidth)
   expect_null(p$scales$get_scales("linetype"))
-  # The start and end thresholds are the keyed lines, below the squares:
-  # the start in the palette's secondary, the end in its tertiary teal.
+  # The start and end thresholds are the keyed lines, below the squares,
+  # each in its own chart component.
   colour <- built$plot$scales$get_scales("colour")
   expect_equal(
     unname(as.character(colour$get_labels())),
@@ -1093,7 +1093,7 @@ test_that("the intensity bands are shaded from the epidemic threshold up, each i
   )
   expect_equal(
     unname(colour$map(c("pre_epidemic", "post_epidemic"))),
-    c(pal$secondary, pal$tertiary)
+    c(pal$chart_mem_start, pal$chart_mem_end)
   )
   expect_equal(p$guides$guides$fill$params$order, 1)
   expect_equal(p$guides$guides$colour$params$order, 2)

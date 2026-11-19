@@ -181,6 +181,8 @@ test_that("episodic_app_activity_log() surfaces assessments, closures, mutes, lo
   expect_true("signaleringsreeks gedempt" %in% activity$action) # mute
   expect_true(any(startsWith(activity$action, "detectierun"))) # the cron run from app_read_setup()
   expect_equal(sum(startsWith(activity$action, "detectierun")), 2) # both runs
+  # A run names the account that ran it beside the host it ran on.
+  expect_true("account op host" %in% activity$target)
   expect_true(any(activity$is_system)) # the cron run from app_read_setup()
   expect_false(all(activity$is_system)) # human actions too
   expect_true(all(diff(as.numeric(as.POSIXct(activity$at, tz = "UTC"))) <= 0)) # descending
